@@ -1,0 +1,221 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String              @id @default(uuid())
+  email              String              @unique
+  name               String?
+  password           String
+  githubUsername     String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  courses            CourseProgress[]
+  paths              PathProgress[]
+  discussions        Discussion[]
+  discussionReplies  DiscussionReply[]
+  projectSubmissions ProjectSubmission[]
+  certificates       Certificate[]
+  achievements       UserAchievement[]
+}
+
+model Course {
+  id               String           @id
+  title            String
+  description      String
+  difficulty       String
+  durationHours    Int
+  pathId           String
+  prerequisites    String?
+  learningOutcomes String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  sections         CourseSection[]
+  progress         CourseProgress[]
+  discussions      Discussion[]
+  certificates     Certificate[]
+  path             Path             @relation(fields: [pathId], references: [id])
+}
+
+model CourseSection {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  order       Int
+  courseId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lessons     Lesson[]
+  course      Course   @relation(fields: [courseId], references: [id])
+}
+
+model Lesson {
+  id                 String              @id @default(uuid())
+  title              String
+  content            String
+  type               String
+  duration           String?
+  hasProject         Boolean             @default(false)
+  githubUrl          String?
+  nextLessonId       String?
+  prevLessonId       String?
+  sectionId          String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  section            CourseSection       @relation(fields: [sectionId], references: [id])
+  quizQuestions      QuizQuestion[]
+  completedBy        CourseProgress[]    @relation("CompletedLessons")
+  projectSubmissions ProjectSubmission[]
+  discussions        Discussion[]
+}
+
+model QuizQuestion {
+  id            String   @id @default(uuid())
+  question      String
+  options       String // JSON array of options
+  correctAnswer Int
+  explanation   String?
+  lessonId      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lesson        Lesson   @relation(fields: [lessonId], references: [id])
+}
+
+model Path {
+  id             String         @id
+  title          String
+  description    String
+  icon           String?
+  estimatedHours Int?
+  difficulty     String?
+  prerequisites  String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  courses        Course[]
+  progress       PathProgress[]
+}
+
+model CourseProgress {
+  id               String      @id @default(uuid())
+  userId           String
+  courseId         String
+  completedLessons Lesson[]    @relation("CompletedLessons")
+  lastAccessed     DateTime    @default(now())
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  user             User        @relation(fields: [userId], references: [id])
+  course           Course      @relation(fields: [courseId], references: [id])
+  quizScores       QuizScore[]
+}
+
+model QuizScore {
+  id               String         @id @default(uuid())
+  courseProgressId String
+  lessonId         String
+  score            Int
+  maxScore         Int
+  completedAt      DateTime       @default(now())
+  courseProgress   CourseProgress @relation(fields: [courseProgressId], references: [id])
+}
+
+model PathProgress {
+  id           String   @id @default(uuid())
+  userId       String
+  pathId       String
+  startedAt    DateTime @default(now())
+  lastAccessed DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
+  path         Path     @relation(fields: [pathId], references: [id])
+}
+
+model ProjectSubmission {
+  id          String    @id @default(uuid())
+  userId      String
+  lessonId    String
+  githubUrl   String
+  liveUrl     String?
+  notes       String?
+  status      String    @default("pending") // pending, approved, rejected
+  feedback    String?
+  submittedAt DateTime  @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id])
+  lesson      Lesson    @relation(fields: [lessonId], references: [id])
+}
+
+model Discussion {
+  id        String            @id @default(uuid())
+  userId    String
+  content   String
+  courseId  String?
+  lessonId  String?
+  likes     Int               @default(0)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  user      User              @relation(fields: [userId], references: [id])
+  course    Course?           @relation(fields: [courseId], references: [id])
+  lesson    Lesson?           @relation(fields: [lessonId], references: [id])
+  replies   DiscussionReply[]
+}
+
+model DiscussionReply {
+  id           String     @id @default(uuid())
+  userId       String
+  discussionId String
+  content      String
+  likes        Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  user         User       @relation(fields: [userId], references: [id])
+  discussion   Discussion @relation(fields: [discussionId], references: [id])
+}
+
+model Certificate {
+  id               String    @id @default(uuid())
+  userId           String
+  courseId         String
+  issueDate        DateTime  @default(now())
+  expiryDate       DateTime?
+  verificationCode String    @unique
+  skills           String // JSON array of skills
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id])
+  course           Course    @relation(fields: [courseId], references: [id])
+}
+
+model Achievement {
+  id               String            @id @default(uuid())
+  name             String
+  description      String
+  icon             String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  userAchievements UserAchievement[]
+}
+
+model UserAchievement {
+  id            String      @id @default(uuid())
+  userId        String
+  achievementId String
+  earnedAt      DateTime    @default(now())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  user          User        @relation(fields: [userId], references: [id])
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+}
