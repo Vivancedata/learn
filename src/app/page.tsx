@@ -1,101 +1,157 @@
-import Image from "next/image";
+import { Course } from "@/types/course"
+import { CourseList } from "@/components/course-list"
+
+const sampleCourses: Course[] = [
+  {
+    id: "web-dev-101",
+    title: "Introduction to Web Development",
+    description: "Learn the fundamentals of web development including HTML, CSS, and JavaScript.",
+    difficulty: "Beginner",
+    durationHours: 20,
+    pathId: "web-dev",
+    sections: [
+      {
+        id: "getting-started",
+        title: "Getting Started",
+        order: 1,
+        lessons: [
+          {
+            id: "intro",
+            title: "Introduction to Web Development",
+            content: "# Introduction to Web Development",
+            type: "lesson"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "react-basics",
+    title: "React Fundamentals",
+    description: "Master the basics of React including components, props, state, and hooks.",
+    difficulty: "Intermediate",
+    durationHours: 15,
+    pathId: "web-dev",
+    sections: [
+      {
+        id: "react-intro",
+        title: "Introduction to React",
+        order: 1,
+        lessons: [
+          {
+            id: "react-overview",
+            title: "React Overview",
+            content: "# React Overview",
+            type: "lesson"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "typescript-advanced",
+    title: "Advanced TypeScript",
+    description: "Deep dive into TypeScript&apos;s advanced features and design patterns.",
+    difficulty: "Advanced",
+    durationHours: 12,
+    pathId: "advanced-programming",
+    sections: [
+      {
+        id: "ts-advanced",
+        title: "Advanced TypeScript Features",
+        order: 1,
+        lessons: [
+          {
+            id: "ts-types",
+            title: "Advanced Types",
+            content: "# Advanced Types in TypeScript",
+            type: "lesson"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "ui-ux-design",
+    title: "UI/UX Design Principles",
+    description: "Learn the core principles of user interface and user experience design.",
+    difficulty: "Beginner",
+    durationHours: 10,
+    pathId: "design",
+    sections: [
+      {
+        id: "design-basics",
+        title: "Design Basics",
+        order: 1,
+        lessons: [
+          {
+            id: "design-principles",
+            title: "Design Principles",
+            content: "# Design Principles",
+            type: "lesson"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "node-backend",
+    title: "Node.js Backend Development",
+    description: "Build scalable backend applications with Node.js and Express.",
+    difficulty: "Intermediate",
+    durationHours: 18,
+    pathId: "web-dev",
+    sections: [
+      {
+        id: "node-intro",
+        title: "Introduction to Node.js",
+        order: 1,
+        lessons: [
+          {
+            id: "node-basics",
+            title: "Node.js Basics",
+            content: "# Node.js Basics",
+            type: "lesson"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "cloud-arch",
+    title: "Cloud Architecture",
+    description: "Master cloud computing concepts and architecture design patterns.",
+    difficulty: "Advanced",
+    durationHours: 25,
+    pathId: "advanced-programming",
+    sections: [
+      {
+        id: "cloud-intro",
+        title: "Introduction to Cloud Computing",
+        order: 1,
+        lessons: [
+          {
+            id: "cloud-concepts",
+            title: "Cloud Computing Concepts",
+            content: "# Cloud Computing Concepts",
+            type: "lesson"
+          }
+        ]
+      }
+    ]
+  }
+]
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+    <div className="space-y-8">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold tracking-tight">Welcome to Eureka</h1>
+        <p className="mt-4 text-lg text-muted-foreground">
+          Discover your next learning adventure
+        </p>
+      </div>
+      <CourseList courses={sampleCourses} />
     </div>
-  );
+  )
 }
