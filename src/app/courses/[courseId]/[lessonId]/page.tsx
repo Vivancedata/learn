@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Github, Flag, ArrowLeft, ArrowRight, CheckCircle } from "lucide-react"
+import { Github, Flag, ArrowLeft, ArrowRight, CheckCircle, Loader2 } from "lucide-react"
 import Link from "next/link"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
@@ -14,6 +14,7 @@ import { getCourseById, getLessonById, parseKnowledgeCheck } from "@/lib/content
 import type { Components } from "react-markdown"
 import { useParams } from "next/navigation"
 import { Course, Lesson } from "@/types/course"
+import { useProgress } from "@/lib/hooks/use-progress"
 
 interface TableOfContentsItem {
   id: string
@@ -53,12 +54,21 @@ export default function LessonPage() {
   const params = useParams()
   const courseId = params.courseId as string
   const lessonId = params.lessonId as string
-  
-  const [isCompleted, setIsCompleted] = useState(false)
+
   const [tableOfContents, setTableOfContents] = useState<TableOfContentsItem[]>([])
   const [course, setCourse] = useState<Course | null>(null)
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isMarkingComplete, setIsMarkingComplete] = useState(false)
+
+  // Use progress tracking hook
+  const {
+    isLessonComplete,
+    markLessonComplete,
+    markLessonIncomplete,
+  } = useProgress(courseId)
+
+  const isCompleted = isLessonComplete(lessonId)
 
   useEffect(() => {
     async function loadData() {
@@ -114,10 +124,31 @@ export default function LessonPage() {
     )
   }
 
-  const handleQuizComplete = (score: number) => {
-    // In a real app, we would save this to the backend
+  const handleQuizComplete = async (score: number) => {
     console.log(`Quiz completed with score: ${score}`)
-    setIsCompleted(true)
+    // Auto-mark lesson as complete if quiz is passed (score >= 70)
+    if (score >= 70 && !isCompleted) {
+      try {
+        await markLessonComplete(lessonId)
+      } catch (error) {
+        console.error('Failed to mark lesson complete:', error)
+      }
+    }
+  }
+
+  const handleToggleComplete = async () => {
+    setIsMarkingComplete(true)
+    try {
+      if (isCompleted) {
+        await markLessonIncomplete(lessonId)
+      } else {
+        await markLessonComplete(lessonId)
+      }
+    } catch (error) {
+      console.error('Failed to toggle lesson completion:', error)
+    } finally {
+      setIsMarkingComplete(false)
+    }
   }
 
   // Sample discussions for this lesson
@@ -153,9 +184,14 @@ export default function LessonPage() {
                 <h1 className="text-3xl font-bold">{lesson.title}</h1>
                 <Button
                   variant={isCompleted ? "default" : "outline"}
-                  onClick={() => setIsCompleted(!isCompleted)}
+                  onClick={handleToggleComplete}
+                  disabled={isMarkingComplete}
                 >
-                  <CheckCircle className={`mr-2 h-4 w-4 ${isCompleted ? "text-white" : "text-muted-foreground"}`} />
+                  {isMarkingComplete ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle className={`mr-2 h-4 w-4 ${isCompleted ? "text-white" : "text-muted-foreground"}`} />
+                  )}
                   {isCompleted ? "Completed" : "Mark as Complete"}
                 </Button>
               </div>

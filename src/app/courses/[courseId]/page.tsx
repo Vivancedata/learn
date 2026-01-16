@@ -12,13 +12,18 @@ import { CommunityDiscussions } from "@/components/community-discussions"
 import { getCourseById } from "@/lib/content"
 import { useParams } from "next/navigation"
 import { Course } from "@/types/course"
+import { useProgress } from "@/lib/hooks/use-progress"
+import { CheckCircle } from "lucide-react"
 
 export default function CoursePage() {
   const params = useParams()
   const courseId = params.courseId as string
   const [courseData, setCourseData] = useState<Course | null>(null)
   const [loading, setLoading] = useState(true)
-  
+
+  // Use progress tracking hook
+  const { progress, isLessonComplete } = useProgress(courseId)
+
   useEffect(() => {
     async function loadCourse() {
       try {
@@ -30,7 +35,7 @@ export default function CoursePage() {
         setLoading(false)
       }
     }
-    
+
     loadCourse()
   }, [courseId])
   
@@ -59,9 +64,13 @@ export default function CoursePage() {
   // Add missing properties to match the CourseType interface
   const course = {
     ...courseData,
-    progress: courseData.progress || {
-      completed: 2,
-      total: 8,
+    progress: progress ? {
+      completed: progress.completedCount,
+      total: progress.totalLessons,
+      lastAccessed: progress.lastAccessed || new Date().toISOString()
+    } : {
+      completed: 0,
+      total: courseData.sections.reduce((acc, s) => acc + s.lessons.length, 0),
       lastAccessed: new Date().toISOString()
     },
     learningOutcomes: courseData.learningOutcomes || [
@@ -71,8 +80,8 @@ export default function CoursePage() {
       "Develop problem-solving skills in the domain"
     ]
   }
-  
-  const progress = course.progress ? (course.progress.completed / course.progress.total) * 100 : 0
+
+  const progressPercent = progress?.percentComplete || 0
 
   // Sample success stories
   const successStories = [
@@ -138,16 +147,21 @@ export default function CoursePage() {
   // Calculate progress metrics for certificate
   const totalLessons = course.sections.reduce((acc, section) => acc + section.lessons.length, 0)
   const projectLessons = course.sections.reduce(
-    (acc, section) => acc + section.lessons.filter(l => l.type === "project").length, 
+    (acc, section) => acc + section.lessons.filter(l => l.type === "project").length,
     0
   )
-  
+
+  // Count completed projects
+  const completedProjects = course.sections.reduce((acc, section) => {
+    return acc + section.lessons.filter(l => l.type === "project" && isLessonComplete(l.id)).length
+  }, 0)
+
   const progressMetrics = {
-    completedLessons: course.progress?.completed || 0,
+    completedLessons: progress?.completedCount || 0,
     totalLessons,
-    completedProjects: 1,
+    completedProjects,
     totalProjects: projectLessons,
-    averageQuizScore: 85
+    averageQuizScore: 85 // TODO: Calculate from actual quiz scores
   }
 
   // Default learning outcomes if not provided
@@ -168,13 +182,11 @@ export default function CoursePage() {
               {course.description}
             </p>
           </div>
-          {course.progress && (
-            <ProgressCircle 
-              progress={progress}
-              size="lg"
-              showPercentage
-            />
-          )}
+          <ProgressCircle
+            progress={progressPercent}
+            size="lg"
+            showPercentage
+          />
         </div>
 
         <div className="flex gap-4">
@@ -211,25 +223,33 @@ export default function CoursePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {section.lessons.map((lesson) => (
-                    <Link
-                      key={lesson.id}
-                      href={`/courses/${course.id}/${lesson.id}`}
-                      className="flex items-center justify-between p-2 hover:bg-accent rounded-md transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span>{lesson.title}</span>
-                        {lesson.type === "project" && (
-                          <Badge variant="outline">Project</Badge>
+                  {section.lessons.map((lesson) => {
+                    const completed = isLessonComplete(lesson.id)
+                    return (
+                      <Link
+                        key={lesson.id}
+                        href={`/courses/${course.id}/${lesson.id}`}
+                        className="flex items-center justify-between p-2 hover:bg-accent rounded-md transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          {completed ? (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <div className="h-4 w-4 rounded-full border-2 border-muted-foreground" />
+                          )}
+                          <span className={completed ? "text-muted-foreground" : ""}>{lesson.title}</span>
+                          {lesson.type === "project" && (
+                            <Badge variant="outline">Project</Badge>
+                          )}
+                        </div>
+                        {lesson.duration && (
+                          <span className="text-sm text-muted-foreground">
+                            {lesson.duration}
+                          </span>
                         )}
-                      </div>
-                      {lesson.duration && (
-                        <span className="text-sm text-muted-foreground">
-                          {lesson.duration}
-                        </span>
-                      )}
-                    </Link>
-                  ))}
+                      </Link>
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>

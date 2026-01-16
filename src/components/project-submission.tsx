@@ -1,53 +1,93 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
-import { Button } from "../components/ui/button"
-import { Input } from "../components/ui/input"
-import { Textarea } from "../components/ui/textarea"
-import { Label } from "../components/ui/label"
-import { Github, Globe, CheckCircle, AlertCircle } from "lucide-react"
-import { Badge } from "../components/ui/badge"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Github, Globe, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 import { ProjectSubmissionProps } from "@/types/project-submission"
 
-export function ProjectSubmission({ lessonId, courseId, requirements = [] }: ProjectSubmissionProps) {
+interface Submission {
+  id: string
+  githubUrl: string
+  liveUrl: string | null
+  notes: string | null
+  status: "pending" | "approved" | "rejected"
+  feedback: string | null
+  submittedAt: string
+}
+
+export function ProjectSubmission({ lessonId, requirements = [] }: ProjectSubmissionProps) {
   const [githubUrl, setGithubUrl] = useState("")
   const [liveUrl, setLiveUrl] = useState("")
   const [notes, setNotes] = useState("")
-  const [submitted, setSubmitted] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [submissionStatus, setSubmissionStatus] = useState<"pending" | "approved" | "rejected" | null>(null)
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const [submission, setSubmission] = useState<Submission | null>(null)
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    
-    // Validate GitHub URL
-    if (!githubUrl.includes("github.com")) {
-      setError("Please enter a valid GitHub repository URL")
-      return
+  // Fetch existing submission on mount
+  useEffect(() => {
+    async function fetchSubmission() {
+      try {
+        const response = await fetch(`/api/submissions?lessonId=${lessonId}`)
+        if (response.ok) {
+          const submissions = await response.json()
+          if (submissions.length > 0) {
+            const existing = submissions[0]
+            setSubmission(existing)
+            setGithubUrl(existing.githubUrl)
+            setLiveUrl(existing.liveUrl || "")
+            setNotes(existing.notes || "")
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching submission:", err)
+      } finally {
+        setIsLoading(false)
+      }
     }
-    
-    // In a real app, we would send this to the backend
-    console.log("Submitting project:", {
-      lessonId,
-      courseId,
-      githubUrl,
-      liveUrl,
-      notes
-    })
-    
-    // Simulate successful submission
-    setSubmitted(true)
+
+    fetchSubmission()
+  }, [lessonId])
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
     setError(null)
-    setSubmissionStatus("pending")
-    
-    // In a real app, we would get this from the backend
-    setTimeout(() => {
-      setSubmissionStatus("approved")
-      setFeedback("Great work! Your project meets all the requirements. The code is well-structured and follows best practices.")
-    }, 2000)
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch("/api/submissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lessonId,
+          githubUrl,
+          liveUrl: liveUrl || null,
+          notes: notes || null,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to submit project")
+      }
+
+      const newSubmission = await response.json()
+      setSubmission(newSubmission)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit project")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleEdit = () => {
+    setSubmission(null)
   }
 
   const handleButtonSubmit = () => {
@@ -63,8 +103,18 @@ export function ProjectSubmission({ lessonId, courseId, requirements = [] }: Pro
     "Application must be responsive and work on mobile devices",
     "All features described in the project brief must be implemented"
   ]
-  
+
   const projectRequirements = requirements.length > 0 ? requirements : defaultRequirements
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card>
@@ -78,7 +128,7 @@ export function ProjectSubmission({ lessonId, courseId, requirements = [] }: Pro
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {!submitted ? (
+        {!submission ? (
           <form id="project-form" onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="github-url">GitHub Repository URL <span className="text-red-500">*</span></Label>
@@ -88,9 +138,10 @@ export function ProjectSubmission({ lessonId, courseId, requirements = [] }: Pro
                 value={githubUrl}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGithubUrl(e.target.value)}
                 required
+                disabled={isSubmitting}
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="live-url">Live Demo URL (optional)</Label>
               <Input
@@ -98,12 +149,13 @@ export function ProjectSubmission({ lessonId, courseId, requirements = [] }: Pro
                 placeholder="https://your-project-demo.netlify.app"
                 value={liveUrl}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLiveUrl(e.target.value)}
+                disabled={isSubmitting}
               />
               <p className="text-xs text-muted-foreground">
                 If your project is deployed, provide a link to the live demo
               </p>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="notes">Notes for Reviewer (optional)</Label>
               <Textarea
@@ -112,16 +164,17 @@ export function ProjectSubmission({ lessonId, courseId, requirements = [] }: Pro
                 value={notes}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
                 rows={3}
+                disabled={isSubmitting}
               />
             </div>
-            
+
             {error && (
               <div className="bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-md flex items-start gap-2">
                 <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
                 <p className="text-sm">{error}</p>
               </div>
             )}
-            
+
             <div className="space-y-2">
               <h4 className="font-medium">Project Requirements</h4>
               <ul className="space-y-2">
@@ -139,57 +192,61 @@ export function ProjectSubmission({ lessonId, courseId, requirements = [] }: Pro
             <div className="flex items-center gap-4">
               <div className="flex-1">
                 <h4 className="font-medium">GitHub Repository</h4>
-                <a 
-                  href={githubUrl}
+                <a
+                  href={submission.githubUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                 >
                   <Github className="h-3.5 w-3.5" />
-                  {githubUrl.replace("https://github.com/", "")}
+                  {submission.githubUrl.replace("https://github.com/", "")}
                 </a>
               </div>
-              
-              {liveUrl && (
+
+              {submission.liveUrl && (
                 <div className="flex-1">
                   <h4 className="font-medium">Live Demo</h4>
-                  <a 
-                    href={liveUrl}
+                  <a
+                    href={submission.liveUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                   >
                     <Globe className="h-3.5 w-3.5" />
-                    {liveUrl.replace(/(https?:\/\/)?(www\.)?/, "")}
+                    {submission.liveUrl.replace(/(https?:\/\/)?(www\.)?/, "")}
                   </a>
                 </div>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <h4 className="font-medium">Submission Status</h4>
-                {submissionStatus === "pending" && (
+                {submission.status === "pending" && (
                   <Badge variant="outline" className="bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400">
                     Pending Review
                   </Badge>
                 )}
-                {submissionStatus === "approved" && (
+                {submission.status === "approved" && (
                   <Badge variant="outline" className="bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400">
                     Approved
                   </Badge>
                 )}
-                {submissionStatus === "rejected" && (
+                {submission.status === "rejected" && (
                   <Badge variant="outline" className="bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400">
                     Needs Improvement
                   </Badge>
                 )}
               </div>
-              
-              {feedback && (
+
+              <p className="text-sm text-muted-foreground">
+                Submitted {new Date(submission.submittedAt).toLocaleDateString()}
+              </p>
+
+              {submission.feedback && (
                 <div className="bg-muted p-3 rounded-md">
                   <h5 className="text-sm font-medium mb-1">Reviewer Feedback</h5>
-                  <p className="text-sm text-muted-foreground">{feedback}</p>
+                  <p className="text-sm text-muted-foreground">{submission.feedback}</p>
                 </div>
               )}
             </div>
@@ -197,15 +254,24 @@ export function ProjectSubmission({ lessonId, courseId, requirements = [] }: Pro
         )}
       </CardContent>
       <CardFooter className="flex justify-between">
-        {!submitted ? (
+        {!submission ? (
           <>
-            <Button variant="outline" type="button">Cancel</Button>
-            <Button type="button" onClick={handleButtonSubmit}>Submit Project</Button>
+            <Button variant="outline" type="button" disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleButtonSubmit} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Submit Project
+            </Button>
           </>
         ) : (
           <>
-            <Button variant="outline" onClick={() => setSubmitted(false)}>Edit Submission</Button>
-            <Button variant="outline">Request Peer Review</Button>
+            <Button variant="outline" onClick={handleEdit}>
+              Edit Submission
+            </Button>
+            <Button variant="outline" disabled>
+              Request Peer Review
+            </Button>
           </>
         )}
       </CardFooter>

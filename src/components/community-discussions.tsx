@@ -1,72 +1,141 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar } from "@/components/ui/avatar"
-import { MessageSquare, ThumbsUp, Reply, MoreHorizontal } from "lucide-react"
+import { MessageSquare, ThumbsUp, Reply, Loader2 } from "lucide-react"
 
-import { CommunityDiscussionsProps } from "@/types/discussion"
+import { CommunityDiscussionsProps, Discussion } from "@/types/discussion"
 
-export function CommunityDiscussions({ discussions, courseId, lessonId }: CommunityDiscussionsProps) {
+export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussionsProps) {
+  const [discussions, setDiscussions] = useState<Discussion[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [newDiscussion, setNewDiscussion] = useState("")
+  const [isPosting, setIsPosting] = useState(false)
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [replyContent, setReplyContent] = useState("")
+  const [isReplying, setIsReplying] = useState(false)
   const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({})
-  
-  const handlePostDiscussion = () => {
+
+  const fetchDiscussions = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (courseId) params.append('courseId', courseId)
+      if (lessonId) params.append('lessonId', lessonId)
+
+      const response = await fetch(`/api/discussions?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setDiscussions(data)
+      }
+    } catch (error) {
+      console.error('Error fetching discussions:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [courseId, lessonId])
+
+  useEffect(() => {
+    fetchDiscussions()
+  }, [fetchDiscussions])
+
+  const handlePostDiscussion = async () => {
     if (!newDiscussion.trim()) return
-    
-    // In a real app, we would send this to the backend
-    console.log("Posting discussion:", {
-      courseId,
-      lessonId,
-      content: newDiscussion
-    })
-    
-    // Clear the input
-    setNewDiscussion("")
+
+    setIsPosting(true)
+    try {
+      const response = await fetch('/api/discussions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: newDiscussion,
+          courseId: courseId || null,
+          lessonId: lessonId || null,
+        }),
+      })
+
+      if (response.ok) {
+        const newPost = await response.json()
+        setDiscussions(prev => [newPost, ...prev])
+        setNewDiscussion("")
+      }
+    } catch (error) {
+      console.error('Error posting discussion:', error)
+    } finally {
+      setIsPosting(false)
+    }
   }
-  
-  const handlePostReply = (discussionId: string) => {
+
+  const handlePostReply = async (discussionId: string) => {
     if (!replyContent.trim()) return
-    
-    // In a real app, we would send this to the backend
-    console.log("Posting reply:", {
-      discussionId,
-      content: replyContent
-    })
-    
-    // Clear the input and close the reply form
-    setReplyContent("")
-    setReplyingTo(null)
+
+    setIsReplying(true)
+    try {
+      const response = await fetch(`/api/discussions/${discussionId}/replies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: replyContent }),
+      })
+
+      if (response.ok) {
+        const newReply = await response.json()
+        setDiscussions(prev =>
+          prev.map(d =>
+            d.id === discussionId
+              ? { ...d, replies: [...(d.replies || []), newReply] }
+              : d
+          )
+        )
+        setReplyContent("")
+        setReplyingTo(null)
+        setExpandedReplies(prev => ({ ...prev, [discussionId]: true }))
+      }
+    } catch (error) {
+      console.error('Error posting reply:', error)
+    } finally {
+      setIsReplying(false)
+    }
   }
-  
-  const handleLike = (discussionId: string) => {
-    // In a real app, we would send this to the backend
-    console.log("Liking discussion:", discussionId)
+
+  const handleLike = async (discussionId: string) => {
+    try {
+      const response = await fetch(`/api/discussions/${discussionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ like: true }),
+      })
+
+      if (response.ok) {
+        const { likes } = await response.json()
+        setDiscussions(prev =>
+          prev.map(d => (d.id === discussionId ? { ...d, likes } : d))
+        )
+      }
+    } catch (error) {
+      console.error('Error liking discussion:', error)
+    }
   }
-  
+
   const toggleReplies = (discussionId: string) => {
     setExpandedReplies(prev => ({
       ...prev,
       [discussionId]: !prev[discussionId]
     }))
   }
-  
+
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString)
       const now = new Date()
       const diffMs = now.getTime() - date.getTime()
-      
-      // Convert to appropriate time unit
+
       const diffSec = Math.floor(diffMs / 1000)
       const diffMin = Math.floor(diffSec / 60)
       const diffHour = Math.floor(diffMin / 60)
       const diffDay = Math.floor(diffHour / 24)
-      
+
       if (diffDay > 30) {
         return date.toLocaleDateString()
       } else if (diffDay > 0) {
@@ -82,7 +151,17 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
       return "recently"
     }
   }
-  
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -94,7 +173,7 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
           Discuss this {lessonId ? "lesson" : "course"} with other students
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         <div className="space-y-4">
           <Textarea
@@ -102,14 +181,19 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
             value={newDiscussion}
             onChange={(e) => setNewDiscussion(e.target.value)}
             rows={3}
+            disabled={isPosting}
           />
           <div className="flex justify-end">
-            <Button onClick={handlePostDiscussion} disabled={!newDiscussion.trim()}>
+            <Button
+              onClick={handlePostDiscussion}
+              disabled={!newDiscussion.trim() || isPosting}
+            >
+              {isPosting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Post
             </Button>
           </div>
         </div>
-        
+
         <div className="space-y-6">
           {discussions.length > 0 ? (
             discussions.map(discussion => (
@@ -129,27 +213,24 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
                         </div>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
                   </div>
-                  
+
                   <p className="text-sm mb-3">{discussion.content}</p>
-                  
+
                   <div className="flex items-center gap-4">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="flex items-center gap-1 h-auto py-1"
                       onClick={() => handleLike(discussion.id)}
                     >
                       <ThumbsUp className="h-4 w-4" />
                       <span className="text-xs">{discussion.likes}</span>
                     </Button>
-                    
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="flex items-center gap-1 h-auto py-1"
                       onClick={() => {
                         if (replyingTo === discussion.id) {
@@ -163,11 +244,11 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
                       <Reply className="h-4 w-4" />
                       <span className="text-xs">Reply</span>
                     </Button>
-                    
+
                     {discussion.replies && discussion.replies.length > 0 && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="flex items-center gap-1 h-auto py-1"
                         onClick={() => toggleReplies(discussion.id)}
                       >
@@ -179,7 +260,7 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
                     )}
                   </div>
                 </div>
-                
+
                 {replyingTo === discussion.id && (
                   <div className="pl-6 space-y-2">
                     <Textarea
@@ -187,26 +268,29 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
                       value={replyContent}
                       onChange={(e) => setReplyContent(e.target.value)}
                       rows={2}
+                      disabled={isReplying}
                     />
                     <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => setReplyingTo(null)}
+                        disabled={isReplying}
                       >
                         Cancel
                       </Button>
-                      <Button 
+                      <Button
                         size="sm"
                         onClick={() => handlePostReply(discussion.id)}
-                        disabled={!replyContent.trim()}
+                        disabled={!replyContent.trim() || isReplying}
                       >
+                        {isReplying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Reply
                       </Button>
                     </div>
                   </div>
                 )}
-                
+
                 {discussion.replies && discussion.replies.length > 0 && expandedReplies[discussion.id] && (
                   <div className="pl-6 space-y-3">
                     {discussion.replies.map(reply => (
@@ -226,15 +310,14 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
                             </div>
                           </div>
                         </div>
-                        
+
                         <p className="text-sm mb-2">{reply.content}</p>
-                        
+
                         <div className="flex items-center gap-4">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className="flex items-center gap-1 h-auto py-1"
-                            onClick={() => handleLike(reply.id)}
                           >
                             <ThumbsUp className="h-3 w-3" />
                             <span className="text-xs">{reply.likes}</span>
@@ -254,7 +337,7 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
           )}
         </div>
       </CardContent>
-      
+
       <CardFooter className="flex justify-between">
         <div className="text-xs text-muted-foreground">
           Please be respectful and follow our community guidelines
