@@ -113,7 +113,7 @@ describe('API Routes', () => {
       prisma.lesson.findUnique.mockResolvedValue(mockLesson)
 
       const request = new NextRequest('http://localhost:3000/api/lessons/lesson-1')
-      const response = await getLesson(request, { params: { id: 'lesson-1' } })
+      const response = await getLesson(request, { params: Promise.resolve({ id: 'lesson-1' }) })
       const data = await response.json()
 
       expect(response.status).toBe(200)
@@ -130,7 +130,7 @@ describe('API Routes', () => {
       prisma.lesson.findUnique.mockResolvedValue(null)
 
       const request = new NextRequest('http://localhost:3000/api/lessons/non-existent')
-      const response = await getLesson(request, { params: { id: 'non-existent' } })
+      const response = await getLesson(request, { params: Promise.resolve({ id: 'non-existent' }) })
       const data = await response.json()
 
       expect(response.status).toBe(404)
@@ -142,7 +142,7 @@ describe('API Routes', () => {
       prisma.lesson.findUnique.mockRejectedValue(new Error('Database error'))
 
       const request = new NextRequest('http://localhost:3000/api/lessons/lesson-1')
-      const response = await getLesson(request, { params: { id: 'lesson-1' } })
+      const response = await getLesson(request, { params: Promise.resolve({ id: 'lesson-1' }) })
       const data = await response.json()
 
       expect(response.status).toBe(500)
