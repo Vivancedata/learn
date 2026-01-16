@@ -1,76 +1,235 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 224 71% 4%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
- 
+    --card-foreground: 224 71% 4%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
- 
-    --primary: 222.2 47.4% 11.2%;
+    --popover-foreground: 224 71% 4%;
+
+    /* Vibrant blue primary */
+    --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
- 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
- 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
- 
-    --destructive: 0 84.2% 60.2%;
+
+    /* Soft purple secondary */
+    --secondary: 250 95% 96%;
+    --secondary-foreground: 224 71% 4%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    /* Purple accent */
+    --accent: 262 83% 58%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
- 
-    --radius: 0.5rem;
+    /* Success green */
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+
+    /* Warning amber */
+    --warning: 38 92% 50%;
+    --warning-foreground: 224 71% 4%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%;
+
+    --radius: 0.75rem;
+
+    /* Gradient colors */
+    --gradient-start: 221 83% 53%;
+    --gradient-end: 262 83% 58%;
   }
- 
+
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
- 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
- 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
- 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
- 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 217.2 32.6% 17.5%;
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+
+    /* Elevated surface for cards */
+    --card: 224 71% 7%;
+    --card-foreground: 213 31% 91%;
+
+    --popover: 224 71% 7%;
+    --popover-foreground: 213 31% 91%;
+
+    /* Vibrant blue in dark mode */
+    --primary: 217 91% 60%;
+    --primary-foreground: 224 71% 4%;
+
+    /* Muted purple secondary */
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 213 31% 91%;
+
+    --muted: 223 47% 11%;
+    --muted-foreground: 215 20% 65%;
+
+    /* Purple accent */
+    --accent: 263 70% 50%;
     --accent-foreground: 210 40% 98%;
- 
-    --destructive: 0 62.8% 30.6%;
+
+    --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
- 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+
+    /* Success green */
+    --success: 142 70% 45%;
+    --success-foreground: 224 71% 4%;
+
+    /* Warning amber */
+    --warning: 38 92% 50%;
+    --warning-foreground: 224 71% 4%;
+
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+    --ring: 217 91% 60%;
+
+    --gradient-start: 217 91% 60%;
+    --gradient-end: 263 70% 50%;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
+}
+
+@layer utilities {
+  /* Gradient text utility */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+  }
+
+  /* Gradient background utility */
+  .bg-gradient-primary {
+    @apply bg-gradient-to-r from-primary to-accent;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-background/80 backdrop-blur-lg border border-border/50;
+  }
+
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-md border border-border/50 shadow-lg;
+  }
+
+  /* Glow effects */
+  .glow {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.3);
+  }
+
+  /* Subtle noise texture for backgrounds */
+  .noise {
+    position: relative;
+  }
+  .noise::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.02;
+    pointer-events: none;
+  }
+  .dark .noise::before {
+    opacity: 0.04;
+  }
+
+  /* Shimmer animation for buttons */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(0 0% 100% / 0.2),
+      transparent
+    );
+    transform: translateX(-100%);
+  }
+  .shimmer:hover::after {
+    animation: shimmer 0.75s ease-out;
+  }
+
+  @keyframes shimmer {
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Gradient border */
+  .gradient-border {
+    position: relative;
+    background: hsl(var(--card));
+    border-radius: var(--radius);
+  }
+  .gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+    pointer-events: none;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better focus states */
+@layer base {
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+}
+
+/* Selection styling */
+::selection {
+  background: hsl(var(--primary) / 0.2);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
 }

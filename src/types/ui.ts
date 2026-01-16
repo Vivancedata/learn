@@ -35,7 +35,7 @@ export interface TextareaProps extends HTMLAttributes<HTMLTextAreaElement> {
 
 export interface ProgressCircleProps {
   progress: number
-  size?: "sm" | "md" | "lg"
+  size?: "sm" | "md" | "lg" | "xl"
   showPercentage?: boolean
   className?: string
 }
