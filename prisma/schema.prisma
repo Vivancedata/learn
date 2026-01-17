@@ -10,34 +10,60 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Enums for type safety
+enum CourseDifficulty {
+  Beginner
+  Intermediate
+  Advanced
+}
+
+enum LessonType {
+  lesson
+  project
+  quiz
+}
+
+enum ProjectStatus {
+  pending
+  approved
+  rejected
+}
+
+enum UserRole {
+  student
+  instructor
+  admin
+}
+
 model User {
-  id                    String                @id @default(uuid())
-  email                 String                @unique
-  name                  String?
-  password              String
-  githubUsername        String?
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
-  courses               CourseProgress[]
-  paths                 PathProgress[]
-  discussions           Discussion[]
-  discussionReplies     DiscussionReply[]
-  projectSubmissions    ProjectSubmission[]
-  certificates          Certificate[]
-  achievements          UserAchievement[]
-  discussionLikes       DiscussionLike[]
-  discussionReplyLikes  DiscussionReplyLike[]
+  id                 String                @id @default(uuid())
+  email              String                @unique
+  name               String?
+  password           String
+  githubUsername     String?
+  role               UserRole              @default(student)
+  emailVerified      Boolean               @default(false)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  courses            CourseProgress[]
+  paths              PathProgress[]
+  discussions        Discussion[]
+  discussionReplies  DiscussionReply[]
+  projectSubmissions ProjectSubmission[]
+  certificates       Certificate[]
+  achievements       UserAchievement[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Course {
   id               String           @id
   title            String
   description      String
-  difficulty       String
+  difficulty       CourseDifficulty
   durationHours    Int
   pathId           String
-  prerequisites    String?
-  learningOutcomes String?
+  prerequisites    String? // JSON array - SQLite doesn't support native JSON type
+  learningOutcomes String? // JSON array - SQLite doesn't support native JSON type
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   sections         CourseSection[]
@@ -45,6 +71,8 @@ model Course {
   discussions      Discussion[]
   certificates     Certificate[]
   path             Path             @relation(fields: [pathId], references: [id])
+
+  @@index([pathId])
 }
 
 model CourseSection {
@@ -57,13 +85,15 @@ model CourseSection {
   updatedAt   DateTime @updatedAt
   lessons     Lesson[]
   course      Course   @relation(fields: [courseId], references: [id])
+
+  @@index([courseId])
 }
 
 model Lesson {
   id                 String              @id @default(uuid())
   title              String
   content            String
-  type               String
+  type               LessonType
   duration           String?
   hasProject         Boolean             @default(false)
   githubUrl          String?
@@ -77,18 +107,22 @@ model Lesson {
   completedBy        CourseProgress[]    @relation("CompletedLessons")
   projectSubmissions ProjectSubmission[]
   discussions        Discussion[]
+
+  @@index([sectionId])
 }
 
 model QuizQuestion {
   id            String   @id @default(uuid())
   question      String
-  options       String // JSON array of options
+  options       String // JSON array of options - SQLite doesn't support native JSON type
   correctAnswer Int
   explanation   String?
   lessonId      String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   lesson        Lesson   @relation(fields: [lessonId], references: [id])
+
+  @@index([lessonId])
 }
 
 model Path {
@@ -98,7 +132,7 @@ model Path {
   icon           String?
   estimatedHours Int?
   difficulty     String?
-  prerequisites  String?
+  prerequisites  String? // JSON array - SQLite doesn't support native JSON type
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   courses        Course[]
@@ -116,6 +150,8 @@ model CourseProgress {
   user             User        @relation(fields: [userId], references: [id])
   course           Course      @relation(fields: [courseId], references: [id])
   quizScores       QuizScore[]
+
+  @@index([userId, courseId])
 }
 
 model QuizScore {
@@ -126,6 +162,9 @@ model QuizScore {
   maxScore         Int
   completedAt      DateTime       @default(now())
   courseProgress   CourseProgress @relation(fields: [courseProgressId], references: [id])
+
+  @@index([courseProgressId])
+  @@index([lessonId])
 }
 
 model PathProgress {
@@ -138,24 +177,30 @@ model PathProgress {
   updatedAt    DateTime @updatedAt
   user         User     @relation(fields: [userId], references: [id])
   path         Path     @relation(fields: [pathId], references: [id])
+
+  @@index([userId, pathId])
 }
 
 model ProjectSubmission {
-  id          String    @id @default(uuid())
+  id          String        @id @default(uuid())
   userId      String
   lessonId    String
   githubUrl   String
   liveUrl     String?
   notes       String?
-  status      String    @default("pending") // pending, approved, rejected
+  status      ProjectStatus @default(pending)
   feedback    String?
-  submittedAt DateTime  @default(now())
+  submittedAt DateTime      @default(now())
   reviewedAt  DateTime?
   reviewedBy  String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        User      @relation(fields: [userId], references: [id])
-  lesson      Lesson    @relation(fields: [lessonId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  user        User          @relation(fields: [userId], references: [id])
+  lesson      Lesson        @relation(fields: [lessonId], references: [id])
+
+  @@index([userId])
+  @@index([lessonId])
+  @@index([status])
 }
 
 model Discussion {
@@ -171,42 +216,25 @@ model Discussion {
   course    Course?           @relation(fields: [courseId], references: [id])
   lesson    Lesson?           @relation(fields: [lessonId], references: [id])
   replies   DiscussionReply[]
-  likedBy   DiscussionLike[]
+
+  @@index([userId])
+  @@index([courseId])
+  @@index([lessonId])
 }
 
 model DiscussionReply {
-  id           String                @id @default(uuid())
-  userId       String
-  discussionId String
-  content      String
-  likes        Int                   @default(0)
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
-  user         User                  @relation(fields: [userId], references: [id])
-  discussion   Discussion            @relation(fields: [discussionId], references: [id])
-  likedBy      DiscussionReplyLike[]
-}
-
-model DiscussionLike {
   id           String     @id @default(uuid())
   userId       String
   discussionId String
+  content      String
+  likes        Int        @default(0)
   createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
   user         User       @relation(fields: [userId], references: [id])
   discussion   Discussion @relation(fields: [discussionId], references: [id])
 
-  @@unique([userId, discussionId])
-}
-
-model DiscussionReplyLike {
-  id      String          @id @default(uuid())
-  userId  String
-  replyId String
-  createdAt DateTime      @default(now())
-  user    User            @relation(fields: [userId], references: [id])
-  reply   DiscussionReply @relation(fields: [replyId], references: [id])
-
-  @@unique([userId, replyId])
+  @@index([userId])
+  @@index([discussionId])
 }
 
 model Certificate {
@@ -216,11 +244,14 @@ model Certificate {
   issueDate        DateTime  @default(now())
   expiryDate       DateTime?
   verificationCode String    @unique
-  skills           String // JSON array of skills
+  skills           String // JSON array of skills - SQLite doesn't support native JSON type
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   user             User      @relation(fields: [userId], references: [id])
   course           Course    @relation(fields: [courseId], references: [id])
+
+  @@index([userId])
+  @@index([courseId])
 }
 
 model Achievement {
@@ -244,4 +275,17 @@ model UserAchievement {
   achievement   Achievement @relation(fields: [achievementId], references: [id])
 
   @@unique([userId, achievementId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
 }
