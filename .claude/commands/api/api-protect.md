@@ -66,46 +66,46 @@ $ARGUMENTS
 ## Security Checklist
 
 **Authentication**
--  Verify authentication tokens
--  Handle missing/invalid tokens (401)
--  Check token expiration
--  Secure token storage recommendations
+- ✓ Verify authentication tokens
+- ✓ Handle missing/invalid tokens (401)
+- ✓ Check token expiration
+- ✓ Secure token storage recommendations
 
 **Authorization**
--  Check user roles/permissions (403)
--  Verify resource ownership
--  Implement least privilege principle
--  Log authorization failures
+- ✓ Check user roles/permissions (403)
+- ✓ Verify resource ownership
+- ✓ Implement least privilege principle
+- ✓ Log authorization failures
 
 **Input Validation**
--  Validate all inputs with Zod
--  Sanitize SQL/NoSQL inputs
--  Escape special characters
--  Limit payload sizes
+- ✓ Validate all inputs with Zod
+- ✓ Sanitize SQL/NoSQL inputs
+- ✓ Escape special characters
+- ✓ Limit payload sizes
 
 **Rate Limiting**
--  Per-user limits
--  Per-IP limits
--  Clear error messages (429)
--  Retry-After headers
+- ✓ Per-user limits
+- ✓ Per-IP limits
+- ✓ Clear error messages (429)
+- ✓ Retry-After headers
 
 **CORS**
--  Whitelist specific origins
--  Handle preflight requests
--  Secure credentials
--  Appropriate headers
+- ✓ Whitelist specific origins
+- ✓ Handle preflight requests
+- ✓ Secure credentials
+- ✓ Appropriate headers
 
 **Error Handling**
--  Don't expose stack traces
--  Generic error messages
--  Log detailed errors server-side
--  Consistent error format
+- ✓ Don't expose stack traces
+- ✓ Generic error messages
+- ✓ Log detailed errors server-side
+- ✓ Consistent error format
 
 **Logging & Monitoring**
--  Log authentication attempts
--  Log authorization failures
--  Track suspicious activity
--  Monitor rate limit hits
+- ✓ Log authentication attempts
+- ✓ Log authorization failures
+- ✓ Track suspicious activity
+- ✓ Monitor rate limit hits
 
 ## What to Generate
 
