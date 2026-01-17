@@ -54,6 +54,30 @@ export const signInSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 })
 
+export const updateUserSettingsSchema = z.object({
+  name: z.string().max(100, 'Name must be less than 100 characters').optional(),
+  email: z.string().email('Invalid email address').optional(),
+  githubUsername: z.string().max(39, 'GitHub username too long').optional(),
+})
+
+// ============================================================================
+// Submission Schemas
+// ============================================================================
+
+// GitHub URL regex pattern
+const githubUrlPattern = /^https?:\/\/(www\.)?github\.com\/[\w-]+\/[\w.-]+/
+
+export const createSubmissionSchema = z.object({
+  lessonId: z.string().uuid('Invalid lesson ID format'),
+  githubUrl: z
+    .string()
+    .url('Invalid URL format')
+    .regex(githubUrlPattern, 'Must be a valid GitHub repository URL')
+    .transform(sanitizeHtml),
+  liveUrl: z.string().url('Invalid URL format').optional(),
+  notes: z.string().max(2000, 'Notes must be less than 2000 characters').transform(sanitizeHtml).optional(),
+})
+
 // ============================================================================
 // Course & Learning Schemas
 // ============================================================================
@@ -267,4 +291,30 @@ export function formatZodErrors(error: z.ZodError): Record<string, string> {
   })
 
   return errors
+}
+
+/**
+ * Validates request body against a Zod schema
+ * Returns a result object compatible with legacy API patterns
+ * @param schema - Zod schema to validate against
+ * @param data - Data to validate
+ * @returns Validation result with typed data or error string
+ */
+export function validateBody<T>(
+  schema: z.ZodSchema<T>,
+  data: unknown
+): { success: true; data: T } | { success: false; error: string } {
+  try {
+    const validatedData = schema.parse(data)
+    return { success: true, data: validatedData }
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const formattedErrors = formatZodErrors(error)
+      const errorMessage = Object.entries(formattedErrors)
+        .map(([field, msg]) => `${field}: ${msg}`)
+        .join(', ')
+      return { success: false, error: errorMessage || 'Validation failed' }
+    }
+    throw error
+  }
 }
