@@ -1,6 +1,29 @@
 /**
- * Simple in-memory rate limiter for API routes
- * For production with multiple instances, use Redis-based rate limiting
+ * Simple in-memory rate limiter
+ *
+ * LIMITATIONS:
+ * - In-memory storage: Rate limit state is lost on server restart
+ * - Single-instance only: Does NOT work across multiple server instances
+ * - Not suitable for serverless (Vercel, AWS Lambda) due to ephemeral memory
+ *
+ * PRODUCTION RECOMMENDATIONS:
+ * For production deployments with multiple instances or serverless:
+ * 1. Use Redis-based rate limiting:
+ *    - @upstash/ratelimit for Vercel Edge/serverless
+ *    - ioredis + sliding window algorithm for Node.js
+ * 2. Use CDN-level rate limiting (Cloudflare, AWS WAF)
+ * 3. Consider API Gateway rate limiting (Kong, AWS API Gateway)
+ *
+ * Example Redis implementation:
+ * ```typescript
+ * import { Ratelimit } from '@upstash/ratelimit'
+ * import { Redis } from '@upstash/redis'
+ *
+ * const ratelimit = new Ratelimit({
+ *   redis: Redis.fromEnv(),
+ *   limiter: Ratelimit.slidingWindow(100, '15 m'),
+ * })
+ * ```
  */
 
 interface RateLimitEntry {
@@ -8,109 +31,128 @@ interface RateLimitEntry {
   resetTime: number
 }
 
-const rateLimitStore = new Map<string, RateLimitEntry>()
+class RateLimiter {
+  private storage: Map<string, RateLimitEntry> = new Map()
+  private cleanupInterval: NodeJS.Timeout | null = null
 
-// Clean up expired entries periodically (every 5 minutes)
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
+  constructor() {
+    // Clean up expired entries every minute
+    this.cleanupInterval = setInterval(() => {
+      this.cleanup()
+    }, 60000)
+  }
+
+  private cleanup() {
     const now = Date.now()
-    for (const [key, entry] of rateLimitStore.entries()) {
+    for (const [key, entry] of this.storage.entries()) {
       if (now > entry.resetTime) {
-        rateLimitStore.delete(key)
+        this.storage.delete(key)
       }
     }
-  }, 5 * 60 * 1000)
-}
+  }
 
-interface RateLimitOptions {
-  /** Maximum number of requests allowed in the window */
-  limit: number
-  /** Time window in seconds */
-  windowSeconds: number
-}
+  /**
+   * Check if a request should be rate limited
+   * @param identifier - Unique identifier (e.g., IP address, user ID)
+   * @param limit - Maximum number of requests allowed
+   * @param windowMs - Time window in milliseconds
+   * @returns Object with success status and remaining attempts
+   */
+  check(
+    identifier: string,
+    limit: number,
+    windowMs: number
+  ): {
+    success: boolean
+    remaining: number
+    resetTime: number
+  } {
+    const now = Date.now()
+    const entry = this.storage.get(identifier)
 
-interface RateLimitResult {
-  success: boolean
-  limit: number
-  remaining: number
-  resetTime: number
-}
+    // No entry exists or entry has expired
+    if (!entry || now > entry.resetTime) {
+      const resetTime = now + windowMs
+      this.storage.set(identifier, {
+        count: 1,
+        resetTime,
+      })
+      return {
+        success: true,
+        remaining: limit - 1,
+        resetTime,
+      }
+    }
 
-/**
- * Check if a request should be rate limited
- * @param identifier - Unique identifier for the client (e.g., IP + userId)
- * @param options - Rate limit configuration
- * @returns Rate limit result with success status and metadata
- */
-export function checkRateLimit(
-  identifier: string,
-  options: RateLimitOptions
-): RateLimitResult {
-  const { limit, windowSeconds } = options
-  const now = Date.now()
-  const windowMs = windowSeconds * 1000
+    // Entry exists and is still valid
+    if (entry.count >= limit) {
+      return {
+        success: false,
+        remaining: 0,
+        resetTime: entry.resetTime,
+      }
+    }
 
-  const existing = rateLimitStore.get(identifier)
+    // Increment count
+    entry.count++
+    this.storage.set(identifier, entry)
 
-  // If no existing entry or window has expired, create new entry
-  if (!existing || now > existing.resetTime) {
-    const resetTime = now + windowMs
-    rateLimitStore.set(identifier, { count: 1, resetTime })
     return {
       success: true,
-      limit,
-      remaining: limit - 1,
-      resetTime,
+      remaining: limit - entry.count,
+      resetTime: entry.resetTime,
     }
   }
 
-  // Increment count
-  existing.count++
-  rateLimitStore.set(identifier, existing)
+  /**
+   * Reset rate limit for a specific identifier
+   * @param identifier - Unique identifier to reset
+   */
+  reset(identifier: string): void {
+    this.storage.delete(identifier)
+  }
 
-  // Check if over limit
-  if (existing.count > limit) {
-    return {
-      success: false,
-      limit,
-      remaining: 0,
-      resetTime: existing.resetTime,
+  /**
+   * Clear all rate limit data
+   */
+  clear(): void {
+    this.storage.clear()
+  }
+
+  /**
+   * Cleanup and stop the cleanup interval
+   */
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval)
+      this.cleanupInterval = null
     }
-  }
-
-  return {
-    success: true,
-    limit,
-    remaining: limit - existing.count,
-    resetTime: existing.resetTime,
+    this.clear()
   }
 }
 
-/**
- * Get client identifier from request
- * Combines IP address with optional user ID for per-user limits
- */
-export function getClientIdentifier(
-  request: Request,
-  userId?: string | null
-): string {
-  // Try to get real IP from various headers (for proxied requests)
-  const forwarded = request.headers.get('x-forwarded-for')
-  const realIp = request.headers.get('x-real-ip')
-  const ip = forwarded?.split(',')[0]?.trim() || realIp || 'unknown'
+// Singleton instance
+const rateLimiter = new RateLimiter()
 
-  // Combine with userId if available for per-user limiting
-  return userId ? `${ip}:${userId}` : ip
-}
+export default rateLimiter
 
 /**
- * Default rate limit configurations for different endpoint types
+ * Rate limit configurations for different endpoints
  */
 export const RATE_LIMITS = {
-  // Standard POST/PATCH/DELETE endpoints
-  mutation: { limit: 30, windowSeconds: 60 },
-  // Auth-related endpoints
-  auth: { limit: 10, windowSeconds: 60 },
-  // Search/list endpoints
-  query: { limit: 100, windowSeconds: 60 },
+  // Authentication endpoints - stricter limits
+  AUTH: {
+    limit: 5, // 5 requests
+    windowMs: 15 * 60 * 1000, // per 15 minutes
+  },
+  // API endpoints - moderate limits
+  API: {
+    limit: 100, // 100 requests
+    windowMs: 15 * 60 * 1000, // per 15 minutes
+  },
+  // General - lenient limits
+  GENERAL: {
+    limit: 1000, // 1000 requests
+    windowMs: 15 * 60 * 1000, // per 15 minutes
+  },
 } as const

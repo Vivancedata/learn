@@ -1,112 +1,270 @@
-import { z } from 'zod'
-
 /**
- * Validation schemas for API request bodies
- * Using Zod for type-safe, runtime validation
+ * Validation schemas using Zod
+ * These schemas validate user input for API endpoints and forms
  */
 
-// Discussion schemas
+import { z } from 'zod'
+
+// ============================================================================
+// Sanitization Utilities
+// ============================================================================
+
+/**
+ * Sanitize user input to prevent XSS attacks
+ * Escapes HTML entities in user-provided strings
+ */
+export function sanitizeHtml(input: string): string {
+  const htmlEntities: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#x27;',
+    '/': '&#x2F;',
+  }
+  return input.replace(/[&<>"'/]/g, (char) => htmlEntities[char] || char)
+}
+
+/**
+ * Create a Zod string schema with HTML sanitization
+ */
+export function sanitizedString() {
+  return z.string().transform(sanitizeHtml)
+}
+
+// ============================================================================
+// User & Authentication Schemas
+// ============================================================================
+
+export const signUpSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(100, 'Password must be less than 100 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number'),
+  name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters').optional(),
+  githubUsername: z.string().max(39, 'GitHub username too long').optional(),
+})
+
+export const signInSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(1, 'Password is required'),
+})
+
+// ============================================================================
+// Course & Learning Schemas
+// ============================================================================
+
+export const courseIdSchema = z.object({
+  courseId: z.string().min(1, 'Course ID is required'),
+})
+
+export const lessonIdSchema = z.object({
+  lessonId: z.string().uuid('Invalid lesson ID format'),
+})
+
+export const courseAndLessonSchema = z.object({
+  courseId: z.string().min(1, 'Course ID is required'),
+  lessonId: z.string().uuid('Invalid lesson ID format'),
+})
+
+// ============================================================================
+// Progress Tracking Schemas
+// ============================================================================
+
+export const markLessonCompleteSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  courseId: z.string().min(1, 'Course ID is required'),
+  lessonId: z.string().uuid('Invalid lesson ID'),
+})
+
+export const submitQuizSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  courseId: z.string().min(1, 'Course ID is required'),
+  lessonId: z.string().uuid('Invalid lesson ID'),
+  answers: z.array(z.number().int().min(0)).min(1, 'Answers are required'),
+})
+
+// ============================================================================
+// Project Submission Schemas
+// ============================================================================
+
+const githubUrlRegex = /^https?:\/\/(www\.)?github\.com\/[\w-]+\/[\w.-]+\/?$/
+
+export const projectSubmissionSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  lessonId: z.string().uuid('Invalid lesson ID'),
+  githubUrl: z
+    .string()
+    .url('Invalid URL format')
+    .regex(githubUrlRegex, 'Must be a valid GitHub repository URL'),
+  liveUrl: z
+    .string()
+    .url('Invalid URL format')
+    .optional()
+    .or(z.literal('')),
+  notes: z
+    .string()
+    .max(1000, 'Notes must be less than 1000 characters')
+    .transform(sanitizeHtml)
+    .optional(),
+})
+
+export const reviewProjectSchema = z.object({
+  submissionId: z.string().uuid('Invalid submission ID'),
+  status: z.enum(['approved', 'rejected']),
+  feedback: z
+    .string()
+    .min(10, 'Feedback must be at least 10 characters')
+    .max(2000, 'Feedback must be less than 2000 characters')
+    .transform(sanitizeHtml),
+  reviewedBy: z.string().uuid('Invalid reviewer ID'),
+})
+
+// ============================================================================
+// Discussion Schemas
+// ============================================================================
+
 export const createDiscussionSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
   content: z
     .string()
-    .min(1, 'Content is required')
-    .max(5000, 'Content must be 5000 characters or less')
-    .transform(s => s.trim()),
-  courseId: z.string().optional().nullable(),
-  lessonId: z.string().optional().nullable(),
+    .min(10, 'Discussion must be at least 10 characters')
+    .max(5000, 'Discussion must be less than 5000 characters')
+    .transform(sanitizeHtml),
+  courseId: z.string().min(1).optional(),
+  lessonId: z.string().uuid().optional(),
 }).refine(
-  data => data.courseId || data.lessonId,
-  { message: 'Either courseId or lessonId is required' }
+  (data) => data.courseId || data.lessonId,
+  {
+    message: 'Either courseId or lessonId must be provided',
+  }
 )
+
+export const createReplySchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  discussionId: z.string().uuid('Invalid discussion ID'),
+  content: z
+    .string()
+    .min(1, 'Reply cannot be empty')
+    .max(2000, 'Reply must be less than 2000 characters')
+    .transform(sanitizeHtml),
+})
+
+export const updateDiscussionLikesSchema = z.object({
+  discussionId: z.string().uuid('Invalid discussion ID'),
+  increment: z.boolean(),
+})
 
 export const updateDiscussionSchema = z.object({
   content: z
     .string()
-    .min(1, 'Content must be non-empty')
-    .max(5000, 'Content must be 5000 characters or less')
-    .transform(s => s.trim())
+    .min(10, 'Discussion must be at least 10 characters')
+    .max(5000, 'Discussion must be less than 5000 characters')
+    .transform(sanitizeHtml),
+})
+
+// ============================================================================
+// Project Update Schema
+// ============================================================================
+
+export const updateProjectSchema = z.object({
+  githubUrl: z
+    .string()
+    .url('Invalid URL format')
+    .regex(/^https?:\/\/(www\.)?github\.com\/[\w-]+\/[\w.-]+\/?$/, 'Must be a valid GitHub repository URL')
     .optional(),
-  like: z.boolean().optional(),
-}).refine(
-  data => data.content !== undefined || data.like !== undefined,
-  { message: 'No valid action provided' }
-)
-
-export const createReplySchema = z.object({
-  content: z
+  liveUrl: z
     .string()
-    .min(1, 'Content is required')
-    .max(5000, 'Content must be 5000 characters or less')
-    .transform(s => s.trim()),
-})
-
-// Submission schemas
-const githubUrlSchema = z.string().refine(
-  url => {
-    try {
-      const parsed = new URL(url)
-      return parsed.hostname === 'github.com' || parsed.hostname.endsWith('.github.com')
-    } catch {
-      return false
-    }
-  },
-  { message: 'Please provide a valid GitHub URL' }
-)
-
-export const createSubmissionSchema = z.object({
-  lessonId: z.string().min(1, 'lessonId is required'),
-  githubUrl: githubUrlSchema,
-  liveUrl: z.string().url('Please provide a valid URL').optional().nullable(),
-  notes: z.string().max(2000, 'Notes must be 2000 characters or less').optional().nullable(),
-})
-
-export const updateSubmissionSchema = z.object({
-  githubUrl: githubUrlSchema.optional(),
-  liveUrl: z.string().url('Please provide a valid URL').optional().nullable(),
-  notes: z.string().max(2000, 'Notes must be 2000 characters or less').optional().nullable(),
-})
-
-// User settings schemas
-const emailSchema = z.string().email('Invalid email address')
-
-export const updateUserSettingsSchema = z.object({
-  name: z.string().max(100, 'Name must be 100 characters or less').optional().nullable(),
-  email: emailSchema.optional(),
-  githubUsername: z
+    .url('Invalid URL format')
+    .optional()
+    .or(z.literal(''))
+    .nullable(),
+  notes: z
     .string()
-    .max(39, 'GitHub username must be 39 characters or less')
-    .regex(/^[a-zA-Z0-9-]*$/, 'GitHub username can only contain letters, numbers, and hyphens')
+    .max(1000, 'Notes must be less than 1000 characters')
+    .transform(sanitizeHtml)
     .optional()
     .nullable(),
 })
 
-// Progress schemas
-export const markLessonCompleteSchema = z.object({
-  quizScore: z.number().min(0).max(100).optional(),
+// ============================================================================
+// Pagination Schemas
+// ============================================================================
+
+export const paginationSchema = z.object({
+  page: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 1))
+    .pipe(z.number().int().min(1, 'Page must be at least 1')),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 10))
+    .pipe(z.number().int().min(1).max(100, 'Limit must be between 1 and 100')),
 })
 
-// Type exports for use in route handlers
+// ============================================================================
+// Type Exports (inferred from schemas)
+// ============================================================================
+
+export type SignUpInput = z.infer<typeof signUpSchema>
+export type SignInInput = z.infer<typeof signInSchema>
+export type CourseIdInput = z.infer<typeof courseIdSchema>
+export type LessonIdInput = z.infer<typeof lessonIdSchema>
+export type CourseAndLessonInput = z.infer<typeof courseAndLessonSchema>
+export type MarkLessonCompleteInput = z.infer<typeof markLessonCompleteSchema>
+export type SubmitQuizInput = z.infer<typeof submitQuizSchema>
+export type ProjectSubmissionInput = z.infer<typeof projectSubmissionSchema>
+export type ReviewProjectInput = z.infer<typeof reviewProjectSchema>
 export type CreateDiscussionInput = z.infer<typeof createDiscussionSchema>
-export type UpdateDiscussionInput = z.infer<typeof updateDiscussionSchema>
 export type CreateReplyInput = z.infer<typeof createReplySchema>
-export type CreateSubmissionInput = z.infer<typeof createSubmissionSchema>
-export type UpdateSubmissionInput = z.infer<typeof updateSubmissionSchema>
-export type UpdateUserSettingsInput = z.infer<typeof updateUserSettingsSchema>
+export type UpdateDiscussionLikesInput = z.infer<typeof updateDiscussionLikesSchema>
+export type UpdateDiscussionInput = z.infer<typeof updateDiscussionSchema>
+export type UpdateProjectInput = z.infer<typeof updateProjectSchema>
+export type PaginationInput = z.infer<typeof paginationSchema>
+
+// ============================================================================
+// Validation Helper Functions
+// ============================================================================
 
 /**
- * Helper function to validate request body and return formatted error
+ * Validates data against a Zod schema and returns typed result
+ * @param schema - Zod schema to validate against
+ * @param data - Data to validate
+ * @returns Validation result with typed data or errors
  */
-export function validateBody<T>(
+export function validate<T>(
   schema: z.ZodSchema<T>,
-  body: unknown
-): { success: true; data: T } | { success: false; error: string } {
-  const result = schema.safeParse(body)
-  if (!result.success) {
-    const firstError = result.error.errors[0]
-    return {
-      success: false,
-      error: firstError?.message || 'Validation failed',
+  data: unknown
+): { success: true; data: T } | { success: false; errors: z.ZodError } {
+  try {
+    const validatedData = schema.parse(data)
+    return { success: true, data: validatedData }
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, errors: error }
     }
+    throw error
   }
-  return { success: true, data: result.data }
+}
+
+/**
+ * Formats Zod validation errors into a user-friendly object
+ * @param error - Zod error object
+ * @returns Object mapping field names to error messages
+ */
+export function formatZodErrors(error: z.ZodError): Record<string, string> {
+  const errors: Record<string, string> = {}
+
+  error.issues.forEach((err) => {
+    const path = err.path.length > 0 ? err.path.join('.') : 'root'
+    errors[path] = err.message
+  })
+
+  return errors
 }
