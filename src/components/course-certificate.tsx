@@ -20,8 +20,7 @@ export function CourseCertificate({ course, progress }: CourseCertificateProps) 
   const allRequirementsMet = Object.values(requirementsStatus).every(Boolean)
   
   const handleDownload = () => {
-    // In a real app, this would generate and download a PDF certificate
-    console.log("Downloading certificate for course:", course.id)
+    // TODO: Generate and download PDF certificate via backend API
     alert("Certificate download would start in a real application")
   }
   

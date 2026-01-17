@@ -10,32 +10,111 @@ import { ProgressSummary } from "@/components/progress-summary"
 import { ArrowRight, BookOpen, Award, Calendar, Clock, CheckCircle2 } from "lucide-react"
 import { Course, Path } from "@/types/course"
 import { getAllCourses, getAllPaths } from "@/lib/content"
+import { ProtectedRoute } from "@/components/ProtectedRoute"
+import { useAuth } from "@/hooks/useAuth"
 
-export default function DashboardPage() {
+interface UserProgress {
+  userId: string
+  courses: {
+    courseId: string
+    courseTitle: string
+    totalLessons: number
+    completedLessons: number
+    progress: number
+    lastAccessed: string
+  }[]
+  overallStats: {
+    totalCourses: number
+    coursesStarted: number
+    coursesCompleted: number
+    totalLessons: number
+    completedLessons: number
+    overallProgress: number
+  }
+}
+
+function DashboardContent() {
+  const { user } = useAuth()
   const [courses, setCourses] = useState<Course[]>([])
   const [paths, setPaths] = useState<Path[]>([])
+  const [userProgress, setUserProgress] = useState<UserProgress | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadData() {
+      if (!user) return
+
       try {
-        // Load courses and paths
-        const [loadedCourses, loadedPaths] = await Promise.all([
+        // Load courses, paths, and user progress
+        const [coursesResult, pathsResult, progressResult] = await Promise.allSettled([
           getAllCourses(),
-          getAllPaths()
+          getAllPaths(),
+          fetch(`/api/progress/user/${user.id}`, {
+            credentials: 'include', // Send HTTP-only auth cookie
+          }).then(res => {
+            if (!res.ok) throw new Error('Failed to fetch progress')
+            return res.json()
+          }),
         ])
-        
-        setCourses(loadedCourses)
-        setPaths(loadedPaths)
+
+        // Handle courses result
+        if (coursesResult.status === 'fulfilled') {
+          setCourses(coursesResult.value)
+        } else {
+          console.error('Failed to load courses:', coursesResult.reason)
+          setError((prev) => prev ? `${prev}; Failed to load courses` : 'Failed to load courses')
+        }
+
+        // Handle paths result
+        if (pathsResult.status === 'fulfilled') {
+          setPaths(pathsResult.value)
+        } else {
+          console.error('Failed to load paths:', pathsResult.reason)
+          setError((prev) => prev ? `${prev}; Failed to load paths` : 'Failed to load paths')
+        }
+
+        // Handle progress result
+        if (progressResult.status === 'fulfilled') {
+          setUserProgress(progressResult.value)
+
+          // Merge progress data into courses
+          if (coursesResult.status === 'fulfilled') {
+            const coursesWithProgress = coursesResult.value.map(course => {
+              const progressData = progressResult.value.courses.find(
+                (p: any) => p.courseId === course.id
+              )
+
+              if (progressData) {
+                return {
+                  ...course,
+                  progress: {
+                    completed: progressData.completedLessons,
+                    total: progressData.totalLessons,
+                    lastAccessed: progressData.lastAccessed,
+                  },
+                }
+              }
+
+              return course
+            })
+
+            setCourses(coursesWithProgress)
+          }
+        } else {
+          console.error('Failed to load progress:', progressResult.reason)
+          // Don't set error here - progress is optional
+        }
       } catch (error) {
-        console.error("Error loading dashboard data:", error)
+        console.error('Error loading dashboard data:', error)
+        setError('An unexpected error occurred while loading dashboard data')
       } finally {
         setLoading(false)
       }
     }
-    
+
     loadData()
-  }, [])
+  }, [user])
 
   if (loading) {
     return (
@@ -45,19 +124,22 @@ export default function DashboardPage() {
     )
   }
 
+  if (error && courses.length === 0 && paths.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="text-destructive text-lg mb-4">⚠️ {error}</div>
+        <Button onClick={() => window.location.reload()}>Try Again</Button>
+      </div>
+    )
+  }
+
   // Get in-progress courses (courses with progress data)
   const inProgressCourses = courses.filter(course => course.progress)
-  
-  // Calculate overall progress
-  const totalLessons = courses.reduce((acc, course) => {
-    return acc + (course.progress?.total || 0)
-  }, 0)
-  
-  const completedLessons = courses.reduce((acc, course) => {
-    return acc + (course.progress?.completed || 0)
-  }, 0)
-  
-  const overallProgress = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0
+
+  // Calculate overall progress from real API data
+  const totalLessons = userProgress?.overallStats.totalLessons || 0
+  const completedLessons = userProgress?.overallStats.completedLessons || 0
+  const overallProgress = userProgress?.overallStats.overallProgress || 0
   
   // Get recently accessed courses
   const recentCourses = [...inProgressCourses]
@@ -130,11 +212,9 @@ export default function DashboardPage() {
             <CardDescription>Your learning journey so far</CardDescription>
           </CardHeader>
           <CardContent>
-            <ProgressSummary 
-              totalCourses={courses.length}
-              completedCourses={inProgressCourses.filter(c => 
-                c.progress?.completed === c.progress?.total
-              ).length}
+            <ProgressSummary
+              totalCourses={userProgress?.overallStats.totalCourses || courses.length}
+              completedCourses={userProgress?.overallStats.coursesCompleted || 0}
               totalLessons={totalLessons}
               completedLessons={completedLessons}
             />
@@ -333,5 +413,13 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
   )
 }

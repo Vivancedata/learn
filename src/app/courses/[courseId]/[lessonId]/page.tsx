@@ -14,7 +14,8 @@ import { getCourseById, getLessonById, parseKnowledgeCheck } from "@/lib/content
 import type { Components } from "react-markdown"
 import { useParams } from "next/navigation"
 import { Course, Lesson } from "@/types/course"
-import { useProgress } from "@/lib/hooks/use-progress"
+import { useAuth } from "@/hooks/useAuth"
+import { PageSpinner } from "@/components/ui/spinner"
 
 interface TableOfContentsItem {
   id: string
@@ -51,127 +52,230 @@ const markdownComponents: Components = {
 }
 
 export default function LessonPage() {
+  const { user } = useAuth()
   const params = useParams()
   const courseId = params.courseId as string
   const lessonId = params.lessonId as string
 
+  const [isCompleted, setIsCompleted] = useState(false)
+  const [completionLoading, setCompletionLoading] = useState(false)
   const [tableOfContents, setTableOfContents] = useState<TableOfContentsItem[]>([])
   const [course, setCourse] = useState<Course | null>(null)
   const [lesson, setLesson] = useState<Lesson | null>(null)
+  const [discussions, setDiscussions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [isMarkingComplete, setIsMarkingComplete] = useState(false)
-
-  // Use progress tracking hook
-  const {
-    isLessonComplete,
-    markLessonComplete,
-    markLessonIncomplete,
-  } = useProgress(courseId)
-
-  const isCompleted = isLessonComplete(lessonId)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadData() {
       try {
-        // Get course and lesson data
-        const [courseData, lessonData] = await Promise.all([
+        // Prepare promises
+        const promises = [
           getCourseById(courseId),
-          getLessonById(courseId, lessonId)
-        ])
-        
-        setCourse(courseData)
-        setLesson(lessonData)
-        
-        if (lessonData) {
-          setTableOfContents(extractTableOfContents(lessonData.content))
-          
-          // Check if there's a knowledge check section in the content
-          if (!lessonData.knowledgeCheck) {
-            const knowledgeCheck = parseKnowledgeCheck(lessonData.content)
-            if (knowledgeCheck) {
-              // In a real app, we would update the lesson with the parsed knowledge check
-              console.log("Found knowledge check:", knowledgeCheck)
+          getLessonById(courseId, lessonId),
+          fetch(`/api/discussions?lessonId=${lessonId}`).then(res => res.json()),
+        ]
+
+        // If user is logged in, also fetch their progress
+        if (user) {
+          const token = localStorage.getItem('token')
+          if (token) {
+            promises.push(
+              fetch(`/api/progress/user/${user.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              }).then(res => res.json())
+            )
+          }
+        }
+
+        // Get course, lesson, discussions, and optionally progress data
+        const results = await Promise.allSettled(promises)
+        const [courseResult, lessonResult, discussionsResult, progressResult] = results
+
+        // Handle course result
+        if (courseResult.status === 'fulfilled') {
+          setCourse(courseResult.value)
+        } else {
+          setError('Failed to load course information')
+        }
+
+        // Handle lesson result
+        if (lessonResult.status === 'fulfilled') {
+          const lessonData = lessonResult.value
+          setLesson(lessonData)
+
+          if (lessonData) {
+            setTableOfContents(extractTableOfContents(lessonData.content))
+
+            // Check if there's a knowledge check section in the content
+            if (!lessonData.knowledgeCheck) {
+              parseKnowledgeCheck(lessonData.content)
             }
+          }
+        } else {
+          setError('Failed to load lesson content')
+        }
+
+        // Handle discussions result
+        if (discussionsResult.status === 'fulfilled') {
+          // Transform backend data to match component expectations
+          const transformedDiscussions = discussionsResult.value.data?.map((d: any) => ({
+            id: d.id,
+            userId: d.userId,
+            username: d.user.name || d.user.email.split('@')[0],
+            content: d.content,
+            createdAt: d.createdAt,
+            likes: d.likes,
+            replies: d.replies?.map((r: any) => ({
+              id: r.id,
+              userId: r.userId,
+              username: r.user.name || r.user.email.split('@')[0],
+              content: r.content,
+              createdAt: r.createdAt,
+              likes: r.likes,
+            })) || [],
+          })) || []
+          setDiscussions(transformedDiscussions)
+        }
+
+        // Handle progress result - check if this lesson is completed
+        if (progressResult && progressResult.status === 'fulfilled') {
+          const userProgress = progressResult.value
+          // Find the course progress that contains this lesson
+          const courseProgress = userProgress.courses?.find((c: any) => c.courseId === courseId)
+          if (courseProgress) {
+            // Check if we have a way to get completed lesson IDs from the API
+            // For now, we'll fetch it separately when needed
+            // This would require updating the progress API to return lesson IDs
           }
         }
       } catch (error) {
-        console.error("Error loading lesson data:", error)
+        setError('An unexpected error occurred while loading lesson data')
       } finally {
         setLoading(false)
       }
     }
-    
+
     loadData()
-  }, [courseId, lessonId])
+  }, [courseId, lessonId, user])
 
   if (loading) {
+    return <PageSpinner />
+  }
+
+  if (error || !course || !lesson) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="container py-8">
+        <h1 className="text-3xl font-bold">{error ? 'Error Loading Lesson' : 'Lesson not found'}</h1>
+        <p className="mt-4 text-destructive">{error || 'The lesson you are looking for does not exist.'}</p>
+        <div className="mt-6 space-x-4">
+          <Link href="/courses" className="inline-block underline">
+            Back to courses
+          </Link>
+          {error && (
+            <Button onClick={() => window.location.reload()} variant="outline">
+              Try Again
+            </Button>
+          )}
+        </div>
       </div>
     )
   }
-  
-  if (!course || !lesson) {
-    return (
-      <div className="container py-8">
-        <h1 className="text-3xl font-bold">Lesson not found</h1>
-        <p className="mt-4">The lesson you are looking for does not exist.</p>
-        <Link href="/courses" className="mt-4 inline-block underline">
-          Back to courses
-        </Link>
-      </div>
-    )
+
+  const handleMarkComplete = async () => {
+    if (!user) {
+      setError("You must be logged in to track progress")
+      return
+    }
+
+    if (isCompleted) {
+      // Already completed, just toggle UI
+      setIsCompleted(false)
+      return
+    }
+
+    setCompletionLoading(true)
+
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error("Authentication required")
+      }
+
+      const response = await fetch('/api/progress/lessons', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          lessonId,
+          completed: true,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to mark lesson as complete')
+      }
+
+      setIsCompleted(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to mark lesson as complete')
+    } finally {
+      setCompletionLoading(false)
+    }
   }
 
   const handleQuizComplete = async (score: number) => {
-    console.log(`Quiz completed with score: ${score}`)
-    // Auto-mark lesson as complete if quiz is passed (score >= 70)
-    if (score >= 70 && !isCompleted) {
-      try {
-        await markLessonComplete(lessonId)
-      } catch (error) {
-        console.error('Failed to mark lesson complete:', error)
-      }
+    if (!user) {
+      setError("You must be logged in to save quiz scores")
+      return
     }
-  }
 
-  const handleToggleComplete = async () => {
-    setIsMarkingComplete(true)
     try {
-      if (isCompleted) {
-        await markLessonIncomplete(lessonId)
-      } else {
-        await markLessonComplete(lessonId)
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error("Authentication required")
       }
-    } catch (error) {
-      console.error('Failed to toggle lesson completion:', error)
-    } finally {
-      setIsMarkingComplete(false)
+
+      const response = await fetch('/api/quiz/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          lessonId,
+          score,
+          maxScore: 100,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to submit quiz score')
+      }
+
+      // Mark lesson as completed
+      setIsCompleted(true)
+
+      // Also mark the lesson as complete via the progress API
+      await fetch('/api/progress/lessons', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          lessonId,
+          completed: true,
+        }),
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to submit quiz score')
     }
   }
-
-  // Sample discussions for this lesson
-  const discussions = [
-    {
-      id: "1",
-      userId: "user1",
-      username: "html_learner",
-      content: "I'm having trouble with the semantic HTML elements. When should I use <article> vs <section>?",
-      createdAt: "2024-02-21T10:30:00Z",
-      likes: 3,
-      replies: [
-        {
-          id: "1-1",
-          userId: "user2",
-          username: "web_dev_teacher",
-          content: "Great question! Use <article> for content that would make sense on its own (like a blog post), and <section> for grouping related content that might not stand alone.",
-          createdAt: "2024-02-21T11:15:00Z",
-          likes: 5
-        }
-      ]
-    }
-  ]
 
   return (
     <div className="min-h-screen bg-background">
@@ -184,15 +288,20 @@ export default function LessonPage() {
                 <h1 className="text-3xl font-bold">{lesson.title}</h1>
                 <Button
                   variant={isCompleted ? "default" : "outline"}
-                  onClick={handleToggleComplete}
-                  disabled={isMarkingComplete}
+                  onClick={handleMarkComplete}
+                  disabled={completionLoading}
                 >
-                  {isMarkingComplete ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {completionLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
                   ) : (
-                    <CheckCircle className={`mr-2 h-4 w-4 ${isCompleted ? "text-white" : "text-muted-foreground"}`} />
+                    <>
+                      <CheckCircle className={`mr-2 h-4 w-4 ${isCompleted ? "text-white" : "text-muted-foreground"}`} />
+                      {isCompleted ? "Completed" : "Mark as Complete"}
+                    </>
                   )}
-                  {isCompleted ? "Completed" : "Mark as Complete"}
                 </Button>
               </div>
 

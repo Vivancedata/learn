@@ -1,22 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import prisma from '@/lib/db'
+import { apiSuccess, handleApiError, NotFoundError } from '@/lib/api-errors'
+import { validateParams } from '@/lib/api-errors'
+import { lessonIdSchema } from '@/lib/validations'
+import { adaptLessonWithQuiz } from '@/lib/type-adapters'
 
+/**
+ * GET /api/lessons/[id]
+ * Fetches a specific lesson by ID with quiz questions and discussions
+ * @param params.id - The lesson UUID
+ * @returns Lesson data with quiz questions and discussions
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: lessonId } = await params
-    
+    const { id } = await params
+
+    // Validate lesson ID format
+    const { lessonId } = validateParams(
+      { lessonId: id },
+      lessonIdSchema
+    )
+
     const lesson = await prisma.lesson.findUnique({
       where: {
-        id: lessonId
+        id: lessonId,
       },
       include: {
         section: {
           include: {
-            course: true
-          }
+            course: true,
+          },
         },
         quizQuestions: true,
         discussions: {
@@ -25,8 +41,8 @@ export async function GET(
               select: {
                 id: true,
                 name: true,
-                email: true
-              }
+                email: true,
+              },
             },
             replies: {
               include: {
@@ -34,29 +50,24 @@ export async function GET(
                   select: {
                     id: true,
                     name: true,
-                    email: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     })
-    
+
     if (!lesson) {
-      return NextResponse.json(
-        { error: 'Lesson not found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Lesson')
     }
-    
-    return NextResponse.json(lesson)
+
+    const adaptedLesson = adaptLessonWithQuiz(lesson)
+
+    return apiSuccess(adaptedLesson)
   } catch (error) {
-    console.error('Error fetching lesson:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch lesson' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }

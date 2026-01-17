@@ -12,23 +12,72 @@ import { CommunityDiscussions } from "@/components/community-discussions"
 import { getCourseById } from "@/lib/content"
 import { useParams } from "next/navigation"
 import { Course } from "@/types/course"
-import { useProgress } from "@/lib/hooks/use-progress"
-import { CheckCircle } from "lucide-react"
+import { Discussion } from "@/types/discussion"
+
+interface ApiDiscussionUser {
+  id: string
+  name: string | null
+  email: string
+}
+
+interface ApiDiscussionReply {
+  id: string
+  userId: string
+  user: ApiDiscussionUser
+  content: string
+  createdAt: string
+  likes: number
+}
+
+interface ApiDiscussion {
+  id: string
+  userId: string
+  user: ApiDiscussionUser
+  content: string
+  createdAt: string
+  likes: number
+  replies?: ApiDiscussionReply[]
+}
 
 export default function CoursePage() {
   const params = useParams()
   const courseId = params.courseId as string
   const [courseData, setCourseData] = useState<Course | null>(null)
+  const [discussions, setDiscussions] = useState<Discussion[]>([])
   const [loading, setLoading] = useState(true)
-
-  // Use progress tracking hook
-  const { progress, isLessonComplete } = useProgress(courseId)
 
   useEffect(() => {
     async function loadCourse() {
       try {
-        const course = await getCourseById(courseId)
-        setCourseData(course)
+        const [course, discussionsResult] = await Promise.allSettled([
+          getCourseById(courseId),
+          fetch(`/api/discussions?courseId=${courseId}`).then(res => res.json()),
+        ])
+
+        if (course.status === 'fulfilled') {
+          setCourseData(course.value)
+        }
+
+        if (discussionsResult.status === 'fulfilled') {
+          const apiDiscussions: ApiDiscussion[] = discussionsResult.value.data || []
+          const transformedDiscussions: Discussion[] = apiDiscussions.map((d) => ({
+            id: d.id,
+            userId: d.userId,
+            username: d.user.name || d.user.email.split('@')[0],
+            content: d.content,
+            createdAt: d.createdAt,
+            likes: d.likes,
+            replies: d.replies?.map((r) => ({
+              id: r.id,
+              userId: r.userId,
+              username: r.user.name || r.user.email.split('@')[0],
+              content: r.content,
+              createdAt: r.createdAt,
+              likes: r.likes,
+            })) || [],
+          }))
+          setDiscussions(transformedDiscussions)
+        }
       } catch (error) {
         console.error("Error loading course:", error)
       } finally {
@@ -64,13 +113,9 @@ export default function CoursePage() {
   // Add missing properties to match the CourseType interface
   const course = {
     ...courseData,
-    progress: progress ? {
-      completed: progress.completedCount,
-      total: progress.totalLessons,
-      lastAccessed: progress.lastAccessed || new Date().toISOString()
-    } : {
-      completed: 0,
-      total: courseData.sections.reduce((acc, s) => acc + s.lessons.length, 0),
+    progress: courseData.progress || {
+      completed: 2,
+      total: 8,
       lastAccessed: new Date().toISOString()
     },
     learningOutcomes: courseData.learningOutcomes || [
@@ -80,8 +125,8 @@ export default function CoursePage() {
       "Develop problem-solving skills in the domain"
     ]
   }
-
-  const progressPercent = progress?.percentComplete || 0
+  
+  const progress = course.progress ? (course.progress.completed / course.progress.total) * 100 : 0
 
   // Sample success stories
   const successStories = [
@@ -105,63 +150,19 @@ export default function CoursePage() {
     }
   ]
 
-  // Sample discussions
-  const discussions = [
-    {
-      id: "1",
-      userId: "user1",
-      username: "webdev_newbie",
-      content: "I'm struggling with the CSS flexbox concept. Any tips on how to visualize it better?",
-      createdAt: "2024-02-20T14:30:00Z",
-      likes: 5,
-      replies: [
-        {
-          id: "1-1",
-          userId: "user2",
-          username: "css_master",
-          content: "Try using the Flexbox Froggy game - it's a fun way to learn flexbox concepts!",
-          createdAt: "2024-02-20T15:45:00Z",
-          likes: 8
-        },
-        {
-          id: "1-2",
-          userId: "user3",
-          username: "dev_mentor",
-          content: "I found that drawing boxes on paper and then trying to arrange them helped me understand the concept better.",
-          createdAt: "2024-02-21T09:15:00Z",
-          likes: 3
-        }
-      ]
-    },
-    {
-      id: "2",
-      userId: "user4",
-      username: "js_enthusiast",
-      content: "Just completed the JavaScript section and I'm amazed at how much I've learned! The exercises were challenging but rewarding.",
-      createdAt: "2024-02-22T11:20:00Z",
-      likes: 12,
-      replies: []
-    }
-  ]
-
   // Calculate progress metrics for certificate
   const totalLessons = course.sections.reduce((acc, section) => acc + section.lessons.length, 0)
   const projectLessons = course.sections.reduce(
-    (acc, section) => acc + section.lessons.filter(l => l.type === "project").length,
+    (acc, section) => acc + section.lessons.filter(l => l.type === "project").length, 
     0
   )
-
-  // Count completed projects
-  const completedProjects = course.sections.reduce((acc, section) => {
-    return acc + section.lessons.filter(l => l.type === "project" && isLessonComplete(l.id)).length
-  }, 0)
-
+  
   const progressMetrics = {
-    completedLessons: progress?.completedCount || 0,
+    completedLessons: course.progress?.completed || 0,
     totalLessons,
-    completedProjects,
+    completedProjects: 1,
     totalProjects: projectLessons,
-    averageQuizScore: 85 // TODO: Calculate from actual quiz scores
+    averageQuizScore: 85
   }
 
   // Default learning outcomes if not provided
@@ -182,11 +183,13 @@ export default function CoursePage() {
               {course.description}
             </p>
           </div>
-          <ProgressCircle
-            progress={progressPercent}
-            size="lg"
-            showPercentage
-          />
+          {course.progress && (
+            <ProgressCircle 
+              progress={progress}
+              size="lg"
+              showPercentage
+            />
+          )}
         </div>
 
         <div className="flex gap-4">
@@ -223,33 +226,25 @@ export default function CoursePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {section.lessons.map((lesson) => {
-                    const completed = isLessonComplete(lesson.id)
-                    return (
-                      <Link
-                        key={lesson.id}
-                        href={`/courses/${course.id}/${lesson.id}`}
-                        className="flex items-center justify-between p-2 hover:bg-accent rounded-md transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          {completed ? (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <div className="h-4 w-4 rounded-full border-2 border-muted-foreground" />
-                          )}
-                          <span className={completed ? "text-muted-foreground" : ""}>{lesson.title}</span>
-                          {lesson.type === "project" && (
-                            <Badge variant="outline">Project</Badge>
-                          )}
-                        </div>
-                        {lesson.duration && (
-                          <span className="text-sm text-muted-foreground">
-                            {lesson.duration}
-                          </span>
+                  {section.lessons.map((lesson) => (
+                    <Link
+                      key={lesson.id}
+                      href={`/courses/${course.id}/${lesson.id}`}
+                      className="flex items-center justify-between p-2 hover:bg-accent rounded-md transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>{lesson.title}</span>
+                        {lesson.type === "project" && (
+                          <Badge variant="outline">Project</Badge>
                         )}
-                      </Link>
-                    )
-                  })}
+                      </div>
+                      {lesson.duration && (
+                        <span className="text-sm text-muted-foreground">
+                          {lesson.duration}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
                 </div>
               </CardContent>
             </Card>

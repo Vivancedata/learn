@@ -102,8 +102,8 @@ export function KnowledgeCheck({ questions, onComplete }: KnowledgeCheckProps) {
                     className={`
                       p-3 rounded-md border cursor-pointer transition-colors
                       ${selectedAnswer === index ? 'border-primary' : 'border-border'}
-                      ${showExplanation && index === question.correctAnswer ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-900' : ''}
-                      ${showExplanation && selectedAnswer === index && !isCorrect ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-900' : ''}
+                      ${showExplanation && index === question.correctAnswer ? 'bg-success/10 border-success' : ''}
+                      ${showExplanation && selectedAnswer === index && !isCorrect ? 'bg-destructive/10 border-destructive' : ''}
                       ${!showExplanation && selectedAnswer !== index ? 'hover:bg-muted' : ''}
                     `}
                     onClick={() => handleSelectAnswer(index)}
@@ -111,9 +111,9 @@ export function KnowledgeCheck({ questions, onComplete }: KnowledgeCheckProps) {
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 mt-0.5">
                         {showExplanation && index === question.correctAnswer ? (
-                          <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                          <CheckCircle className="h-5 w-5 text-success" />
                         ) : showExplanation && selectedAnswer === index && !isCorrect ? (
-                          <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                          <XCircle className="h-5 w-5 text-destructive" />
                         ) : (
                           <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${selectedAnswer === index ? 'border-primary bg-primary/10' : 'border-muted-foreground'}`}>
                             {selectedAnswer === index && (
@@ -145,17 +145,17 @@ export function KnowledgeCheck({ questions, onComplete }: KnowledgeCheckProps) {
               </p>
               
               {score >= 80 ? (
-                <div className="flex items-center gap-2 text-green-600 dark:text-green-400 mt-4">
+                <div className="flex items-center gap-2 text-success mt-4">
                   <CheckCircle className="h-5 w-5" />
                   <span>Great job! You&apos;ve mastered this content.</span>
                 </div>
               ) : score >= 60 ? (
-                <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400 mt-4">
+                <div className="flex items-center gap-2 text-warning mt-4">
                   <AlertTriangle className="h-5 w-5" />
                   <span>Good effort! Review the material and try again.</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mt-4">
+                <div className="flex items-center gap-2 text-destructive mt-4">
                   <XCircle className="h-5 w-5" />
                 <span>You might need to revisit the lesson content.</span>
                 </div>
@@ -168,9 +168,9 @@ export function KnowledgeCheck({ questions, onComplete }: KnowledgeCheckProps) {
                 {questions.map((q, index) => (
                   <div key={index} className="flex items-center gap-2">
                     {selectedAnswers[index] === q.correctAnswer ? (
-                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                      <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
                     ) : (
-                      <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />
+                      <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />
                     )}
                     <span className="text-sm truncate">{q.question}</span>
                   </div>
