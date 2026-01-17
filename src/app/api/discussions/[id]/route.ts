@@ -1,23 +1,54 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import prisma from '@/lib/db'
+import {
+  apiSuccess,
+  handleApiError,
+  parseRequestBody,
+  NotFoundError,
+  ForbiddenError,
+} from '@/lib/api-errors'
+import { updateDiscussionSchema } from '@/lib/validations'
 import { requireAuth } from '@/lib/auth'
-import { updateDiscussionSchema, validateBody } from '@/lib/validations'
 
-// Helper to get display username
-function getUsername(user: { name: string | null; email: string }): string {
-  return user.name || user.email.split('@')[0]
-}
-
-// GET - Get a specific discussion
-export async function GET(
+/**
+ * PATCH /api/discussions/[id]
+ * Update a discussion (users can only update their own discussions)
+ * @param id - Discussion ID
+ * @body content - Updated discussion content
+ * @returns Updated discussion
+ */
+export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
+    const user = await requireAuth(request)
 
+    // Parse and validate request body
+    const body = await parseRequestBody(request, updateDiscussionSchema)
+
+    // Find the discussion
     const discussion = await prisma.discussion.findUnique({
       where: { id },
+    })
+
+    if (!discussion) {
+      throw new NotFoundError('Discussion')
+    }
+
+    // SECURITY: Users can only update their own discussions
+    if (discussion.userId !== user.userId) {
+      throw new ForbiddenError('You can only update your own discussions')
+    }
+
+    // Update the discussion
+    const updatedDiscussion = await prisma.discussion.update({
+      where: { id },
+      data: {
+        content: body.content,
+        updatedAt: new Date(),
+      },
       include: {
         user: {
           select: {
@@ -26,205 +57,67 @@ export async function GET(
             email: true,
           },
         },
-        replies: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-          orderBy: { createdAt: 'asc' },
-        },
       },
     })
 
-    if (!discussion) {
-      return NextResponse.json({ error: 'Discussion not found' }, { status: 404 })
-    }
-
-    return NextResponse.json({
-      id: discussion.id,
-      userId: discussion.userId,
-      username: getUsername(discussion.user),
-      content: discussion.content,
-      createdAt: discussion.createdAt.toISOString(),
-      likes: discussion.likes,
-      replies: discussion.replies.map(r => ({
-        id: r.id,
-        userId: r.userId,
-        username: getUsername(r.user),
-        content: r.content,
-        createdAt: r.createdAt.toISOString(),
-        likes: r.likes,
-      })),
+    return apiSuccess({
+      discussion: updatedDiscussion,
+      message: 'Discussion updated successfully',
     })
   } catch (error) {
-    console.error('Error fetching discussion:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch discussion' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }
 
-// PATCH - Update a discussion (like or edit)
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    const userId = await requireAuth()
-
-    const discussion = await prisma.discussion.findUnique({
-      where: { id },
-    })
-
-    if (!discussion) {
-      return NextResponse.json({ error: 'Discussion not found' }, { status: 404 })
-    }
-
-    const body = await request.json()
-    const validation = validateBody(updateDiscussionSchema, body)
-    if (!validation.success) {
-      return NextResponse.json({ error: validation.error }, { status: 400 })
-    }
-
-    const { content, like } = validation.data
-
-    // Handle like action - properly track likes per user
-    if (like !== undefined) {
-      // Check if user has already liked this discussion
-      const existingLike = await prisma.discussionLike.findUnique({
-        where: {
-          userId_discussionId: {
-            userId,
-            discussionId: id,
-          },
-        },
-      })
-
-      if (like) {
-        // User wants to like
-        if (existingLike) {
-          // Already liked - return current likes without change
-          return NextResponse.json({ likes: discussion.likes, alreadyLiked: true })
-        }
-
-        // Add like and increment counter in a transaction
-        const [, updated] = await prisma.$transaction([
-          prisma.discussionLike.create({
-            data: { userId, discussionId: id },
-          }),
-          prisma.discussion.update({
-            where: { id },
-            data: { likes: { increment: 1 } },
-          }),
-        ])
-        return NextResponse.json({ likes: updated.likes, liked: true })
-      } else {
-        // User wants to unlike
-        if (!existingLike) {
-          // Hasn't liked - return current likes without change
-          return NextResponse.json({ likes: discussion.likes, alreadyUnliked: true })
-        }
-
-        // Remove like and decrement counter in a transaction
-        const [, updated] = await prisma.$transaction([
-          prisma.discussionLike.delete({
-            where: {
-              userId_discussionId: {
-                userId,
-                discussionId: id,
-              },
-            },
-          }),
-          prisma.discussion.update({
-            where: { id },
-            data: { likes: { decrement: 1 } },
-          }),
-        ])
-        return NextResponse.json({ likes: updated.likes, unliked: true })
-      }
-    }
-
-    // Handle content edit (only owner can edit)
-    if (content !== undefined) {
-      if (discussion.userId !== userId) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-      }
-
-      const updated = await prisma.discussion.update({
-        where: { id },
-        data: { content },
-      })
-      return NextResponse.json(updated)
-    }
-
-    return NextResponse.json({ error: 'No valid action provided' }, { status: 400 })
-  } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    console.error('Error updating discussion:', error)
-    return NextResponse.json(
-      { error: 'Failed to update discussion' },
-      { status: 500 }
-    )
-  }
-}
-
-// DELETE - Delete a discussion
+/**
+ * DELETE /api/discussions/[id]
+ * Delete a discussion (users can only delete their own discussions)
+ * @param id - Discussion ID
+ * @returns Success message
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    const userId = await requireAuth()
+    const user = await requireAuth(request)
 
+    // Find the discussion
     const discussion = await prisma.discussion.findUnique({
       where: { id },
+      include: {
+        replies: true,
+      },
     })
 
     if (!discussion) {
-      return NextResponse.json({ error: 'Discussion not found' }, { status: 404 })
+      throw new NotFoundError('Discussion')
     }
 
-    if (discussion.userId !== userId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    // SECURITY: Users can only delete their own discussions
+    if (discussion.userId !== user.userId) {
+      throw new ForbiddenError('You can only delete your own discussions')
     }
 
-    // Delete likes, then replies, then discussion
-    await prisma.$transaction([
-      prisma.discussionLike.deleteMany({
-        where: { discussionId: id },
-      }),
-      prisma.discussionReplyLike.deleteMany({
-        where: {
-          reply: { discussionId: id },
-        },
-      }),
-      prisma.discussionReply.deleteMany({
-        where: { discussionId: id },
-      }),
-      prisma.discussion.delete({
-        where: { id },
-      }),
-    ])
+    // Delete the discussion (cascade will delete replies)
+    await prisma.discussion.delete({
+      where: { id },
+    })
 
-    return NextResponse.json({ message: 'Discussion deleted' })
+    console.log('=================================')
+    console.log('DISCUSSION DELETED')
+    console.log('=================================')
+    console.log('Discussion ID:', id)
+    console.log('User:', user.email)
+    console.log('Deleted Replies:', discussion.replies.length)
+    console.log('=================================')
+
+    return apiSuccess({
+      message: 'Discussion and all replies deleted successfully',
+      deletedReplies: discussion.replies.length,
+    })
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    console.error('Error deleting discussion:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete discussion' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }

@@ -1,57 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import prisma from '@/lib/db'
-import { requireAuth } from '@/lib/auth'
-import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/lib/rate-limit'
-import { createReplySchema, validateBody } from '@/lib/validations'
+import {
+  apiSuccess,
+  handleApiError,
+  parseRequestBody,
+  NotFoundError,
+  HTTP_STATUS,
+} from '@/lib/api-errors'
+import { createReplySchema } from '@/lib/validations'
+import { requireOwnership } from '@/lib/authorization'
 
-// POST - Create a reply to a discussion
+/**
+ * POST /api/discussions/[id]/replies
+ * Add a reply to a discussion
+ * @param id - The discussion ID
+ * @body userId - The user ID creating the reply
+ * @body content - Reply content
+ * @returns Created reply
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: discussionId } = await params
-    const userId = await requireAuth()
+    const { id } = await params
+    const discussionId = id
 
-    // Rate limiting
-    const identifier = getClientIdentifier(request, userId)
-    const rateLimitResult = checkRateLimit(identifier, RATE_LIMITS.mutation)
-    if (!rateLimitResult.success) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please try again later.' },
-        {
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
-            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-            'X-RateLimit-Reset': rateLimitResult.resetTime.toString(),
-          },
-        }
-      )
-    }
-
-    // Check if discussion exists
+    // Verify discussion exists
     const discussion = await prisma.discussion.findUnique({
       where: { id: discussionId },
     })
 
     if (!discussion) {
-      return NextResponse.json({ error: 'Discussion not found' }, { status: 404 })
+      throw new NotFoundError('Discussion')
     }
 
-    const body = await request.json()
-    const validation = validateBody(createReplySchema, body)
-    if (!validation.success) {
-      return NextResponse.json({ error: validation.error }, { status: 400 })
-    }
+    // Parse and validate request body
+    const body = await parseRequestBody(request, createReplySchema)
 
-    const { content } = validation.data
+    const { userId, content } = body
 
+    // Authorization: Users can only create replies as themselves
+    requireOwnership(request, userId, 'discussion reply')
+
+    // Create the reply
     const reply = await prisma.discussionReply.create({
       data: {
         userId,
         discussionId,
         content,
+        likes: 0,
       },
       include: {
         user: {
@@ -64,22 +62,57 @@ export async function POST(
       },
     })
 
-    return NextResponse.json({
-      id: reply.id,
-      userId: reply.userId,
-      username: reply.user.name || reply.user.email.split('@')[0],
-      content: reply.content,
-      createdAt: reply.createdAt.toISOString(),
-      likes: reply.likes,
-    }, { status: 201 })
-  } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    console.error('Error creating reply:', error)
-    return NextResponse.json(
-      { error: 'Failed to create reply' },
-      { status: 500 }
+    return apiSuccess(
+      {
+        replyId: reply.id,
+        content: reply.content,
+        user: reply.user,
+        likes: reply.likes,
+        createdAt: reply.createdAt,
+        message: 'Reply added successfully',
+      },
+      HTTP_STATUS.CREATED
     )
+  } catch (error) {
+    return handleApiError(error)
+  }
+}
+
+/**
+ * GET /api/discussions/[id]/replies
+ * Get all replies for a discussion
+ * @param id - The discussion ID
+ * @returns Array of replies
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const discussionId = id
+
+    const replies = await prisma.discussionReply.findMany({
+      where: { discussionId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    })
+
+    return apiSuccess({
+      replies,
+      total: replies.length,
+    })
+  } catch (error) {
+    return handleApiError(error)
   }
 }
