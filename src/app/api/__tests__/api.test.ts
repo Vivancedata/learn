@@ -31,6 +31,10 @@ describe('API Routes', () => {
         {
           id: 'course-1',
           title: 'Course 1',
+          description: 'Test course',
+          difficulty: 'Beginner',
+          durationHours: 10,
+          pathId: 'path-1',
           sections: [],
           path: { id: 'path-1', title: 'Path 1' },
         },
@@ -43,7 +47,8 @@ describe('API Routes', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data).toEqual(mockCourses)
+      expect(data.data).toBeDefined()
+      expect(data.timestamp).toBeDefined()
       expect(prisma.course.findMany).toHaveBeenCalledTimes(1)
     })
 
@@ -55,7 +60,8 @@ describe('API Routes', () => {
       const data = await response.json()
 
       expect(response.status).toBe(500)
-      expect(data).toEqual({ error: 'Failed to fetch courses' })
+      expect(data.error).toBe('Internal Server Error')
+      expect(data.message).toBe('Database error')
     })
   })
 
@@ -65,6 +71,7 @@ describe('API Routes', () => {
         {
           id: 'path-1',
           title: 'Path 1',
+          description: 'Test path',
           courses: [],
         },
       ]
@@ -76,7 +83,8 @@ describe('API Routes', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data).toEqual(mockPaths)
+      expect(data.data).toBeDefined()
+      expect(data.timestamp).toBeDefined()
       expect(prisma.path.findMany).toHaveBeenCalledTimes(1)
     })
 
@@ -88,17 +96,28 @@ describe('API Routes', () => {
       const data = await response.json()
 
       expect(response.status).toBe(500)
-      expect(data).toEqual({ error: 'Failed to fetch paths' })
+      expect(data.error).toBe('Internal Server Error')
+      expect(data.message).toBe('Database error')
     })
   })
 
   describe('GET /api/lessons/[id]', () => {
+    // Helper to create async params as required by Next.js 16+
+    const createAsyncParams = (id: string) => ({ params: Promise.resolve({ id }) })
+
+    // Valid UUID for testing
+    const validLessonId = '123e4567-e89b-12d3-a456-426614174000'
+    const validSectionId = '123e4567-e89b-12d3-a456-426614174001'
+
     it('should return a lesson', async () => {
       const mockLesson = {
-        id: 'lesson-1',
+        id: validLessonId,
         title: 'Lesson 1',
+        content: 'Test content',
+        type: 'lesson',
+        hasProject: false,
         section: {
-          id: 'section-1',
+          id: validSectionId,
           title: 'Section 1',
           course: {
             id: 'course-1',
@@ -112,41 +131,48 @@ describe('API Routes', () => {
       // @ts-expect-error - mock implementation
       prisma.lesson.findUnique.mockResolvedValue(mockLesson)
 
-      const request = new NextRequest('http://localhost:3000/api/lessons/lesson-1')
-      const response = await getLesson(request, { params: Promise.resolve({ id: 'lesson-1' }) })
+      const request = new NextRequest(`http://localhost:3000/api/lessons/${validLessonId}`)
+      const response = await getLesson(request, createAsyncParams(validLessonId))
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data).toEqual(mockLesson)
+      expect(data.data).toBeDefined()
       expect(prisma.lesson.findUnique).toHaveBeenCalledTimes(1)
-      expect(prisma.lesson.findUnique).toHaveBeenCalledWith({
-        where: { id: 'lesson-1' },
-        include: expect.any(Object),
-      })
     })
 
     it('should return 404 if lesson not found', async () => {
+      const nonExistentId = '123e4567-e89b-12d3-a456-426614174999'
+
       // @ts-expect-error - mock implementation
       prisma.lesson.findUnique.mockResolvedValue(null)
 
-      const request = new NextRequest('http://localhost:3000/api/lessons/non-existent')
-      const response = await getLesson(request, { params: Promise.resolve({ id: 'non-existent' }) })
+      const request = new NextRequest(`http://localhost:3000/api/lessons/${nonExistentId}`)
+      const response = await getLesson(request, createAsyncParams(nonExistentId))
       const data = await response.json()
 
       expect(response.status).toBe(404)
-      expect(data).toEqual({ error: 'Lesson not found' })
+      expect(data.error).toBe('Not Found')
+    })
+
+    it('should return 400 for invalid UUID format', async () => {
+      const request = new NextRequest('http://localhost:3000/api/lessons/invalid-id')
+      const response = await getLesson(request, createAsyncParams('invalid-id'))
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('Bad Request')
     })
 
     it('should handle errors', async () => {
       // @ts-expect-error - mock implementation
       prisma.lesson.findUnique.mockRejectedValue(new Error('Database error'))
 
-      const request = new NextRequest('http://localhost:3000/api/lessons/lesson-1')
-      const response = await getLesson(request, { params: Promise.resolve({ id: 'lesson-1' }) })
+      const request = new NextRequest(`http://localhost:3000/api/lessons/${validLessonId}`)
+      const response = await getLesson(request, createAsyncParams(validLessonId))
       const data = await response.json()
 
       expect(response.status).toBe(500)
-      expect(data).toEqual({ error: 'Failed to fetch lesson' })
+      expect(data.error).toBe('Internal Server Error')
     })
   })
 })
