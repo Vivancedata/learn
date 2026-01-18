@@ -6,7 +6,6 @@ import {
   handleApiError,
   parseRequestBody,
   ValidationError,
-  HTTP_STATUS,
 } from '@/lib/api-errors'
 import { hashPassword } from '@/lib/auth'
 

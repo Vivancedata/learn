@@ -61,7 +61,12 @@ export async function PATCH(
     }
 
     // Build update data - only update fields that are provided
-    const updateData: any = {
+    const updateData: {
+      updatedAt: Date
+      githubUrl?: string
+      liveUrl?: string | null
+      notes?: string | null
+    } = {
       updatedAt: new Date(),
     }
 

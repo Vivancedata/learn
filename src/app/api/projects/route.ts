@@ -6,9 +6,11 @@ import {
   parseRequestBody,
   HTTP_STATUS,
   NotFoundError,
+  ForbiddenError,
 } from '@/lib/api-errors'
 import { projectSubmissionSchema } from '@/lib/validations'
 import { requireOwnership } from '@/lib/authorization'
+import { getUserId } from '@/lib/auth'
 
 /**
  * POST /api/projects
@@ -110,20 +112,30 @@ export async function POST(request: NextRequest) {
 /**
  * GET /api/projects?userId=xxx&lessonId=xxx
  * Get project submissions
- * @query userId - Filter by user ID (optional)
+ * @query userId - Filter by user ID (required, must match authenticated user)
  * @query lessonId - Filter by lesson ID (optional)
  * @query status - Filter by status (optional)
  * @returns Array of project submissions
  */
 export async function GET(request: NextRequest) {
   try {
+    // Get authenticated user ID from middleware-injected header
+    const authenticatedUserId = getUserId(request)
+
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const lessonId = searchParams.get('lessonId')
     const status = searchParams.get('status')
 
-    const where: any = {}
-    if (userId) where.userId = userId
+    // Authorization: Users can only fetch their own submissions
+    // If userId is provided, it must match the authenticated user
+    // If not provided, default to authenticated user's submissions
+    const targetUserId = userId || authenticatedUserId
+    if (targetUserId !== authenticatedUserId) {
+      throw new ForbiddenError('You can only view your own project submissions')
+    }
+
+    const where: Record<string, string> = { userId: targetUserId! }
     if (lessonId) where.lessonId = lessonId
     if (status) where.status = status
 

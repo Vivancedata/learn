@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { courseId } = await params
-    const userId = await getUserId()
+    const userId = getUserId(request)
 
     if (!userId) {
       return NextResponse.json(

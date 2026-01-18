@@ -8,7 +8,8 @@ export async function POST(
 ) {
   try {
     const { courseId, lessonId } = await params
-    const userId = await requireAuth()
+    const session = await requireAuth(request)
+    const userId = session.userId
 
     // Verify the lesson exists and belongs to the course
     const lesson = await prisma.lesson.findUnique({
@@ -137,7 +138,7 @@ export async function DELETE(
 ) {
   try {
     const { courseId, lessonId } = await params
-    const userId = await getUserId()
+    const userId = getUserId(request)
 
     if (!userId) {
       return NextResponse.json(

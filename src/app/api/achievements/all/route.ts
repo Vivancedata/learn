@@ -6,7 +6,7 @@ import { ACHIEVEMENTS, getAchievementsByCategory } from '@/lib/achievements'
  * GET /api/achievements/all
  * Get all available achievements
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const categorized = getAchievementsByCategory()
 

@@ -4,9 +4,10 @@ import { requireAuth } from '@/lib/auth'
 import { updateUserSettingsSchema, validateBody } from '@/lib/validations'
 
 // GET - Get current user settings
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const userId = await requireAuth()
+    const session = await requireAuth(request)
+    const userId = session.userId
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -38,7 +39,8 @@ export async function GET() {
 // PATCH - Update user settings
 export async function PATCH(request: NextRequest) {
   try {
-    const userId = await requireAuth()
+    const session = await requireAuth(request)
+    const userId = session.userId
 
     const body = await request.json()
     const validation = validateBody(updateUserSettingsSchema, body)

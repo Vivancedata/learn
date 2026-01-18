@@ -105,7 +105,6 @@ export async function POST(request: NextRequest) {
     // 7. Calculate quiz completion (if there are quizzes)
     const lessonsWithQuiz = allLessons.filter(lesson => lesson.quizQuestions.length > 0)
     if (lessonsWithQuiz.length > 0) {
-      const quizLessonIds = new Set(lessonsWithQuiz.map(l => l.id))
       const completedQuizIds = new Set(courseProgress.quizScores.map(q => q.lessonId))
       const passedQuizzes = lessonsWithQuiz.filter(lesson => completedQuizIds.has(lesson.id))
 

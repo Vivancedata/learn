@@ -11,7 +11,7 @@ import { clearAuthCookie } from '@/lib/auth'
  * Sign out the current user by clearing the authentication cookie
  * @returns Success message
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Clear authentication cookie
     await clearAuthCookie()

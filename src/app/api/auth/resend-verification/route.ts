@@ -5,9 +5,7 @@ import {
   apiSuccess,
   handleApiError,
   parseRequestBody,
-  NotFoundError,
 } from '@/lib/api-errors'
-import crypto from 'crypto'
 
 const resendVerificationSchema = z.object({
   email: z.string().email('Invalid email address'),

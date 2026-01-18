@@ -7,7 +7,7 @@ import { createSubmissionSchema, validateBody } from '@/lib/validations'
 // GET - List submissions for current user
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getUserId()
+    const userId = getUserId(request)
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -53,18 +53,18 @@ export async function GET(request: NextRequest) {
 // POST - Create a new submission
 export async function POST(request: NextRequest) {
   try {
-    const userId = await requireAuth()
+    const session = await requireAuth(request)
+    const userId = session.userId
 
     // Rate limiting
-    const identifier = getClientIdentifier(request, userId)
-    const rateLimitResult = checkRateLimit(identifier, RATE_LIMITS.mutation)
+    const identifier = getClientIdentifier(request)
+    const rateLimitResult = checkRateLimit(identifier, RATE_LIMITS.API)
     if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: 'Too many requests. Please try again later.' },
         {
           status: 429,
           headers: {
-            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
             'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
             'X-RateLimit-Reset': rateLimitResult.resetTime.toString(),
           },
