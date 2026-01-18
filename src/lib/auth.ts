@@ -246,3 +246,12 @@ export async function requireAuth(
 
   return user
 }
+
+/**
+ * Get user ID from request headers (set by middleware)
+ * @param request - Next.js request object
+ * @returns User ID string or null if not authenticated
+ */
+export function getUserId(request: NextRequest): string | null {
+  return request.headers.get('x-user-id')
+}

@@ -156,3 +156,43 @@ export const RATE_LIMITS = {
     windowMs: 15 * 60 * 1000, // per 15 minutes
   },
 } as const
+
+/**
+ * Get client identifier from request for rate limiting
+ * Uses IP address from headers with fallbacks
+ * @param request - Request object with headers
+ * @returns Client identifier string
+ */
+export function getClientIdentifier(request: { headers: { get(name: string): string | null } }): string {
+  // Try common headers for client IP
+  const forwarded = request.headers.get('x-forwarded-for')
+  if (forwarded) {
+    // x-forwarded-for can contain multiple IPs, use the first one
+    return forwarded.split(',')[0].trim()
+  }
+
+  const realIp = request.headers.get('x-real-ip')
+  if (realIp) {
+    return realIp
+  }
+
+  // Fallback to a generic identifier
+  return 'unknown-client'
+}
+
+/**
+ * Check rate limit for a request
+ * @param identifier - Client identifier (e.g., IP address)
+ * @param config - Rate limit configuration with limit and windowMs
+ * @returns Object with success status and rate limit info
+ */
+export function checkRateLimit(
+  identifier: string,
+  config: { limit: number; windowMs: number }
+): {
+  success: boolean
+  remaining: number
+  resetTime: number
+} {
+  return rateLimiter.check(identifier, config.limit, config.windowMs)
+}
