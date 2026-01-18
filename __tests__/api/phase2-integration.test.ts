@@ -300,7 +300,7 @@ describe('Phase 2 Integration Tests', () => {
       it('should prevent admin from demoting themselves', () => {
         const adminId = 'admin-123'
         const targetUserId = 'admin-123'
-        const newRole = 'student'
+        const newRole: string = 'student'
 
         const isDemotingSelf = targetUserId === adminId && newRole !== 'admin'
 

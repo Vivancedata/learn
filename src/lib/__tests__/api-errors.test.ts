@@ -7,7 +7,11 @@ import {
   ForbiddenError,
   apiSuccess,
   apiError,
+  apiValidationError,
   handleApiError,
+  validateRequest,
+  parseRequestBody,
+  validateParams,
   HTTP_STATUS,
 } from '../api-errors'
 
@@ -231,6 +235,153 @@ describe('API Error Utilities', () => {
 
       const body = await response.json()
       expect(body.message).toBe('An unexpected error occurred')
+    })
+
+    it('should handle unknown Prisma error code', async () => {
+      const prismaError = { code: 'P9999', meta: {} }
+      const response = handleApiError(prismaError)
+
+      expect(response.status).toBe(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+
+      const body = await response.json()
+      expect(body.message).toBe('Database operation failed')
+    })
+  })
+
+  describe('apiValidationError', () => {
+    it('should format Zod validation errors', async () => {
+      const schema = z.object({ email: z.string().email('Invalid email') })
+      let zodError: z.ZodError | null = null
+
+      try {
+        schema.parse({ email: 'not-an-email' })
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          zodError = error
+        }
+      }
+
+      expect(zodError).not.toBeNull()
+
+      const response = apiValidationError(zodError!)
+      expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST)
+
+      const body = await response.json()
+      expect(body.message).toBe('Validation failed')
+      expect(body.error).toBe('Bad Request')
+    })
+  })
+
+  describe('validateRequest', () => {
+    const testSchema = z.object({
+      name: z.string().min(1),
+      age: z.number().positive(),
+    })
+
+    it('should return validated data for valid input', async () => {
+      const validData = { name: 'John', age: 25 }
+      const result = await validateRequest(testSchema, validData)
+
+      expect(result).toEqual(validData)
+    })
+
+    it('should throw ValidationError for invalid input', async () => {
+      const invalidData = { name: '', age: -5 }
+
+      await expect(validateRequest(testSchema, invalidData)).rejects.toThrow(ValidationError)
+    })
+
+    it('should rethrow non-Zod errors', async () => {
+      const throwingSchema = z.string().transform(() => {
+        throw new Error('Custom error')
+      })
+
+      await expect(validateRequest(throwingSchema, 'test')).rejects.toThrow('Custom error')
+    })
+  })
+
+  describe('parseRequestBody', () => {
+    it('should parse JSON body without schema', async () => {
+      const body = { name: 'Test', value: 123 }
+      const request = new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      const result = await parseRequestBody<typeof body>(request)
+
+      expect(result).toEqual(body)
+    })
+
+    it('should parse and validate JSON body with schema', async () => {
+      const schema = z.object({
+        name: z.string().min(1),
+        value: z.number(),
+      })
+      const body = { name: 'Test', value: 123 }
+      const request = new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      const result = await parseRequestBody(request, schema)
+
+      expect(result).toEqual(body)
+    })
+
+    it('should throw ValidationError for invalid JSON', async () => {
+      const request = new Request('http://localhost', {
+        method: 'POST',
+        body: 'not valid json',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      await expect(parseRequestBody(request)).rejects.toThrow(ValidationError)
+      await expect(parseRequestBody(request)).rejects.toThrow('Invalid JSON in request body')
+    })
+
+    it('should throw ValidationError for invalid data against schema', async () => {
+      const schema = z.object({
+        name: z.string().min(1),
+      })
+      const request = new Request('http://localhost', {
+        method: 'POST',
+        body: JSON.stringify({ name: '' }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      await expect(parseRequestBody(request, schema)).rejects.toThrow(ValidationError)
+    })
+  })
+
+  describe('validateParams', () => {
+    const paramsSchema = z.object({
+      id: z.string().uuid(),
+      page: z.string().optional(),
+    })
+
+    it('should return validated params for valid input', () => {
+      const validParams = { id: '123e4567-e89b-12d3-a456-426614174000' }
+      const result = validateParams(validParams, paramsSchema)
+
+      expect(result).toEqual(validParams)
+    })
+
+    it('should throw ValidationError for invalid params', () => {
+      const invalidParams = { id: 'not-a-uuid' }
+
+      expect(() => validateParams(invalidParams, paramsSchema)).toThrow(ValidationError)
+      expect(() => validateParams(invalidParams, paramsSchema)).toThrow('Invalid URL parameters')
+    })
+
+    it('should rethrow non-Zod errors', () => {
+      const throwingSchema = z.string().transform(() => {
+        throw new Error('Custom param error')
+      })
+
+      expect(() => validateParams('test', throwingSchema)).toThrow('Custom param error')
     })
   })
 })

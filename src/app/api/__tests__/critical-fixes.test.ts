@@ -10,9 +10,12 @@ process.env.JWT_SECRET = 'test-secret-key-for-testing-only'
 process.env.DATABASE_URL = 'file:./test.db'
 
 describe('Critical Security Fixes - Integration Tests', () => {
-  let testStudent: { id: string; email: string; token: string }
-  let testInstructor: { id: string; email: string; token: string }
-  let testAdmin: { id: string; email: string; token: string }
+   
+  let _testStudent: { id: string; email: string; token: string }
+   
+  let _testInstructor: { id: string; email: string; token: string }
+   
+  let _testAdmin: { id: string; email: string; token: string }
 
   beforeAll(async () => {
     // Note: In real tests, we'd set up a test database here
@@ -52,8 +55,8 @@ describe('Critical Security Fixes - Integration Tests', () => {
   describe('Fix 2: Authorization on User Data Endpoints', () => {
     it('should reject unauthorized access to other users certificates', async () => {
       // Test that user A cannot access user B's certificates
-      const userA = 'user-a-uuid'
-      const userB = 'user-b-uuid'
+      const userA: string = 'user-a-uuid'
+      const userB: string = 'user-b-uuid'
 
       // Mock request where user A tries to access user B's certificates
       // In real test, this would be an actual HTTP request
@@ -63,8 +66,8 @@ describe('Critical Security Fixes - Integration Tests', () => {
 
     it('should reject unauthorized access to other users achievements', async () => {
       // Test that user A cannot access user B's achievements
-      const userA = 'user-a-uuid'
-      const userB = 'user-b-uuid'
+      const userA: string = 'user-a-uuid'
+      const userB: string = 'user-b-uuid'
 
       const shouldFail = userA !== userB
       expect(shouldFail).toBe(true)
@@ -146,10 +149,10 @@ describe('Critical Security Fixes - Integration Tests', () => {
     })
 
     it('should handle courses with no sections gracefully', () => {
-      const courseNoSections = { sections: undefined }
+      const courseNoSections: { sections?: Array<{ lessons: unknown[] }> } = { sections: undefined }
 
       const totalLessons = courseNoSections.sections?.reduce(
-        (sum, section) => sum + section.lessons.length,
+        (sum: number, section: { lessons: unknown[] }) => sum + section.lessons.length,
         0
       ) || 0
 
@@ -191,7 +194,7 @@ describe('Critical Security Fixes - Integration Tests', () => {
 
     it('should not use localStorage for token storage', () => {
       // Verify old pattern is removed
-      const oldPattern = 'localStorage.getItem("token")'
+      const _oldPattern = 'localStorage.getItem("token")'  
       const shouldNotExist = false // This pattern should not exist in new code
 
       expect(shouldNotExist).toBe(false)
@@ -222,7 +225,7 @@ describe('Critical Security Fixes - Integration Tests', () => {
     it('should prevent SQL injection via parameterized queries', () => {
       // Prisma uses parameterized queries by default
       // This test documents that we're protected
-      const maliciousInput = "'; DROP TABLE User; --"
+      const _maliciousInput = "'; DROP TABLE User; --"  
 
       // Prisma would escape this automatically
       // Just verify we're not doing raw SQL
@@ -234,10 +237,10 @@ describe('Critical Security Fixes - Integration Tests', () => {
     })
 
     it('should hash passwords before storage', async () => {
-      const plainPassword = 'MyPassword123'
+      const _plainPassword = 'MyPassword123'  
 
       // Verify bcrypt hash format (starts with $2b$ or $2a$)
-      const bcryptHashPattern = /^\$2[aby]\$\d{2}\$/
+      const _bcryptHashPattern = /^\$2[aby]\$\d{2}\$/  
 
       // In real implementation, password is hashed with bcrypt
       const isHashed = true // hashPassword() uses bcrypt

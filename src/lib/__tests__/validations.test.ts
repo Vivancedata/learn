@@ -1,11 +1,17 @@
+import { z } from 'zod'
 import {
   signUpSchema,
   signInSchema,
   sanitizeHtml,
+  sanitizedString,
   createDiscussionSchema,
   createReplySchema,
   markLessonCompleteSchema,
   submitQuizSchema,
+  paginationSchema,
+  validate,
+  formatZodErrors,
+  validateBody,
 } from '../validations'
 
 describe('Validation Schemas', () => {
@@ -310,6 +316,190 @@ describe('Validation Schemas', () => {
 
       const result = submitQuizSchema.safeParse(invalidData)
       expect(result.success).toBe(false)
+    })
+  })
+
+  describe('sanitizedString', () => {
+    it('should create a Zod string schema that sanitizes HTML', () => {
+      const schema = sanitizedString()
+      const result = schema.safeParse('<script>alert("xss")</script>')
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data).toContain('&lt;script&gt;')
+        expect(result.data).not.toContain('<script>')
+      }
+    })
+
+    it('should pass through normal strings', () => {
+      const schema = sanitizedString()
+      const result = schema.safeParse('Hello World')
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data).toBe('Hello World')
+      }
+    })
+  })
+
+  describe('paginationSchema', () => {
+    it('should parse valid page and limit', () => {
+      const result = paginationSchema.safeParse({ page: '2', limit: '20' })
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.page).toBe(2)
+        expect(result.data.limit).toBe(20)
+      }
+    })
+
+    it('should use defaults when not provided', () => {
+      const result = paginationSchema.safeParse({})
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.page).toBe(1)
+        expect(result.data.limit).toBe(10)
+      }
+    })
+
+    it('should reject page less than 1', () => {
+      const result = paginationSchema.safeParse({ page: '0', limit: '10' })
+
+      expect(result.success).toBe(false)
+    })
+
+    it('should reject limit greater than 100', () => {
+      const result = paginationSchema.safeParse({ page: '1', limit: '101' })
+
+      expect(result.success).toBe(false)
+    })
+
+    it('should handle undefined values', () => {
+      const result = paginationSchema.safeParse({ page: undefined, limit: undefined })
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.page).toBe(1)
+        expect(result.data.limit).toBe(10)
+      }
+    })
+  })
+
+  describe('validate', () => {
+    const testSchema = z.object({
+      name: z.string().min(1),
+      age: z.number().min(0),
+    })
+
+    it('should return success with data for valid input', () => {
+      const validData = { name: 'John', age: 25 }
+      const result = validate(testSchema, validData)
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data).toEqual(validData)
+      }
+    })
+
+    it('should return failure with errors for invalid input', () => {
+      const invalidData = { name: '', age: -5 }
+      const result = validate(testSchema, invalidData)
+
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.errors).toBeInstanceOf(z.ZodError)
+      }
+    })
+
+    it('should rethrow non-Zod errors', () => {
+      const throwingSchema = z.string().transform(() => {
+        throw new Error('Custom error')
+      })
+
+      expect(() => validate(throwingSchema, 'test')).toThrow('Custom error')
+    })
+  })
+
+  describe('formatZodErrors', () => {
+    it('should format Zod errors into a record', () => {
+      const schema = z.object({
+        email: z.string().email('Invalid email'),
+        password: z.string().min(8, 'Too short'),
+      })
+
+      const result = schema.safeParse({ email: 'not-email', password: '123' })
+
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        const formatted = formatZodErrors(result.error)
+        expect(formatted.email).toBe('Invalid email')
+        expect(formatted.password).toBe('Too short')
+      }
+    })
+
+    it('should handle nested paths', () => {
+      const schema = z.object({
+        user: z.object({
+          email: z.string().email('Invalid email'),
+        }),
+      })
+
+      const result = schema.safeParse({ user: { email: 'bad' } })
+
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        const formatted = formatZodErrors(result.error)
+        expect(formatted['user.email']).toBe('Invalid email')
+      }
+    })
+
+    it('should use "root" for empty path', () => {
+      const schema = z.string().min(1, 'Required')
+
+      const result = schema.safeParse('')
+
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        const formatted = formatZodErrors(result.error)
+        expect(formatted.root).toBe('Required')
+      }
+    })
+  })
+
+  describe('validateBody', () => {
+    const testSchema = z.object({
+      name: z.string().min(1, 'Name required'),
+      email: z.string().email('Invalid email'),
+    })
+
+    it('should return success with data for valid input', () => {
+      const validData = { name: 'John', email: 'john@example.com' }
+      const result = validateBody(testSchema, validData)
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data).toEqual(validData)
+      }
+    })
+
+    it('should return failure with formatted error string', () => {
+      const invalidData = { name: '', email: 'not-email' }
+      const result = validateBody(testSchema, invalidData)
+
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error).toContain('Name required')
+        expect(result.error).toContain('Invalid email')
+      }
+    })
+
+    it('should rethrow non-Zod errors', () => {
+      const throwingSchema = z.string().transform(() => {
+        throw new Error('Custom validation error')
+      })
+
+      expect(() => validateBody(throwingSchema, 'test')).toThrow('Custom validation error')
     })
   })
 })
