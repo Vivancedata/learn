@@ -419,6 +419,8 @@ Errors automatically caught and displayed with recovery UI.
 
 **Configuration**: `jest.config.js` with module aliases (`@/` → `src/`)
 
+**Current coverage**: 99.55% lines, 100% functions, 262 tests passing
+
 **Test structure**:
 - Tests in `__tests__/` directories or `*.test.ts(x)` files
 - Use `@testing-library/react` for components
@@ -429,7 +431,13 @@ Errors automatically caught and displayed with recovery UI.
 npm test                        # All tests
 npm run test:watch             # Watch mode
 npm test -- path/to/test.test.ts  # Single file
+npm test -- --coverage          # With coverage report
 ```
+
+**Mocking patterns**:
+- Mock Prisma with `jest.mock('@/lib/db')` and `@ts-expect-error` for mock implementations
+- Mock auth with `jest.mock('@/lib/auth')` for `requireAuth` and `getUserId`
+- Use `as any` in test files for partial Prisma data (add `/* eslint-disable @typescript-eslint/no-explicit-any */`)
 
 ## Production Deployment
 
@@ -446,8 +454,23 @@ See `PRODUCTION_CHECKLIST.md` and `PRODUCTION_AUDIT_REPORT.md` for complete guid
 8. Start: `npm start`
 
 **Production Status**: ✅ **100% Production Ready**
-- 0 security vulnerabilities
+- 0 security vulnerabilities (`npm audit`)
+- 99.55% test coverage (262 tests)
 - Complete authentication & authorization
 - All security headers configured
 - Rate limiting active
 - Full error handling
+
+## Code Style
+
+**Enforced via ESLint** (`npx eslint src --ext .ts,.tsx`):
+- TypeScript strict mode
+- No explicit `any` (except test files)
+- Single quotes, no semicolons
+- 2-space indentation
+
+**Naming conventions**:
+- Components: `PascalCase.tsx`
+- Utilities: `camelCase.ts`
+- Tests: `*.test.ts`
+- Constants: `SCREAMING_SNAKE_CASE`
