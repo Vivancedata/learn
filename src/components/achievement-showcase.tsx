@@ -22,7 +22,7 @@ interface AchievementShowcaseProps {
 
 export default function AchievementShowcase({ userId }: AchievementShowcaseProps) {
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([])
-  const [allAchievements, setAllAchievements] = useState<{ byCategory: any; all: Achievement[] }>({
+  const [allAchievements, setAllAchievements] = useState<{ byCategory: Record<string, Achievement[]>; all: Achievement[] }>({
     byCategory: {},
     all: [],
   })
@@ -31,6 +31,7 @@ export default function AchievementShowcase({ userId }: AchievementShowcaseProps
 
   useEffect(() => {
     fetchAchievements()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
   const fetchAchievements = async () => {

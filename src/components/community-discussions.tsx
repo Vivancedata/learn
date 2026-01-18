@@ -103,7 +103,7 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
     }
   }
 
-  const handleLike = async (discussionId: string) => {
+  const handleLike = async (_discussionId: string) => {
     // TODO: Implement like functionality when API endpoint is available
     // This would require a new endpoint like PUT /api/discussions/[id]/like
   }

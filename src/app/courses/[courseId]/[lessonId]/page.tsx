@@ -23,6 +23,46 @@ interface TableOfContentsItem {
   level: number
 }
 
+interface DiscussionReply {
+  id: string
+  userId: string
+  user: { name: string | null; email: string }
+  content: string
+  createdAt: string
+  likes: number
+}
+
+interface DiscussionData {
+  id: string
+  userId: string
+  user: { name: string | null; email: string }
+  content: string
+  createdAt: string
+  likes: number
+  replies?: DiscussionReply[]
+}
+
+interface TransformedDiscussion {
+  id: string
+  userId: string
+  username: string
+  content: string
+  createdAt: string
+  likes: number
+  replies: {
+    id: string
+    userId: string
+    username: string
+    content: string
+    createdAt: string
+    likes: number
+  }[]
+}
+
+interface CourseProgressData {
+  courseId: string
+}
+
 function extractTableOfContents(content: string): TableOfContentsItem[] {
   const headings = content.match(/^#{1,6}\s+.+$/gm) || []
   return headings.map(heading => {
@@ -62,7 +102,7 @@ export default function LessonPage() {
   const [tableOfContents, setTableOfContents] = useState<TableOfContentsItem[]>([])
   const [course, setCourse] = useState<Course | null>(null)
   const [lesson, setLesson] = useState<Lesson | null>(null)
-  const [discussions, setDiscussions] = useState<any[]>([])
+  const [discussions, setDiscussions] = useState<TransformedDiscussion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -119,14 +159,14 @@ export default function LessonPage() {
         // Handle discussions result
         if (discussionsResult.status === 'fulfilled') {
           // Transform backend data to match component expectations
-          const transformedDiscussions = discussionsResult.value.data?.map((d: any) => ({
+          const transformedDiscussions = discussionsResult.value.data?.map((d: DiscussionData) => ({
             id: d.id,
             userId: d.userId,
             username: d.user.name || d.user.email.split('@')[0],
             content: d.content,
             createdAt: d.createdAt,
             likes: d.likes,
-            replies: d.replies?.map((r: any) => ({
+            replies: d.replies?.map((r: DiscussionReply) => ({
               id: r.id,
               userId: r.userId,
               username: r.user.name || r.user.email.split('@')[0],
@@ -142,14 +182,14 @@ export default function LessonPage() {
         if (progressResult && progressResult.status === 'fulfilled') {
           const userProgress = progressResult.value
           // Find the course progress that contains this lesson
-          const courseProgress = userProgress.courses?.find((c: any) => c.courseId === courseId)
+          const courseProgress = userProgress.courses?.find((c: CourseProgressData) => c.courseId === courseId)
           if (courseProgress) {
             // Check if we have a way to get completed lesson IDs from the API
             // For now, we'll fetch it separately when needed
             // This would require updating the progress API to return lesson IDs
           }
         }
-      } catch (error) {
+      } catch {
         setError('An unexpected error occurred while loading lesson data')
       } finally {
         setLoading(false)

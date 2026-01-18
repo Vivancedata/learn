@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth"
 
 import { ProjectSubmissionProps } from "@/types/project-submission"
 
-export function ProjectSubmission({ lessonId, courseId, requirements = [] }: ProjectSubmissionProps) {
+export function ProjectSubmission({ lessonId, courseId: _courseId, requirements = [] }: ProjectSubmissionProps) {
   const { user } = useAuth()
   const [githubUrl, setGithubUrl] = useState("")
   const [liveUrl, setLiveUrl] = useState("")

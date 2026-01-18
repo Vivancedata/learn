@@ -13,16 +13,18 @@ import { getAllCourses, getAllPaths } from "@/lib/content"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { useAuth } from "@/hooks/useAuth"
 
+interface CourseProgressData {
+  courseId: string
+  courseTitle: string
+  totalLessons: number
+  completedLessons: number
+  progress: number
+  lastAccessed: string
+}
+
 interface UserProgress {
   userId: string
-  courses: {
-    courseId: string
-    courseTitle: string
-    totalLessons: number
-    completedLessons: number
-    progress: number
-    lastAccessed: string
-  }[]
+  courses: CourseProgressData[]
   overallStats: {
     totalCourses: number
     coursesStarted: number
@@ -82,7 +84,7 @@ function DashboardContent() {
           if (coursesResult.status === 'fulfilled') {
             const coursesWithProgress = coursesResult.value.map(course => {
               const progressData = progressResult.value.courses.find(
-                (p: any) => p.courseId === course.id
+                (p: CourseProgressData) => p.courseId === course.id
               )
 
               if (progressData) {
