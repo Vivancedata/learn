@@ -37,23 +37,28 @@ enum UserRole {
 }
 
 model User {
-  id                 String                @id @default(uuid())
-  email              String                @unique
-  name               String?
-  password           String
-  githubUsername     String?
-  role               UserRole              @default(student)
-  emailVerified      Boolean               @default(false)
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
-  courses            CourseProgress[]
-  paths              PathProgress[]
-  discussions        Discussion[]
-  discussionReplies  DiscussionReply[]
-  projectSubmissions ProjectSubmission[]
-  certificates       Certificate[]
-  achievements       UserAchievement[]
-  passwordResetTokens PasswordResetToken[]
+  id                   String                @id @default(uuid())
+  email                String                @unique
+  name                 String?
+  password             String
+  githubUsername       String?
+  role                 UserRole              @default(student)
+  emailVerified        Boolean               @default(false)
+  points               Int                   @default(0)
+  showOnLeaderboard    Boolean               @default(true)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  courses              CourseProgress[]
+  paths                PathProgress[]
+  discussions          Discussion[]
+  discussionReplies    DiscussionReply[]
+  projectSubmissions   ProjectSubmission[]
+  certificates         Certificate[]
+  achievements         UserAchievement[]
+  passwordResetTokens  PasswordResetToken[]
+  pointsReceived       CommunityPoint[]      @relation("PointsReceived")
+  pointsGiven          CommunityPoint[]      @relation("PointsGiven")
+  projectLikes         ProjectLike[]
 }
 
 model Course {
@@ -194,29 +199,48 @@ model ProjectSubmission {
   submittedAt DateTime      @default(now())
   reviewedAt  DateTime?
   reviewedBy  String?
+  isPublic    Boolean       @default(false)
+  description String?
+  likesCount  Int           @default(0)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   user        User          @relation(fields: [userId], references: [id])
   lesson      Lesson        @relation(fields: [lessonId], references: [id])
+  likes       ProjectLike[]
 
   @@index([userId])
   @@index([lessonId])
   @@index([status])
+  @@index([isPublic])
+}
+
+model ProjectLike {
+  id           String            @id @default(uuid())
+  userId       String
+  submissionId String
+  createdAt    DateTime          @default(now())
+  user         User              @relation(fields: [userId], references: [id])
+  submission   ProjectSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, submissionId])
+  @@index([userId])
+  @@index([submissionId])
 }
 
 model Discussion {
-  id        String            @id @default(uuid())
-  userId    String
-  content   String
-  courseId  String?
-  lessonId  String?
-  likes     Int               @default(0)
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-  user      User              @relation(fields: [userId], references: [id])
-  course    Course?           @relation(fields: [courseId], references: [id])
-  lesson    Lesson?           @relation(fields: [lessonId], references: [id])
-  replies   DiscussionReply[]
+  id              String            @id @default(uuid())
+  userId          String
+  content         String
+  courseId        String?
+  lessonId        String?
+  likes           Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  user            User              @relation(fields: [userId], references: [id])
+  course          Course?           @relation(fields: [courseId], references: [id])
+  lesson          Lesson?           @relation(fields: [lessonId], references: [id])
+  replies         DiscussionReply[]
+  communityPoints CommunityPoint[]
 
   @@index([userId])
   @@index([courseId])
@@ -224,15 +248,16 @@ model Discussion {
 }
 
 model DiscussionReply {
-  id           String     @id @default(uuid())
-  userId       String
-  discussionId String
-  content      String
-  likes        Int        @default(0)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  user         User       @relation(fields: [userId], references: [id])
-  discussion   Discussion @relation(fields: [discussionId], references: [id])
+  id              String           @id @default(uuid())
+  userId          String
+  discussionId    String
+  content         String
+  likes           Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  user            User             @relation(fields: [userId], references: [id])
+  discussion      Discussion       @relation(fields: [discussionId], references: [id])
+  communityPoints CommunityPoint[]
 
   @@index([userId])
   @@index([discussionId])
@@ -289,4 +314,25 @@ model PasswordResetToken {
 
   @@index([userId])
   @@index([token])
+}
+
+model CommunityPoint {
+  id           String            @id @default(uuid())
+  recipientId  String
+  giverId      String
+  discussionId String?
+  replyId      String?
+  reason       String?
+  createdAt    DateTime          @default(now())
+  recipient    User              @relation("PointsReceived", fields: [recipientId], references: [id])
+  giver        User              @relation("PointsGiven", fields: [giverId], references: [id])
+  discussion   Discussion?       @relation(fields: [discussionId], references: [id])
+  reply        DiscussionReply?  @relation(fields: [replyId], references: [id])
+
+  @@unique([giverId, discussionId])
+  @@unique([giverId, replyId])
+  @@index([recipientId])
+  @@index([giverId])
+  @@index([discussionId])
+  @@index([replyId])
 }

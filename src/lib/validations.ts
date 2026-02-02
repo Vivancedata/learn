@@ -213,6 +213,64 @@ export const updateProjectSchema = z.object({
     .transform(sanitizeHtml)
     .optional()
     .nullable(),
+  isPublic: z.boolean().optional(),
+  description: z
+    .string()
+    .max(2000, 'Description must be less than 2000 characters')
+    .transform(sanitizeHtml)
+    .optional()
+    .nullable(),
+})
+
+// ============================================================================
+// Student Solutions Gallery Schemas
+// ============================================================================
+
+export const getSolutionsQuerySchema = z.object({
+  lessonId: z.string().uuid('Invalid lesson ID format'),
+  page: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 1))
+    .pipe(z.number().int().min(1, 'Page must be at least 1')),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 12))
+    .pipe(z.number().int().min(1).max(50, 'Limit must be between 1 and 50')),
+})
+
+export const toggleSolutionLikeSchema = z.object({
+  submissionId: z.string().uuid('Invalid submission ID'),
+})
+
+// ============================================================================
+// Community Points Schemas
+// ============================================================================
+
+export const givePointSchema = z.object({
+  recipientId: z.string().uuid('Invalid recipient user ID'),
+  discussionId: z.string().uuid('Invalid discussion ID').optional(),
+  replyId: z.string().uuid('Invalid reply ID').optional(),
+  reason: z
+    .string()
+    .max(200, 'Reason must be less than 200 characters')
+    .transform(sanitizeHtml)
+    .optional(),
+}).refine(
+  (data) => data.discussionId || data.replyId,
+  {
+    message: 'Either discussionId or replyId must be provided',
+  }
+).refine(
+  (data) => !(data.discussionId && data.replyId),
+  {
+    message: 'Cannot provide both discussionId and replyId',
+  }
+)
+
+export const userPointsParamsSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
 })
 
 // ============================================================================
@@ -251,6 +309,10 @@ export type UpdateDiscussionLikesInput = z.infer<typeof updateDiscussionLikesSch
 export type UpdateDiscussionInput = z.infer<typeof updateDiscussionSchema>
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>
 export type PaginationInput = z.infer<typeof paginationSchema>
+export type GetSolutionsQueryInput = z.infer<typeof getSolutionsQuerySchema>
+export type ToggleSolutionLikeInput = z.infer<typeof toggleSolutionLikeSchema>
+export type GivePointInput = z.infer<typeof givePointSchema>
+export type UserPointsParamsInput = z.infer<typeof userPointsParamsSchema>
 
 // ============================================================================
 // Validation Helper Functions

@@ -10,6 +10,7 @@ import remarkGfm from "remark-gfm"
 import { ProjectSubmission } from "@/components/project-submission"
 import { KnowledgeCheck } from "@/components/knowledge-check"
 import { CommunityDiscussions } from "@/components/community-discussions"
+import { StudentSolutions } from "@/components/student-solutions"
 import { getCourseById, getLessonById, parseKnowledgeCheck } from "@/lib/content"
 import type { Components } from "react-markdown"
 import { useParams } from "next/navigation"
@@ -305,10 +306,16 @@ function LessonContent() {
               )}
 
               {lesson.type === "project" && (
-                <ProjectSubmission 
-                  lessonId={lessonId}
-                  courseId={courseId}
-                />
+                <>
+                  <ProjectSubmission
+                    lessonId={lessonId}
+                    courseId={courseId}
+                  />
+                  <StudentSolutions
+                    lessonId={lessonId}
+                    courseId={courseId}
+                  />
+                </>
               )}
 
               <CommunityDiscussions

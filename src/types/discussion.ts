@@ -3,6 +3,7 @@ export interface ApiUser {
   id: string
   name: string | null
   email: string
+  points?: number
 }
 
 export interface ApiDiscussionReply {
@@ -32,6 +33,7 @@ export interface Discussion {
   id: string
   userId: string
   username: string
+  userPoints: number
   content: string
   createdAt: string
   likes: number
@@ -44,6 +46,7 @@ export interface DiscussionReply {
   content: string
   userId: string
   username: string
+  userPoints: number
   createdAt: string
   likes: number
 }
@@ -59,6 +62,7 @@ export function transformApiDiscussion(apiDiscussion: ApiDiscussion): Discussion
     id: apiDiscussion.id,
     userId: apiDiscussion.userId,
     username: apiDiscussion.user.name || apiDiscussion.user.email.split('@')[0],
+    userPoints: apiDiscussion.user.points || 0,
     content: apiDiscussion.content,
     createdAt: apiDiscussion.createdAt,
     likes: apiDiscussion.likes,
@@ -73,6 +77,7 @@ export function transformApiReply(apiReply: ApiDiscussionReply): DiscussionReply
     content: apiReply.content,
     userId: apiReply.userId,
     username: apiReply.user.name || apiReply.user.email.split('@')[0],
+    userPoints: apiReply.user.points || 0,
     createdAt: apiReply.createdAt,
     likes: apiReply.likes,
   }

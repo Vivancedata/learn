@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ProgressCircle } from "@/components/ui/progress-circle"
 import { ProgressSummary } from "@/components/progress-summary"
-import { ArrowRight, BookOpen, Award, Calendar, Clock, CheckCircle2 } from "lucide-react"
+import { HelperBadge } from "@/components/helper-badge"
+import { ArrowRight, BookOpen, Award, Calendar, Clock, CheckCircle2, Heart, Users } from "lucide-react"
 import { Course, Path } from "@/types/course"
 import { getAllCourses, getAllPaths } from "@/lib/content"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
@@ -35,11 +36,26 @@ interface UserProgress {
   }
 }
 
+interface UserPointsData {
+  user: {
+    id: string
+    name: string | null
+    totalPoints: number
+    pointsGiven: number
+    badge: {
+      level: string
+      name: string
+      minPoints: number
+    } | null
+  }
+}
+
 function DashboardContent() {
   const { user } = useAuth()
   const [courses, setCourses] = useState<Course[]>([])
   const [paths, setPaths] = useState<Path[]>([])
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null)
+  const [userPoints, setUserPoints] = useState<UserPointsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -48,14 +64,20 @@ function DashboardContent() {
       if (!user) return
 
       try {
-        // Load courses, paths, and user progress
-        const [coursesResult, pathsResult, progressResult] = await Promise.allSettled([
+        // Load courses, paths, user progress, and user points
+        const [coursesResult, pathsResult, progressResult, pointsResult] = await Promise.allSettled([
           getAllCourses(),
           getAllPaths(),
           fetch(`/api/progress/user/${user.id}`, {
             credentials: 'include', // Send HTTP-only auth cookie
           }).then(res => {
             if (!res.ok) throw new Error('Failed to fetch progress')
+            return res.json()
+          }),
+          fetch(`/api/points/user/${user.id}`, {
+            credentials: 'include',
+          }).then(res => {
+            if (!res.ok) throw new Error('Failed to fetch points')
             return res.json()
           }),
         ])
@@ -106,6 +128,14 @@ function DashboardContent() {
         } else {
           console.error('Failed to load progress:', progressResult.reason)
           // Don't set error here - progress is optional
+        }
+
+        // Handle points result
+        if (pointsResult.status === 'fulfilled') {
+          setUserPoints(pointsResult.value.data)
+        } else {
+          console.error('Failed to load points:', pointsResult.reason)
+          // Don't set error here - points is optional
         }
       } catch (error) {
         console.error('Error loading dashboard data:', error)
@@ -385,6 +415,109 @@ function DashboardContent() {
               </Card>
             )
           })}
+        </div>
+      </div>
+
+      {/* Community Helper Section */}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-semibold">Community Contributions</h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Heart className="h-5 w-5 text-pink-500" />
+                Community Points
+              </CardTitle>
+              <CardDescription>
+                Points earned by helping others in discussions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-primary">
+                    {userPoints?.user.totalPoints || 0}
+                  </div>
+                  <p className="text-sm text-muted-foreground">points received</p>
+                </div>
+                {userPoints?.user.badge && (
+                  <div className="flex justify-center">
+                    <HelperBadge
+                      points={userPoints.user.totalPoints}
+                      showPoints={false}
+                    />
+                  </div>
+                )}
+                <div className="text-center text-sm text-muted-foreground">
+                  You have given {userPoints?.user.pointsGiven || 0} points to others
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="text-xs text-muted-foreground">
+              Help others in discussions to earn points
+            </CardFooter>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-500" />
+                Helper Badges
+              </CardTitle>
+              <CardDescription>
+                Recognition for community contributions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className={`p-3 rounded-lg border ${(userPoints?.user.totalPoints || 0) >= 10 ? 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800' : 'opacity-50'}`}>
+                <div className="flex items-center gap-2">
+                  <HelperBadge points={10} showPoints={false} />
+                  <div>
+                    <div className="text-sm font-medium">Community Helper</div>
+                    <div className="text-xs text-muted-foreground">Earn 10+ points</div>
+                  </div>
+                </div>
+              </div>
+              <div className={`p-3 rounded-lg border ${(userPoints?.user.totalPoints || 0) >= 40 ? 'bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800' : 'opacity-50'}`}>
+                <div className="flex items-center gap-2">
+                  <HelperBadge points={40} showPoints={false} />
+                  <div>
+                    <div className="text-sm font-medium">Super Helper</div>
+                    <div className="text-xs text-muted-foreground">Earn 40+ points</div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>How It Works</CardTitle>
+              <CardDescription>
+                Earn points by helping the community
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Answer questions in course discussions</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Share helpful tips and resources</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>When others find your help valuable, they give you a point</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Earn badges as you help more people</span>
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
         </div>
       </div>
 

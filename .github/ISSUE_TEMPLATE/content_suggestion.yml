@@ -1,0 +1,143 @@
+name: Content Suggestion
+description: Suggest improvements to course content, lessons, or curriculum
+title: "[Content] "
+labels: ["content", "documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping us improve our AI and data science curriculum! Quality educational content is at the heart of what we do, and your feedback is invaluable.
+
+  - type: input
+    id: course-affected
+    attributes:
+      label: Course Affected
+      description: Which course does this suggestion relate to?
+      placeholder: e.g., Machine Learning Fundamentals, Deep Learning Specialization
+    validations:
+      required: true
+
+  - type: input
+    id: lesson-affected
+    attributes:
+      label: Lesson/Section Affected
+      description: Which specific lesson or section? Include the lesson number if applicable.
+      placeholder: e.g., Lesson 3 - Neural Network Basics, Section 2.1
+    validations:
+      required: false
+
+  - type: dropdown
+    id: suggestion-type
+    attributes:
+      label: Type of Suggestion
+      description: What kind of content change are you suggesting?
+      options:
+        - Typo or grammatical error
+        - Technical inaccuracy
+        - Clarification needed
+        - Missing information
+        - Outdated content
+        - Broken link or resource
+        - Code example issue
+        - New content suggestion
+        - Quiz/assessment improvement
+        - Project improvement
+        - Accessibility improvement
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: difficulty-level
+    attributes:
+      label: Content Difficulty Level
+      description: Does this affect content at a particular difficulty level?
+      options:
+        - Beginner content
+        - Intermediate content
+        - Advanced content
+        - All levels
+        - Not applicable
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-content
+    attributes:
+      label: Current Content
+      description: Quote or describe the current content that needs improvement. Include URLs if applicable.
+      placeholder: |
+        Paste the current text, code, or describe what currently exists.
+        Include the exact location (URL, line number, etc.) if possible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested-change
+    attributes:
+      label: Suggested Change
+      description: Provide your suggested improvement or correction.
+      placeholder: |
+        What should the content say or include instead?
+        For code examples, please provide the corrected version.
+    validations:
+      required: true
+
+  - type: textarea
+    id: learning-impact
+    attributes:
+      label: How This Improves Learning
+      description: Explain why this change would improve the learning experience.
+      placeholder: |
+        - Does it fix a misconception?
+        - Does it add missing context?
+        - Does it make a concept clearer?
+        - Does it update outdated information?
+        - Does it improve accessibility?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Suggested Priority
+      description: How urgent is this content issue?
+      options:
+        - High - Incorrect information that could mislead learners
+        - Medium - Unclear or incomplete information
+        - Low - Minor improvements or typos
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: Supporting References
+      description: Provide links to documentation, papers, or other sources that support your suggestion.
+      placeholder: |
+        - Official documentation links
+        - Research papers
+        - Industry best practices
+        - Other learning resources
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: verification
+    attributes:
+      label: Verification
+      description: Please confirm the following.
+      options:
+        - label: I have verified the accuracy of my suggested change (for technical corrections).
+          required: false
+        - label: I have searched existing issues to ensure this hasn't already been reported.
+          required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other information that would help us evaluate and implement this suggestion.
+      placeholder: Screenshots, related issues, or additional notes...
+    validations:
+      required: false

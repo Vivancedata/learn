@@ -1,0 +1,187 @@
+name: Exercise Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'exercises/**'
+      - '.github/workflows/test.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'exercises/**'
+      - '.github/workflows/test.yml'
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: exercises
+
+jobs:
+  test-python:
+    name: Python Exercises
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+
+      - name: Run Python exercise tests (solutions)
+        run: |
+          # Copy solutions to exercise files for testing
+          for dir in python-basics/exercises/*/; do
+            if [ -f "${dir}solution.py" ]; then
+              cp "${dir}solution.py" "${dir}exercise.py"
+            fi
+          done
+          pytest python-basics/ -v --tb=short
+
+      - name: Run SQL exercise tests (solutions)
+        run: |
+          # Copy solutions to exercise files for testing
+          for dir in sql-fundamentals/exercises/*/; do
+            if [ -f "${dir}solution.sql" ]; then
+              cp "${dir}solution.sql" "${dir}exercise.sql"
+            fi
+          done
+          pytest sql-fundamentals/ -v --tb=short
+
+  test-structure:
+    name: Validate Exercise Structure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Python exercise structure
+        run: |
+          echo "Checking Python exercises structure..."
+          for exercise in python-basics/exercises/*/; do
+            exercise_name=$(basename "$exercise")
+            echo "Checking: $exercise_name"
+
+            # Check required files exist
+            [ -f "${exercise}README.md" ] || (echo "Missing README.md in $exercise_name" && exit 1)
+            [ -f "${exercise}exercise.py" ] || (echo "Missing exercise.py in $exercise_name" && exit 1)
+            [ -f "${exercise}test_exercise.py" ] || (echo "Missing test_exercise.py in $exercise_name" && exit 1)
+            [ -f "${exercise}solution.py" ] || (echo "Missing solution.py in $exercise_name" && exit 1)
+
+            echo "  - All required files present"
+          done
+          echo "Python exercises structure validated!"
+
+      - name: Validate SQL exercise structure
+        run: |
+          echo "Checking SQL exercises structure..."
+          for exercise in sql-fundamentals/exercises/*/; do
+            exercise_name=$(basename "$exercise")
+            echo "Checking: $exercise_name"
+
+            # Check required files exist
+            [ -f "${exercise}README.md" ] || (echo "Missing README.md in $exercise_name" && exit 1)
+            [ -f "${exercise}exercise.sql" ] || (echo "Missing exercise.sql in $exercise_name" && exit 1)
+            [ -f "${exercise}test_queries.py" ] || (echo "Missing test_queries.py in $exercise_name" && exit 1)
+            [ -f "${exercise}solution.sql" ] || (echo "Missing solution.sql in $exercise_name" && exit 1)
+
+            echo "  - All required files present"
+          done
+          echo "SQL exercises structure validated!"
+
+      - name: Check for TODO markers in solutions
+        run: |
+          echo "Checking that solutions don't contain TODO markers..."
+          if grep -r "TODO" python-basics/exercises/*/solution.py 2>/dev/null; then
+            echo "Error: Found TODO markers in Python solutions"
+            exit 1
+          fi
+          if grep -r "TODO" sql-fundamentals/exercises/*/solution.sql 2>/dev/null; then
+            echo "Error: Found TODO markers in SQL solutions"
+            exit 1
+          fi
+          echo "No TODO markers found in solutions!"
+
+  lint:
+    name: Lint Exercise Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install linting tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+
+      - name: Run Ruff linter on test files
+        run: |
+          ruff check python-basics/exercises/*/test_exercise.py sql-fundamentals/exercises/*/test_queries.py --select=E,W,F
+        continue-on-error: true  # Don't fail CI on lint warnings
+
+      - name: Check solution files syntax
+        run: |
+          python -m py_compile python-basics/exercises/*/solution.py
+          echo "Python solutions have valid syntax"
+
+  coverage:
+    name: Test Coverage Report
+    runs-on: ubuntu-latest
+    needs: test-python
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+
+      - name: Prepare solutions for coverage test
+        run: |
+          for dir in python-basics/exercises/*/; do
+            if [ -f "${dir}solution.py" ]; then
+              cp "${dir}solution.py" "${dir}exercise.py"
+            fi
+          done
+          for dir in sql-fundamentals/exercises/*/; do
+            if [ -f "${dir}solution.sql" ]; then
+              cp "${dir}solution.sql" "${dir}exercise.sql"
+            fi
+          done
+
+      - name: Run tests with coverage
+        run: |
+          pytest . --cov=. --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        with:
+          files: exercises/coverage.xml
+          fail_ci_if_error: false
+        continue-on-error: true

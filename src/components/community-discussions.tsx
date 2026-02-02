@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Avatar } from "@/components/ui/avatar"
 import { MessageSquare, ThumbsUp, Reply, MoreHorizontal, Loader2, AlertCircle } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
+import { GivePointButton } from "@/components/give-point-button"
+import { PointsBadge } from "@/components/helper-badge"
 
 import {
   CommunityDiscussionsProps,
@@ -242,7 +244,10 @@ export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussion
                         </div>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{discussion.username}</div>
+                        <div className="font-medium flex items-center gap-2">
+                          {discussion.username}
+                          <PointsBadge points={discussion.userPoints} />
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           {formatDate(discussion.createdAt)}
                         </div>
@@ -252,19 +257,26 @@ export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussion
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </div>
-                  
+
                   <p className="text-sm mb-3">{discussion.content}</p>
-                  
+
                   <div className="flex items-center gap-4">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="flex items-center gap-1 h-auto py-1"
                       onClick={() => handleLike(discussion.id)}
                     >
                       <ThumbsUp className="h-4 w-4" />
                       <span className="text-xs">{discussion.likes}</span>
                     </Button>
+
+                    <GivePointButton
+                      recipientId={discussion.userId}
+                      recipientName={discussion.username}
+                      discussionId={discussion.id}
+                      onPointGiven={fetchDiscussions}
+                    />
                     
                     <Button 
                       variant="ghost" 
@@ -347,26 +359,37 @@ export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussion
                               </div>
                             </Avatar>
                             <div>
-                              <div className="font-medium text-sm">{reply.username}</div>
+                              <div className="font-medium text-sm flex items-center gap-2">
+                                {reply.username}
+                                <PointsBadge points={reply.userPoints} />
+                              </div>
                               <div className="text-xs text-muted-foreground">
                                 {formatDate(reply.createdAt)}
                               </div>
                             </div>
                           </div>
                         </div>
-                        
+
                         <p className="text-sm mb-2">{reply.content}</p>
-                        
+
                         <div className="flex items-center gap-4">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className="flex items-center gap-1 h-auto py-1"
                             onClick={() => handleLike(reply.id)}
                           >
                             <ThumbsUp className="h-3 w-3" />
                             <span className="text-xs">{reply.likes}</span>
                           </Button>
+
+                          <GivePointButton
+                            recipientId={reply.userId}
+                            recipientName={reply.username}
+                            replyId={reply.id}
+                            onPointGiven={fetchDiscussions}
+                            size="sm"
+                          />
                         </div>
                       </div>
                     ))}

@@ -13,11 +13,13 @@ import { requireAuth } from '@/lib/auth'
 
 /**
  * PATCH /api/projects/[id]
- * Update a project submission (users can only update their own pending projects)
+ * Update a project submission (users can only update their own projects)
  * @param id - Project submission ID
- * @body githubUrl - Optional updated GitHub URL
- * @body liveUrl - Optional updated live URL
- * @body notes - Optional updated notes
+ * @body githubUrl - Optional updated GitHub URL (pending only)
+ * @body liveUrl - Optional updated live URL (pending only)
+ * @body notes - Optional updated notes (pending only)
+ * @body isPublic - Optional visibility setting (approved only)
+ * @body description - Optional public description (approved only)
  * @returns Updated project submission
  */
 export async function PATCH(
@@ -53,10 +55,26 @@ export async function PATCH(
       throw new ForbiddenError('You can only update your own project submissions')
     }
 
-    // BUSINESS RULE: Can only update pending submissions
-    if (submission.status !== 'pending') {
+    // Determine which fields can be updated based on submission status
+    const isUpdatingCoreFields =
+      body.githubUrl !== undefined ||
+      body.liveUrl !== undefined ||
+      body.notes !== undefined
+
+    const isUpdatingVisibilityFields =
+      body.isPublic !== undefined || body.description !== undefined
+
+    // BUSINESS RULE: Core fields (githubUrl, liveUrl, notes) can only be updated on pending submissions
+    if (isUpdatingCoreFields && submission.status !== 'pending') {
       throw new ValidationError(
-        `Cannot update ${submission.status} submissions. Only pending submissions can be updated.`
+        `Cannot update project details on ${submission.status} submissions. Only pending submissions can have their details updated.`
+      )
+    }
+
+    // BUSINESS RULE: Visibility fields can only be updated on approved submissions
+    if (isUpdatingVisibilityFields && submission.status !== 'approved') {
+      throw new ValidationError(
+        'You can only share approved projects publicly. Wait for your project to be approved first.'
       )
     }
 
@@ -66,10 +84,13 @@ export async function PATCH(
       githubUrl?: string
       liveUrl?: string | null
       notes?: string | null
+      isPublic?: boolean
+      description?: string | null
     } = {
       updatedAt: new Date(),
     }
 
+    // Core fields (pending only)
     if (body.githubUrl !== undefined) {
       updateData.githubUrl = body.githubUrl
     }
@@ -80,6 +101,15 @@ export async function PATCH(
 
     if (body.notes !== undefined) {
       updateData.notes = body.notes || null
+    }
+
+    // Visibility fields (approved only)
+    if (body.isPublic !== undefined) {
+      updateData.isPublic = body.isPublic
+    }
+
+    if (body.description !== undefined) {
+      updateData.description = body.description || null
     }
 
     // Update the project submission
@@ -102,6 +132,9 @@ export async function PATCH(
     console.log('Submission ID:', id)
     console.log('User:', user.email)
     console.log('Lesson:', updatedSubmission.lesson.title)
+    if (body.isPublic !== undefined) {
+      console.log('Public:', updatedSubmission.isPublic)
+    }
     console.log('=================================')
 
     return apiSuccess({
