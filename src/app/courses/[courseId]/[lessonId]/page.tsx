@@ -10,53 +10,19 @@ import remarkGfm from "remark-gfm"
 import { ProjectSubmission } from "@/components/project-submission"
 import { KnowledgeCheck } from "@/components/knowledge-check"
 import { CommunityDiscussions } from "@/components/community-discussions"
+import { StudentSolutions } from "@/components/student-solutions"
 import { getCourseById, getLessonById, parseKnowledgeCheck } from "@/lib/content"
 import type { Components } from "react-markdown"
 import { useParams } from "next/navigation"
 import { Course, Lesson } from "@/types/course"
 import { useAuth } from "@/hooks/useAuth"
 import { PageSpinner } from "@/components/ui/spinner"
+import { ProtectedRoute } from "@/components/ProtectedRoute"
 
 interface TableOfContentsItem {
   id: string
   title: string
   level: number
-}
-
-interface DiscussionReply {
-  id: string
-  userId: string
-  user: { name: string | null; email: string }
-  content: string
-  createdAt: string
-  likes: number
-}
-
-interface DiscussionData {
-  id: string
-  userId: string
-  user: { name: string | null; email: string }
-  content: string
-  createdAt: string
-  likes: number
-  replies?: DiscussionReply[]
-}
-
-interface TransformedDiscussion {
-  id: string
-  userId: string
-  username: string
-  content: string
-  createdAt: string
-  likes: number
-  replies: {
-    id: string
-    userId: string
-    username: string
-    content: string
-    createdAt: string
-    likes: number
-  }[]
 }
 
 interface CourseProgressData {
@@ -91,7 +57,7 @@ const markdownComponents: Components = {
   }
 }
 
-export default function LessonPage() {
+function LessonContent() {
   const { user } = useAuth()
   const params = useParams()
   const courseId = params.courseId as string
@@ -102,18 +68,16 @@ export default function LessonPage() {
   const [tableOfContents, setTableOfContents] = useState<TableOfContentsItem[]>([])
   const [course, setCourse] = useState<Course | null>(null)
   const [lesson, setLesson] = useState<Lesson | null>(null)
-  const [discussions, setDiscussions] = useState<TransformedDiscussion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadData() {
       try {
-        // Prepare promises
-        const promises = [
+        // Prepare promises for course and lesson data
+        const promises: Promise<unknown>[] = [
           getCourseById(courseId),
           getLessonById(courseId, lessonId),
-          fetch(`/api/discussions?lessonId=${lessonId}`).then(res => res.json()),
         ]
 
         // If user is logged in, also fetch their progress
@@ -128,20 +92,20 @@ export default function LessonPage() {
           }
         }
 
-        // Get course, lesson, discussions, and optionally progress data
+        // Get course, lesson, and optionally progress data
         const results = await Promise.allSettled(promises)
-        const [courseResult, lessonResult, discussionsResult, progressResult] = results
+        const [courseResult, lessonResult, progressResult] = results
 
         // Handle course result
         if (courseResult.status === 'fulfilled') {
-          setCourse(courseResult.value)
+          setCourse(courseResult.value as Course)
         } else {
           setError('Failed to load course information')
         }
 
         // Handle lesson result
         if (lessonResult.status === 'fulfilled') {
-          const lessonData = lessonResult.value
+          const lessonData = lessonResult.value as Lesson
           setLesson(lessonData)
 
           if (lessonData) {
@@ -156,31 +120,9 @@ export default function LessonPage() {
           setError('Failed to load lesson content')
         }
 
-        // Handle discussions result
-        if (discussionsResult.status === 'fulfilled') {
-          // Transform backend data to match component expectations
-          const transformedDiscussions = discussionsResult.value.data?.map((d: DiscussionData) => ({
-            id: d.id,
-            userId: d.userId,
-            username: d.user.name || d.user.email.split('@')[0],
-            content: d.content,
-            createdAt: d.createdAt,
-            likes: d.likes,
-            replies: d.replies?.map((r: DiscussionReply) => ({
-              id: r.id,
-              userId: r.userId,
-              username: r.user.name || r.user.email.split('@')[0],
-              content: r.content,
-              createdAt: r.createdAt,
-              likes: r.likes,
-            })) || [],
-          })) || []
-          setDiscussions(transformedDiscussions)
-        }
-
         // Handle progress result - check if this lesson is completed
         if (progressResult && progressResult.status === 'fulfilled') {
-          const userProgress = progressResult.value
+          const userProgress = progressResult.value as { courses?: CourseProgressData[] }
           // Find the course progress that contains this lesson
           const courseProgress = userProgress.courses?.find((c: CourseProgressData) => c.courseId === courseId)
           if (courseProgress) {
@@ -364,14 +306,19 @@ export default function LessonPage() {
               )}
 
               {lesson.type === "project" && (
-                <ProjectSubmission 
-                  lessonId={lessonId}
-                  courseId={courseId}
-                />
+                <>
+                  <ProjectSubmission
+                    lessonId={lessonId}
+                    courseId={courseId}
+                  />
+                  <StudentSolutions
+                    lessonId={lessonId}
+                    courseId={courseId}
+                  />
+                </>
               )}
 
-              <CommunityDiscussions 
-                discussions={discussions}
+              <CommunityDiscussions
                 courseId={courseId}
                 lessonId={lessonId}
               />
@@ -449,5 +396,13 @@ export default function LessonPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LessonPage() {
+  return (
+    <ProtectedRoute>
+      <LessonContent />
+    </ProtectedRoute>
   )
 }

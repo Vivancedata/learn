@@ -1,0 +1,56 @@
+# Content Linting Workflow
+# Validates markdown content for consistency and quality
+# Only runs when content files are modified
+
+name: Content Lint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'content/**/*.md'
+      - '.markdownlint.json'
+      - '.markdownlintignore'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'content/**/*.md'
+      - '.markdownlint.json'
+      - '.markdownlintignore'
+
+jobs:
+  lint-content:
+    name: Lint Markdown Content
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run markdownlint
+        run: npm run lint:content
+        continue-on-error: false
+
+      - name: Lint failure message
+        if: failure()
+        run: |
+          echo "::error::Markdown linting failed. Please fix the issues listed above."
+          echo ""
+          echo "Common fixes:"
+          echo "  - Ensure consistent heading levels (no skipping from ## to ####)"
+          echo "  - Use dashes (-) for unordered lists"
+          echo "  - Add language identifier to fenced code blocks (\`\`\`python)"
+          echo "  - Remove trailing whitespace"
+          echo "  - Ensure blank lines around headings and code blocks"
+          echo ""
+          echo "Run 'npm run lint:content' locally to see all issues."
+          exit 1

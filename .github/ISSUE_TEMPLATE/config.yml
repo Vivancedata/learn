@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: General Questions
+    url: https://github.com/vivancedata/learn/discussions/categories/q-a
+    about: Ask questions and get help from the community in GitHub Discussions.
+  - name: Course Recommendations
+    url: https://github.com/vivancedata/learn/discussions/categories/course-recommendations
+    about: Discuss which courses to take or suggest new course topics.
+  - name: Study Groups
+    url: https://github.com/vivancedata/learn/discussions/categories/study-groups
+    about: Find or create study groups for collaborative learning.
+  - name: Documentation
+    url: https://github.com/vivancedata/learn/wiki
+    about: Check the wiki for guides, FAQs, and additional resources.
+  - name: Security Vulnerabilities
+    url: https://github.com/vivancedata/learn/security/advisories/new
+    about: Report security vulnerabilities privately through GitHub Security Advisories.

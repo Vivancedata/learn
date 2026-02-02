@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { verifyToken } from '@/lib/auth'
+import { getUserId } from '@/lib/auth'
 import { handleApiError, UnauthorizedError } from '@/lib/api-errors'
 
 interface UserProgressResponse {
@@ -28,15 +28,10 @@ export async function GET(
   context: { params: Promise<{ userId: string }> }
 ) {
   try {
-    // Verify authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '')
-    if (!token) {
+    // Get authenticated user ID from middleware-injected headers
+    const authenticatedUserId = getUserId(request)
+    if (!authenticatedUserId) {
       throw new UnauthorizedError('Authentication required')
-    }
-
-    const decoded = await verifyToken(token)
-    if (!decoded) {
-      throw new UnauthorizedError('Invalid token')
     }
 
     // Get userId from params
@@ -44,7 +39,7 @@ export async function GET(
     const { userId } = params
 
     // Authorization check: users can only access their own progress
-    if (decoded.userId !== userId) {
+    if (authenticatedUserId !== userId) {
       throw new UnauthorizedError('You can only access your own progress')
     }
 

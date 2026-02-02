@@ -1,0 +1,109 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for the VivanceData Learning Platform
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a new feature! Your ideas help us improve the learning experience for everyone. Please provide as much detail as possible.
+
+  - type: textarea
+    id: problem-description
+    attributes:
+      label: Problem Description
+      description: Describe the problem or limitation you're experiencing. What frustrates you or could be improved?
+      placeholder: |
+        A clear and concise description of what the problem is.
+        Example: "I find it difficult to track my progress across multiple courses because..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see implemented.
+      placeholder: |
+        A clear and concise description of what you want to happen.
+        Be as specific as possible about the functionality you're requesting.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature-area
+    attributes:
+      label: Feature Area
+      description: Which area of the platform does this feature relate to?
+      options:
+        - Course content and curriculum
+        - User interface and navigation
+        - Progress tracking and analytics
+        - Quizzes and assessments
+        - Project submissions
+        - Community and discussions
+        - User profile and settings
+        - Authentication and accounts
+        - Certificates and achievements
+        - Accessibility
+        - Mobile experience
+        - Performance
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user-impact
+    attributes:
+      label: User Impact
+      description: How many users do you think would benefit from this feature?
+      options:
+        - All users
+        - Most users
+        - Some users (specific use case)
+        - Primarily new learners
+        - Primarily advanced learners
+        - Instructors/content creators
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or features you've considered.
+      placeholder: |
+        Have you thought of other ways to solve this problem?
+        Are there workarounds you currently use?
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples or References
+      description: Are there examples from other platforms or tools that implement something similar?
+      placeholder: |
+        Links to similar features on other platforms, mockups, or detailed examples that help illustrate your idea.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, or mockups about the feature request here.
+      placeholder: Any additional information that helps explain your feature request...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      description: Please confirm the following before submitting.
+      options:
+        - label: I have searched existing issues to ensure this feature has not already been requested.
+          required: true
+        - label: I have provided a clear problem statement and proposed solution.
+          required: true

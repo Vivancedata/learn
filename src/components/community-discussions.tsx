@@ -1,24 +1,67 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar } from "@/components/ui/avatar"
 import { MessageSquare, ThumbsUp, Reply, MoreHorizontal, Loader2, AlertCircle } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
+import { GivePointButton } from "@/components/give-point-button"
+import { PointsBadge } from "@/components/helper-badge"
 
-import { CommunityDiscussionsProps } from "@/types/discussion"
+import {
+  CommunityDiscussionsProps,
+  Discussion,
+  ApiDiscussion,
+  transformApiDiscussion,
+} from "@/types/discussion"
 
-export function CommunityDiscussions({ discussions, courseId, lessonId }: CommunityDiscussionsProps) {
+export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussionsProps) {
   const { user } = useAuth()
+  const [discussions, setDiscussions] = useState<Discussion[]>([])
   const [newDiscussion, setNewDiscussion] = useState("")
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [replyContent, setReplyContent] = useState("")
   const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({})
+  const [initialLoading, setInitialLoading] = useState(true)
   const [loading, setLoading] = useState(false)
   const [replyLoading, setReplyLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Fetch discussions from API
+  const fetchDiscussions = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (courseId) params.append('courseId', courseId)
+      if (lessonId) params.append('lessonId', lessonId)
+
+      const response = await fetch(`/api/discussions?${params.toString()}`, {
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch discussions')
+      }
+
+      const data = await response.json()
+      const apiDiscussions: ApiDiscussion[] = data.data?.discussions || []
+      const transformedDiscussions = apiDiscussions.map(transformApiDiscussion)
+      setDiscussions(transformedDiscussions)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load discussions')
+    }
+  }, [courseId, lessonId])
+
+  // Fetch discussions on mount and when courseId/lessonId changes
+  useEffect(() => {
+    const loadDiscussions = async () => {
+      setInitialLoading(true)
+      await fetchDiscussions()
+      setInitialLoading(false)
+    }
+    loadDiscussions()
+  }, [fetchDiscussions])
 
   const handlePostDiscussion = async () => {
     if (!newDiscussion.trim()) return
@@ -50,11 +93,9 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
         throw new Error(errorData.message || 'Failed to post discussion')
       }
 
-      // Clear the input and refresh discussions
+      // Clear the input and refresh discussions from the API
       setNewDiscussion("")
-
-      // In a real app, we would refresh the discussions list here
-      // or update it optimistically with the new discussion
+      await fetchDiscussions()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to post discussion')
     } finally {
@@ -91,11 +132,11 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
         throw new Error(errorData.message || 'Failed to post reply')
       }
 
-      // Clear the input and close the reply form
+      // Clear the input, close the reply form, and refresh discussions
       setReplyContent("")
       setReplyingTo(null)
-
-      // In a real app, we would refresh the discussions list here
+      setExpandedReplies(prev => ({ ...prev, [discussionId]: true }))
+      await fetchDiscussions()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to post reply')
     } finally {
@@ -157,7 +198,7 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
       
       <CardContent className="space-y-6">
         {error && (
-          <div className="bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-md flex items-start gap-2">
+          <div className="bg-destructive/10 text-destructive p-3 rounded-md flex items-start gap-2">
             <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
             <p className="text-sm">{error}</p>
           </div>
@@ -186,7 +227,12 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
         </div>
         
         <div className="space-y-6">
-          {discussions.length > 0 ? (
+          {initialLoading ? (
+            <div className="text-center py-6">
+              <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin text-muted-foreground" />
+              <p className="text-muted-foreground">Loading discussions...</p>
+            </div>
+          ) : discussions.length > 0 ? (
             discussions.map(discussion => (
               <div key={discussion.id} className="space-y-4">
                 <div className="bg-muted/40 p-4 rounded-lg">
@@ -198,7 +244,10 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
                         </div>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{discussion.username}</div>
+                        <div className="font-medium flex items-center gap-2">
+                          {discussion.username}
+                          <PointsBadge points={discussion.userPoints} />
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           {formatDate(discussion.createdAt)}
                         </div>
@@ -208,19 +257,26 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </div>
-                  
+
                   <p className="text-sm mb-3">{discussion.content}</p>
-                  
+
                   <div className="flex items-center gap-4">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="flex items-center gap-1 h-auto py-1"
                       onClick={() => handleLike(discussion.id)}
                     >
                       <ThumbsUp className="h-4 w-4" />
                       <span className="text-xs">{discussion.likes}</span>
                     </Button>
+
+                    <GivePointButton
+                      recipientId={discussion.userId}
+                      recipientName={discussion.username}
+                      discussionId={discussion.id}
+                      onPointGiven={fetchDiscussions}
+                    />
                     
                     <Button 
                       variant="ghost" 
@@ -303,26 +359,37 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
                               </div>
                             </Avatar>
                             <div>
-                              <div className="font-medium text-sm">{reply.username}</div>
+                              <div className="font-medium text-sm flex items-center gap-2">
+                                {reply.username}
+                                <PointsBadge points={reply.userPoints} />
+                              </div>
                               <div className="text-xs text-muted-foreground">
                                 {formatDate(reply.createdAt)}
                               </div>
                             </div>
                           </div>
                         </div>
-                        
+
                         <p className="text-sm mb-2">{reply.content}</p>
-                        
+
                         <div className="flex items-center gap-4">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className="flex items-center gap-1 h-auto py-1"
                             onClick={() => handleLike(reply.id)}
                           >
                             <ThumbsUp className="h-3 w-3" />
                             <span className="text-xs">{reply.likes}</span>
                           </Button>
+
+                          <GivePointButton
+                            recipientId={reply.userId}
+                            recipientName={reply.username}
+                            replyId={reply.id}
+                            onPointGiven={fetchDiscussions}
+                            size="sm"
+                          />
                         </div>
                       </div>
                     ))}

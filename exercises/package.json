@@ -1,0 +1,42 @@
+{
+  "name": "vivancedata-exercises",
+  "version": "1.0.0",
+  "description": "Hands-on coding exercises for VivanceData Learning Platform",
+  "private": true,
+  "scripts": {
+    "test": "pytest . -v",
+    "test:python": "pytest python-basics/ -v",
+    "test:sql": "pytest sql-fundamentals/ -v",
+    "test:python:01": "pytest python-basics/exercises/01-variables/test_variables.py -v",
+    "test:python:02": "pytest python-basics/exercises/02-functions/test_functions.py -v",
+    "test:python:03": "pytest python-basics/exercises/03-data-structures/test_data_structures.py -v",
+    "test:sql:01": "pytest sql-fundamentals/exercises/01-select-basics/test_select_basics.py -v",
+    "test:sql:02": "pytest sql-fundamentals/exercises/02-filtering/test_filtering.py -v",
+    "test:sql:03": "pytest sql-fundamentals/exercises/03-joins/test_joins.py -v",
+    "test:coverage": "pytest . --cov=. --cov-report=html --cov-report=term-missing",
+    "test:watch": "pytest-watch -- -v",
+    "lint": "echo 'Python linting not configured - use flake8 or ruff'",
+    "format": "echo 'Python formatting not configured - use black or ruff format'"
+  },
+  "keywords": [
+    "python",
+    "sql",
+    "exercises",
+    "learning",
+    "data-science",
+    "ai"
+  ],
+  "author": "VivanceData",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vivancedata/exercises"
+  },
+  "bugs": {
+    "url": "https://github.com/vivancedata/exercises/issues"
+  },
+  "homepage": "https://github.com/vivancedata/exercises#readme"
+}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,26 +13,53 @@ import { AlertCircle, Loader2 } from "lucide-react"
 
 export default function SignInPage() {
   const router = useRouter()
-  const { login, loading } = useAuth()
+  const { login, user } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Redirect to dashboard if user is already logged in
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard")
+    }
+  }, [user, router])
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
     // Client-side validation
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       setError("Please fill in all fields")
       return
     }
 
+    if (!validateEmail(email.trim())) {
+      setError("Please enter a valid email address")
+      return
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters")
+      return
+    }
+
+    setIsSubmitting(true)
+
     try {
-      await login(email, password)
+      await login(email.trim(), password)
       router.push("/dashboard")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to sign in")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -48,8 +75,8 @@ export default function SignInPage() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
+              <Alert variant="destructive" id="error-message" role="alert">
+                <AlertCircle className="h-4 w-4" aria-hidden="true" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -64,7 +91,9 @@ export default function SignInPage() {
                 placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
+                disabled={isSubmitting}
+                autoComplete="email"
+                aria-describedby={error ? "error-message" : undefined}
                 required
               />
             </div>
@@ -79,17 +108,18 @@ export default function SignInPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
+                disabled={isSubmitting}
+                autoComplete="current-password"
                 required
               />
             </div>
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-2">
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                   Signing in...
                 </>
               ) : (

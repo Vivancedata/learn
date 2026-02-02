@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
         name: true,
         password: true,
         role: true,
+        githubUsername: true,
       },
     })
 
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
           id: user.id,
           email: user.email,
           name: user.name,
+          githubUsername: user.githubUsername,
         },
         token,
         message: 'Sign in successful',
