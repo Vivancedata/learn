@@ -1,22 +1,25 @@
-"use client"
+'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react'
 
 export interface User {
   id: string
   email: string
   name?: string
   githubUsername?: string
+  createdAt?: string
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null
   loading: boolean
   error: string | null
+  isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
   signup: (email: string, password: string, name?: string, githubUsername?: string) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
+  clearError: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -25,6 +28,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Computed property for authentication status
+  const isAuthenticated = useMemo(() => !!user, [user])
+
+  // Clear error state
+  const clearError = useCallback(() => {
+    setError(null)
+  }, [])
 
   const refreshUser = useCallback(async () => {
     try {
@@ -134,18 +145,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const contextValue = useMemo(
+    () => ({
+      user,
+      loading,
+      error,
+      isAuthenticated,
+      login,
+      signup,
+      logout,
+      refreshUser,
+      clearError,
+    }),
+    [user, loading, error, isAuthenticated, refreshUser, clearError]
+  )
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        error,
-        login,
-        signup,
-        logout,
-        refreshUser,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   )

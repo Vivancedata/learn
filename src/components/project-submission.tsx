@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
@@ -12,16 +12,67 @@ import { useAuth } from "@/hooks/useAuth"
 
 import { ProjectSubmissionProps } from "@/types/project-submission"
 
+// GitHub URL regex pattern matching the backend validation
+const GITHUB_URL_REGEX = /^https?:\/\/(www\.)?github\.com\/[\w-]+\/[\w.-]+\/?$/
+
 export function ProjectSubmission({ lessonId, courseId: _courseId, requirements = [] }: ProjectSubmissionProps) {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [githubUrl, setGithubUrl] = useState("")
   const [liveUrl, setLiveUrl] = useState("")
   const [notes, setNotes] = useState("")
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [fetchingExisting, setFetchingExisting] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [submissionStatus, setSubmissionStatus] = useState<"pending" | "approved" | "rejected" | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [submissionId, setSubmissionId] = useState<string | null>(null)
+
+  // Fetch existing submission for this lesson on mount
+  const fetchExistingSubmission = useCallback(async () => {
+    if (!user?.id || !lessonId) {
+      setFetchingExisting(false)
+      return
+    }
+
+    try {
+      setFetchingExisting(true)
+      const response = await fetch(
+        `/api/projects?userId=${encodeURIComponent(user.id)}&lessonId=${encodeURIComponent(lessonId)}`,
+        {
+          credentials: 'include',
+        }
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        const submissions = data.data
+
+        if (submissions && submissions.length > 0) {
+          const existingSubmission = submissions[0]
+          setGithubUrl(existingSubmission.githubUrl || "")
+          setLiveUrl(existingSubmission.liveUrl || "")
+          setNotes(existingSubmission.notes || "")
+          setSubmissionStatus(existingSubmission.status)
+          setFeedback(existingSubmission.feedback || null)
+          setSubmissionId(existingSubmission.id)
+          setSubmitted(true)
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch existing submission:', err)
+    } finally {
+      setFetchingExisting(false)
+    }
+  }, [user?.id, lessonId])
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      fetchExistingSubmission()
+    } else if (!authLoading && !user) {
+      setFetchingExisting(false)
+    }
+  }, [authLoading, user, fetchExistingSubmission])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -32,9 +83,15 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
       return
     }
 
-    // Validate GitHub URL
-    if (!githubUrl.includes("github.com")) {
-      setError("Please enter a valid GitHub repository URL")
+    // Validate GitHub URL using the same pattern as the backend
+    if (!GITHUB_URL_REGEX.test(githubUrl)) {
+      setError("Please enter a valid GitHub repository URL (e.g., https://github.com/username/repo)")
+      return
+    }
+
+    // Validate live URL if provided
+    if (liveUrl && !isValidUrl(liveUrl)) {
+      setError("Please enter a valid URL for the live demo")
       return
     }
 
@@ -68,10 +125,21 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
       setSubmitted(true)
       setSubmissionStatus(data.data.status)
       setFeedback(data.data.feedback || null)
+      setSubmissionId(data.data.submissionId)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit project')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Helper function to validate URLs
+  const isValidUrl = (url: string): boolean => {
+    try {
+      new URL(url)
+      return true
+    } catch {
+      return false
     }
   }
 
@@ -91,15 +159,78 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
   
   const projectRequirements = requirements.length > 0 ? requirements : defaultRequirements
 
+  // Handle switching to edit mode
+  const handleEditSubmission = () => {
+    setSubmitted(false)
+    setError(null)
+  }
+
+  // Show loading state while checking for existing submission or auth
+  if (authLoading || fetchingExisting) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Github className="h-5 w-5" />
+            Project Submission
+          </CardTitle>
+          <CardDescription>
+            Submit your project for review and feedback
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-muted-foreground">Loading...</span>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Show login prompt if user is not authenticated
+  if (!user) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Github className="h-5 w-5" />
+            Project Submission
+          </CardTitle>
+          <CardDescription>
+            Submit your project for review and feedback
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <AlertCircle className="h-8 w-8 text-muted-foreground mb-2" />
+            <p className="text-muted-foreground">
+              Please sign in to submit your project.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Github className="h-5 w-5" />
           Project Submission
+          {submissionId && (
+            <span className="text-xs font-normal text-muted-foreground">
+              (Resubmission)
+            </span>
+          )}
         </CardTitle>
         <CardDescription>
-          Submit your project for review and feedback
+          {submitted
+            ? "Your project has been submitted for review"
+            : submissionId
+              ? "Update your project submission"
+              : "Submit your project for review and feedback"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -218,13 +349,34 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
       <CardFooter className="flex justify-between">
         {!submitted ? (
           <>
-            <Button variant="outline" type="button" disabled={loading}>Cancel</Button>
-            <Button type="button" onClick={handleButtonSubmit} disabled={loading}>
+            <Button
+              variant="outline"
+              type="button"
+              disabled={loading}
+              onClick={() => {
+                // Reset form if user cancels
+                if (submissionId) {
+                  // If editing, go back to submitted view
+                  setSubmitted(true)
+                } else {
+                  // If new submission, clear form
+                  setGithubUrl("")
+                  setLiveUrl("")
+                  setNotes("")
+                  setError(null)
+                }
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleButtonSubmit} disabled={loading || !githubUrl}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Submitting...
                 </>
+              ) : submissionId ? (
+                'Update Submission'
               ) : (
                 'Submit Project'
               )}
@@ -232,8 +384,10 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
           </>
         ) : (
           <>
-            <Button variant="outline" onClick={() => setSubmitted(false)}>Edit Submission</Button>
-            <Button variant="outline">Request Peer Review</Button>
+            <Button variant="outline" onClick={handleEditSubmission}>
+              {submissionStatus === 'rejected' ? 'Resubmit Project' : 'Edit Submission'}
+            </Button>
+            <Button variant="outline" disabled>Request Peer Review</Button>
           </>
         )}
       </CardFooter>

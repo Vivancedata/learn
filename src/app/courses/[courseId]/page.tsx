@@ -12,72 +12,18 @@ import { CommunityDiscussions } from "@/components/community-discussions"
 import { getCourseById } from "@/lib/content"
 import { useParams } from "next/navigation"
 import { Course } from "@/types/course"
-import { Discussion } from "@/types/discussion"
-
-interface ApiDiscussionUser {
-  id: string
-  name: string | null
-  email: string
-}
-
-interface ApiDiscussionReply {
-  id: string
-  userId: string
-  user: ApiDiscussionUser
-  content: string
-  createdAt: string
-  likes: number
-}
-
-interface ApiDiscussion {
-  id: string
-  userId: string
-  user: ApiDiscussionUser
-  content: string
-  createdAt: string
-  likes: number
-  replies?: ApiDiscussionReply[]
-}
 
 export default function CoursePage() {
   const params = useParams()
   const courseId = params.courseId as string
   const [courseData, setCourseData] = useState<Course | null>(null)
-  const [discussions, setDiscussions] = useState<Discussion[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadCourse() {
       try {
-        const [course, discussionsResult] = await Promise.allSettled([
-          getCourseById(courseId),
-          fetch(`/api/discussions?courseId=${courseId}`).then(res => res.json()),
-        ])
-
-        if (course.status === 'fulfilled') {
-          setCourseData(course.value)
-        }
-
-        if (discussionsResult.status === 'fulfilled') {
-          const apiDiscussions: ApiDiscussion[] = discussionsResult.value.data || []
-          const transformedDiscussions: Discussion[] = apiDiscussions.map((d) => ({
-            id: d.id,
-            userId: d.userId,
-            username: d.user.name || d.user.email.split('@')[0],
-            content: d.content,
-            createdAt: d.createdAt,
-            likes: d.likes,
-            replies: d.replies?.map((r) => ({
-              id: r.id,
-              userId: r.userId,
-              username: r.user.name || r.user.email.split('@')[0],
-              content: r.content,
-              createdAt: r.createdAt,
-              likes: r.likes,
-            })) || [],
-          }))
-          setDiscussions(transformedDiscussions)
-        }
+        const course = await getCourseById(courseId)
+        setCourseData(course)
       } catch (error) {
         console.error("Error loading course:", error)
       } finally {
@@ -271,10 +217,7 @@ export default function CoursePage() {
           <SuccessStories stories={successStories} />
         </div>
 
-        <CommunityDiscussions 
-          discussions={discussions}
-          courseId={course.id}
-        />
+        <CommunityDiscussions courseId={course.id} />
       </div>
     </CourseLayout>
   )

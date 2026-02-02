@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -8,17 +8,58 @@ import { Avatar } from "@/components/ui/avatar"
 import { MessageSquare, ThumbsUp, Reply, MoreHorizontal, Loader2, AlertCircle } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 
-import { CommunityDiscussionsProps } from "@/types/discussion"
+import {
+  CommunityDiscussionsProps,
+  Discussion,
+  ApiDiscussion,
+  transformApiDiscussion,
+} from "@/types/discussion"
 
-export function CommunityDiscussions({ discussions, courseId, lessonId }: CommunityDiscussionsProps) {
+export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussionsProps) {
   const { user } = useAuth()
+  const [discussions, setDiscussions] = useState<Discussion[]>([])
   const [newDiscussion, setNewDiscussion] = useState("")
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [replyContent, setReplyContent] = useState("")
   const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({})
+  const [initialLoading, setInitialLoading] = useState(true)
   const [loading, setLoading] = useState(false)
   const [replyLoading, setReplyLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Fetch discussions from API
+  const fetchDiscussions = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (courseId) params.append('courseId', courseId)
+      if (lessonId) params.append('lessonId', lessonId)
+
+      const response = await fetch(`/api/discussions?${params.toString()}`, {
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch discussions')
+      }
+
+      const data = await response.json()
+      const apiDiscussions: ApiDiscussion[] = data.data?.discussions || []
+      const transformedDiscussions = apiDiscussions.map(transformApiDiscussion)
+      setDiscussions(transformedDiscussions)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load discussions')
+    }
+  }, [courseId, lessonId])
+
+  // Fetch discussions on mount and when courseId/lessonId changes
+  useEffect(() => {
+    const loadDiscussions = async () => {
+      setInitialLoading(true)
+      await fetchDiscussions()
+      setInitialLoading(false)
+    }
+    loadDiscussions()
+  }, [fetchDiscussions])
 
   const handlePostDiscussion = async () => {
     if (!newDiscussion.trim()) return
@@ -50,11 +91,9 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
         throw new Error(errorData.message || 'Failed to post discussion')
       }
 
-      // Clear the input and refresh discussions
+      // Clear the input and refresh discussions from the API
       setNewDiscussion("")
-
-      // In a real app, we would refresh the discussions list here
-      // or update it optimistically with the new discussion
+      await fetchDiscussions()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to post discussion')
     } finally {
@@ -91,11 +130,11 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
         throw new Error(errorData.message || 'Failed to post reply')
       }
 
-      // Clear the input and close the reply form
+      // Clear the input, close the reply form, and refresh discussions
       setReplyContent("")
       setReplyingTo(null)
-
-      // In a real app, we would refresh the discussions list here
+      setExpandedReplies(prev => ({ ...prev, [discussionId]: true }))
+      await fetchDiscussions()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to post reply')
     } finally {
@@ -186,7 +225,12 @@ export function CommunityDiscussions({ discussions, courseId, lessonId }: Commun
         </div>
         
         <div className="space-y-6">
-          {discussions.length > 0 ? (
+          {initialLoading ? (
+            <div className="text-center py-6">
+              <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin text-muted-foreground" />
+              <p className="text-muted-foreground">Loading discussions...</p>
+            </div>
+          ) : discussions.length > 0 ? (
             discussions.map(discussion => (
               <div key={discussion.id} className="space-y-4">
                 <div className="bg-muted/40 p-4 rounded-lg">
