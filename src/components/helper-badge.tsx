@@ -109,9 +109,9 @@ export function PointsBadge({
       className={cn(
         'inline-flex items-center gap-0.5 text-xs',
         level === 'super'
-          ? 'text-amber-600 dark:text-amber-400'
+          ? 'text-warning'
           : level === 'helper'
-            ? 'text-blue-600 dark:text-blue-400'
+            ? 'text-info'
             : 'text-muted-foreground',
         className
       )}

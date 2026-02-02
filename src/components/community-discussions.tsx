@@ -198,7 +198,7 @@ export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussion
       
       <CardContent className="space-y-6">
         {error && (
-          <div className="bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-md flex items-start gap-2">
+          <div className="bg-destructive/10 text-destructive p-3 rounded-md flex items-start gap-2">
             <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
             <p className="text-sm">{error}</p>
           </div>

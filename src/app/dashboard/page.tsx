@@ -425,7 +425,7 @@ function DashboardContent() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Heart className="h-5 w-5 text-pink-500" />
+                <Heart className="h-5 w-5 text-destructive" />
                 Community Points
               </CardTitle>
               <CardDescription>
@@ -461,7 +461,7 @@ function DashboardContent() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-500" />
+                <Users className="h-5 w-5 text-info" />
                 Helper Badges
               </CardTitle>
               <CardDescription>
@@ -469,7 +469,7 @@ function DashboardContent() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className={`p-3 rounded-lg border ${(userPoints?.user.totalPoints || 0) >= 10 ? 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800' : 'opacity-50'}`}>
+              <div className={`p-3 rounded-lg border ${(userPoints?.user.totalPoints || 0) >= 10 ? 'bg-info/10 border-info/20' : 'opacity-50'}`}>
                 <div className="flex items-center gap-2">
                   <HelperBadge points={10} showPoints={false} />
                   <div>
@@ -478,7 +478,7 @@ function DashboardContent() {
                   </div>
                 </div>
               </div>
-              <div className={`p-3 rounded-lg border ${(userPoints?.user.totalPoints || 0) >= 40 ? 'bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800' : 'opacity-50'}`}>
+              <div className={`p-3 rounded-lg border ${(userPoints?.user.totalPoints || 0) >= 40 ? 'bg-warning/10 border-warning/20' : 'opacity-50'}`}>
                 <div className="flex items-center gap-2">
                   <HelperBadge points={40} showPoints={false} />
                   <div>
@@ -500,19 +500,19 @@ function DashboardContent() {
             <CardContent>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
                   <span>Answer questions in course discussions</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
                   <span>Share helpful tips and resources</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
                   <span>When others find your help valuable, they give you a point</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
                   <span>Earn badges as you help more people</span>
                 </li>
               </ul>
@@ -535,7 +535,7 @@ function DashboardContent() {
               </CardHeader>
               <CardFooter>
                 {achievement.earned ? (
-                  <div className="flex items-center text-sm text-green-600">
+                  <div className="flex items-center text-sm text-success">
                     <CheckCircle2 className="mr-1 h-4 w-4" />
                     Earned
                   </div>

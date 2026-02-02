@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
-import { Button } from "../components/ui/button"
-import { Input } from "../components/ui/input"
-import { Textarea } from "../components/ui/textarea"
-import { Label } from "../components/ui/label"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { Github, Globe, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
-import { StatusBadge } from "../components/ui/status-badge"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { useAuth } from "@/hooks/useAuth"
 
 import { ProjectSubmissionProps } from "@/types/project-submission"
@@ -237,7 +237,7 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
         {!submitted ? (
           <form id="project-form" onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="github-url">GitHub Repository URL <span className="text-red-500">*</span></Label>
+              <Label htmlFor="github-url">GitHub Repository URL <span className="text-destructive">*</span></Label>
               <Input
                 id="github-url"
                 placeholder="https://github.com/yourusername/project-repo"

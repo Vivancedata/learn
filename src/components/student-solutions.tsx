@@ -305,7 +305,7 @@ export function StudentSolutions({ lessonId, courseId }: StudentSolutionsProps) 
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`h-8 px-2 ${solution.isLikedByUser ? 'text-red-500' : ''}`}
+                  className={`h-8 px-2 ${solution.isLikedByUser ? 'text-destructive' : ''}`}
                   onClick={() => handleLike(solution.id)}
                   disabled={!user || likingIds.has(solution.id) || solution.user.id === user?.id}
                   title={

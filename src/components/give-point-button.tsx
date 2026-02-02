@@ -39,7 +39,7 @@ export function GivePointButton({
   if (given) {
     return (
       <span
-        className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400"
+        className="inline-flex items-center gap-1 text-xs text-success"
         title={`You thanked ${recipientName}`}
       >
         <Check className="h-3 w-3" />
@@ -92,7 +92,7 @@ export function GivePointButton({
         <Button
           variant="ghost"
           size="sm"
-          className="h-6 px-2 text-xs text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950"
+          className="h-6 px-2 text-xs text-success hover:bg-success/10"
           onClick={handleGivePoint}
           disabled={loading}
         >
@@ -120,7 +120,7 @@ export function GivePointButton({
       <Button
         variant="ghost"
         size={size}
-        className="flex items-center gap-1 h-auto py-1 text-muted-foreground hover:text-pink-600 dark:hover:text-pink-400"
+        className="flex items-center gap-1 h-auto py-1 text-muted-foreground hover:text-primary"
         onClick={() => setShowConfirm(true)}
         title={`Give thanks to ${recipientName} for their helpful response`}
         aria-label={`Give thanks to ${recipientName}`}
@@ -129,7 +129,7 @@ export function GivePointButton({
         <span className="text-xs">Thanks</span>
       </Button>
       {error && (
-        <span className="text-xs text-red-500 mt-1">{error}</span>
+        <span className="text-xs text-destructive mt-1">{error}</span>
       )}
     </div>
   )
