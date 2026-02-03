@@ -649,3 +649,28 @@ export function validateBody<T>(
     throw error
   }
 }
+
+// ============================================================================
+// Stripe Payment Schemas
+// ============================================================================
+
+export const subscriptionStatusValues = [
+  'active',
+  'canceled',
+  'past_due',
+  'trialing',
+  'incomplete',
+  'incomplete_expired',
+  'unpaid',
+] as const
+
+export const createCheckoutSessionSchema = z.object({
+  priceId: z.string().min(1, 'Price ID is required'),
+})
+
+export const createPortalSessionSchema = z.object({
+  returnUrl: z.string().url('Invalid return URL').optional(),
+})
+
+export type CreateCheckoutSessionInput = z.infer<typeof createCheckoutSessionSchema>
+export type CreatePortalSessionInput = z.infer<typeof createPortalSessionSchema>

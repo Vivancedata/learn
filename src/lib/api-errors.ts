@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import * as Sentry from '@sentry/nextjs'
 import { formatZodErrors } from './validations'
 
 // ============================================================================
@@ -160,17 +161,26 @@ export function apiValidationError(
 
 /**
  * Handles caught errors in API routes
+ * Reports server errors to Sentry for monitoring
  * @param error - Any caught error
+ * @param context - Optional context for error tracking
  * @returns NextResponse with appropriate error response
  */
-export function handleApiError(error: unknown): NextResponse<ApiErrorResponse> {
-  // Handle Zod validation errors
+export function handleApiError(
+  error: unknown,
+  context?: { route?: string; userId?: string; requestData?: unknown }
+): NextResponse<ApiErrorResponse> {
+  // Handle Zod validation errors (don't report to Sentry - client error)
   if (error instanceof z.ZodError) {
     return apiValidationError(error)
   }
 
   // Handle custom API errors
   if (error instanceof ApiError) {
+    // Only report server errors (5xx) to Sentry
+    if (error.statusCode >= 500) {
+      reportToSentry(error, error.statusCode, context)
+    }
     return apiError(error.message, error.statusCode, error.details)
   }
 
@@ -180,24 +190,33 @@ export function handleApiError(error: unknown): NextResponse<ApiErrorResponse> {
 
     switch (prismaError.code) {
       case 'P2002':
+        // Duplicate record - client error, don't report
         return apiError(
           'A record with this information already exists',
           HTTP_STATUS.CONFLICT,
           prismaError.meta
         )
       case 'P2025':
+        // Record not found - client error, don't report
         return apiError(
           'Record not found',
           HTTP_STATUS.NOT_FOUND,
           prismaError.meta
         )
       case 'P2003':
+        // Invalid reference - client error, don't report
         return apiError(
           'Invalid reference to related record',
           HTTP_STATUS.BAD_REQUEST,
           prismaError.meta
         )
       default:
+        // Other database errors - report to Sentry
+        reportToSentry(
+          new Error(`Database error: ${prismaError.code}`),
+          HTTP_STATUS.INTERNAL_SERVER_ERROR,
+          { ...context, prismaError }
+        )
         return apiError(
           'Database operation failed',
           HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -206,16 +225,81 @@ export function handleApiError(error: unknown): NextResponse<ApiErrorResponse> {
     }
   }
 
-  // Handle generic errors
+  // Handle generic errors - report to Sentry
   if (error instanceof Error) {
+    reportToSentry(error, HTTP_STATUS.INTERNAL_SERVER_ERROR, context)
     return apiError(error.message, HTTP_STATUS.INTERNAL_SERVER_ERROR)
   }
 
-  // Unknown error type
+  // Unknown error type - report to Sentry
+  const unknownError = new Error('An unexpected error occurred')
+  reportToSentry(unknownError, HTTP_STATUS.INTERNAL_SERVER_ERROR, {
+    ...context,
+    originalError: String(error),
+  })
   return apiError(
     'An unexpected error occurred',
     HTTP_STATUS.INTERNAL_SERVER_ERROR
   )
+}
+
+/**
+ * Reports an error to Sentry with context
+ */
+function reportToSentry(
+  error: Error,
+  statusCode: number,
+  context?: { route?: string; userId?: string; requestData?: unknown; [key: string]: unknown }
+): void {
+  Sentry.captureException(error, {
+    contexts: {
+      api: {
+        route: context?.route,
+        statusCode,
+      },
+      request: context?.requestData ? {
+        body: sanitizeRequestData(context.requestData),
+      } : undefined,
+    },
+    tags: {
+      errorType: 'api',
+      statusCode: String(statusCode),
+      route: context?.route || 'unknown',
+    },
+    user: context?.userId ? { id: context.userId } : undefined,
+    level: statusCode >= 500 ? 'error' : 'warning',
+  })
+
+  // Add breadcrumb for debugging
+  Sentry.addBreadcrumb({
+    category: 'api',
+    message: `API Error: ${error.message}`,
+    level: 'error',
+    data: {
+      statusCode,
+      route: context?.route,
+    },
+  })
+}
+
+/**
+ * Sanitizes request data to remove sensitive fields before sending to Sentry
+ */
+function sanitizeRequestData(data: unknown): unknown {
+  if (!data || typeof data !== 'object') {
+    return data
+  }
+
+  const sensitiveFields = ['password', 'token', 'secret', 'apiKey', 'creditCard']
+  const sanitized = { ...data } as Record<string, unknown>
+
+  for (const field of sensitiveFields) {
+    if (field in sanitized) {
+      sanitized[field] = '[REDACTED]'
+    }
+  }
+
+  return sanitized
 }
 
 // ============================================================================

@@ -1,11 +1,14 @@
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
+import { Suspense } from "react"
 import "./globals.css"
 import { Navbar } from "@/components/ui/navbar"
 import { ThemeProvider } from "@/components/ui/theme-provider"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import { AuthProvider } from "@/contexts/AuthContext"
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext"
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
+import { PostHogProvider } from "@/components/providers/posthog-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -58,20 +61,26 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ErrorBoundary>
-          <AuthProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <ServiceWorkerRegistration />
-              <Navbar />
-              <main className="container mx-auto py-8 px-4">
-                {children}
-              </main>
-            </ThemeProvider>
-          </AuthProvider>
+          <Suspense fallback={null}>
+            <PostHogProvider>
+              <AuthProvider>
+                <SubscriptionProvider>
+                  <ThemeProvider
+                    attribute="class"
+                    defaultTheme="system"
+                    enableSystem
+                    disableTransitionOnChange
+                  >
+                    <ServiceWorkerRegistration />
+                    <Navbar />
+                    <main className="container mx-auto py-8 px-4">
+                      {children}
+                    </main>
+                  </ThemeProvider>
+                </SubscriptionProvider>
+              </AuthProvider>
+            </PostHogProvider>
+          </Suspense>
         </ErrorBoundary>
       </body>
     </html>

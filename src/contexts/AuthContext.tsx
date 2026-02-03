@@ -1,6 +1,8 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react'
+import * as Sentry from '@sentry/nextjs'
+import { analytics } from '@/lib/analytics'
 
 export interface User {
   id: string
@@ -65,6 +67,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser()
   }, [refreshUser])
 
+  // Update Sentry user context when user changes
+  useEffect(() => {
+    if (user) {
+      // Set user context in Sentry for error tracking
+      Sentry.setUser({
+        id: user.id,
+        email: user.email,
+        username: user.name || user.email,
+      })
+
+      // Add breadcrumb for login
+      Sentry.addBreadcrumb({
+        category: 'auth',
+        message: 'User authenticated',
+        level: 'info',
+        data: {
+          userId: user.id,
+        },
+      })
+    } else {
+      // Clear Sentry user context on logout
+      Sentry.setUser(null)
+    }
+  }, [user])
+
   const login = async (email: string, password: string) => {
     try {
       setLoading(true)
@@ -83,10 +110,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.message || 'Login failed')
       }
 
-      setUser(data.data.user)
+      const loggedInUser = data.data.user
+      setUser(loggedInUser)
+
+      // Track sign in with PostHog analytics
+      analytics.identify(loggedInUser.id, {
+        email: loggedInUser.email,
+        name: loggedInUser.name || undefined,
+        github_username: loggedInUser.githubUsername || undefined,
+      })
+      analytics.trackUserSignedIn({ signin_method: 'email' })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed'
       setError(message)
+
+      // Track authentication failures in Sentry
+      Sentry.addBreadcrumb({
+        category: 'auth',
+        message: 'Login failed',
+        level: 'warning',
+        data: {
+          error: message,
+        },
+      })
+
+      // Track login failure in analytics
+      analytics.trackError('auth_error', message, { action: 'login' })
+
       throw err
     } finally {
       setLoading(false)
@@ -116,10 +166,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.message || 'Signup failed')
       }
 
-      setUser(data.data.user)
+      const newUser = data.data.user
+      setUser(newUser)
+
+      // Track sign up with PostHog analytics
+      analytics.identify(newUser.id, {
+        email: newUser.email,
+        name: newUser.name || undefined,
+        github_username: newUser.githubUsername || undefined,
+        signup_date: new Date().toISOString(),
+      })
+      analytics.trackUserSignedUp({ signup_method: 'email', plan_type: 'free' })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Signup failed'
       setError(message)
+
+      // Track signup failures in Sentry
+      Sentry.addBreadcrumb({
+        category: 'auth',
+        message: 'Signup failed',
+        level: 'warning',
+        data: {
+          error: message,
+        },
+      })
+
+      // Track signup failure in analytics
+      analytics.trackError('auth_error', message, { action: 'signup' })
+
       throw err
     } finally {
       setLoading(false)
@@ -136,10 +210,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credentials: 'include',
       })
 
+      // Add breadcrumb for logout
+      Sentry.addBreadcrumb({
+        category: 'auth',
+        message: 'User logged out',
+        level: 'info',
+      })
+
+      // Track sign out with PostHog analytics and reset identity
+      analytics.trackUserSignedOut()
+      analytics.reset()
+
       setUser(null)
     } catch (err) {
       console.error('Logout failed:', err)
       setError('Logout failed')
+
+      // Track logout failures in Sentry
+      Sentry.addBreadcrumb({
+        category: 'auth',
+        message: 'Logout failed',
+        level: 'warning',
+      })
     } finally {
       setLoading(false)
     }

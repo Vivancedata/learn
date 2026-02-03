@@ -11,6 +11,7 @@ import {
 import { projectSubmissionSchema } from '@/lib/validations'
 import { requireOwnership } from '@/lib/authorization'
 import { getUserId } from '@/lib/auth'
+import { serverAnalytics } from '@/lib/analytics-server'
 
 /**
  * POST /api/projects
@@ -93,6 +94,24 @@ export async function POST(request: NextRequest) {
         notes: notes || null,
         status: 'pending',
       },
+    })
+
+    // Get courseId for analytics (through the lesson's section)
+    const lessonWithCourse = await prisma.lesson.findUnique({
+      where: { id: lessonId },
+      include: {
+        section: {
+          select: { courseId: true },
+        },
+      },
+    })
+
+    // Track project submission with analytics
+    serverAnalytics.trackProjectSubmitted(userId, {
+      lesson_id: lessonId,
+      course_id: lessonWithCourse?.section?.courseId,
+      github_url: githubUrl,
+      has_live_demo: !!liveUrl,
     })
 
     return apiSuccess(

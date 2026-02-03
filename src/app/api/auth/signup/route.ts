@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/db'
+import crypto from 'crypto'
 import {
   apiSuccess,
   handleApiError,
@@ -13,6 +14,11 @@ import {
   generateToken,
   setAuthCookie,
 } from '@/lib/auth'
+import {
+  sendVerificationEmail,
+  generateVerificationCode,
+  isEmailServiceConfigured,
+} from '@/lib/email'
 
 /**
  * POST /api/auth/signup
@@ -74,6 +80,59 @@ export async function POST(request: NextRequest) {
     // Set authentication cookie
     await setAuthCookie(token)
 
+    // Generate and store email verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex')
+    const verificationCode = generateVerificationCode()
+    const expiresAt = new Date()
+    expiresAt.setHours(expiresAt.getHours() + 24) // 24 hour expiry
+
+    // Create verification token in database
+    // Note: This will fail if EmailVerificationToken model doesn't exist yet
+    // In that case, skip verification token creation
+    try {
+      await prisma.emailVerificationToken.create({
+        data: {
+          userId: user.id,
+          token: verificationToken,
+          code: verificationCode,
+          expiresAt,
+        },
+      })
+
+      // Send verification email
+      const userName = user.name || user.email.split('@')[0]
+
+      if (isEmailServiceConfigured()) {
+        const emailResult = await sendVerificationEmail({
+          to: user.email,
+          userName,
+          verificationCode,
+          verificationToken,
+        })
+
+        if (!emailResult.success) {
+          console.error('[Signup] Failed to send verification email:', emailResult.error)
+        }
+      } else {
+        // Development: Log verification info to console
+        const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`
+
+        console.log('=================================')
+        console.log('EMAIL VERIFICATION (Dev Mode)')
+        console.log('=================================')
+        console.log('User:', user.email)
+        console.log('Code:', verificationCode)
+        console.log('Verification URL:', verificationUrl)
+        console.log('Expires:', expiresAt.toISOString())
+        console.log('=================================')
+        console.log('Note: Set RESEND_API_KEY to send real emails')
+        console.log('=================================')
+      }
+    } catch (dbError) {
+      // EmailVerificationToken model might not exist yet
+      console.warn('[Signup] Could not create verification token:', dbError)
+    }
+
     return apiSuccess(
       {
         user: {
@@ -81,9 +140,10 @@ export async function POST(request: NextRequest) {
           email: user.email,
           name: user.name,
           githubUsername: user.githubUsername,
+          emailVerified: false,
         },
         token,
-        message: 'Account created successfully',
+        message: 'Account created successfully. Please check your email to verify your account.',
       },
       HTTP_STATUS.CREATED
     )

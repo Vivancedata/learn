@@ -16,6 +16,10 @@ const customJestConfig = {
     '<rootDir>/node_modules/',
     '<rootDir>/.next/',
   ],
+  // Transform ES modules from these packages
+  transformIgnorePatterns: [
+    '/node_modules/(?!(uncrypto|@upstash)/)',
+  ],
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

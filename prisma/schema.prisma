@@ -100,6 +100,7 @@ model User {
   certificates            Certificate[]
   achievements            UserAchievement[]
   passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
   pointsReceived          CommunityPoint[]         @relation("PointsReceived")
   pointsGiven             CommunityPoint[]         @relation("PointsGiven")
   projectLikes            ProjectLike[]
@@ -109,6 +110,7 @@ model User {
   dailyActivities         DailyActivity[]
   leaderboardEntries      LeaderboardCache[]
   assessmentAttempts      AssessmentAttempt[]
+  subscription            Subscription?
 }
 
 model Course {
@@ -375,6 +377,21 @@ model PasswordResetToken {
   @@index([token])
 }
 
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  code      String   // 6-digit verification code
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([code])
+}
+
 model CommunityPoint {
   id           String            @id @default(uuid())
   recipientId  String
@@ -555,4 +572,54 @@ model AssessmentAttempt {
   @@index([userId])
   @@index([assessmentId])
   @@index([userId, assessmentId])
+}
+
+// ============================================================================
+// Subscription & Payment Models
+// ============================================================================
+
+enum SubscriptionStatus {
+  active
+  canceled
+  past_due
+  trialing
+  incomplete
+  incomplete_expired
+  unpaid
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  userId               String             @unique
+  stripeCustomerId     String             @unique
+  stripeSubscriptionId String?            @unique
+  stripePriceId        String?
+  status               SubscriptionStatus @default(incomplete)
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  trialStart           DateTime?
+  trialEnd             DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+  @@index([status])
+}
+
+model WebhookEvent {
+  id            String   @id @default(uuid())
+  stripeEventId String   @unique
+  eventType     String
+  processed     Boolean  @default(false)
+  payload       String   // JSON payload for debugging
+  error         String?  // Error message if processing failed
+  createdAt     DateTime @default(now())
+  processedAt   DateTime?
+
+  @@index([stripeEventId])
+  @@index([processed])
 }

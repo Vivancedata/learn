@@ -5,12 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Moon, Sun, Globe, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Moon, Sun, Globe, Loader2, AlertCircle, CheckCircle2, Crown, CreditCard, Calendar, ExternalLink } from "lucide-react"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { useAuth } from "@/hooks/useAuth"
+import { useSubscription, useSubscriptionActions } from "@/hooks/useSubscription"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
 import { useTheme } from "next-themes"
 import { NotificationPreferences } from "@/components/notification-preferences"
+import Link from "next/link"
 
 function SettingsContent() {
   const { user, refreshUser } = useAuth()
@@ -148,6 +151,8 @@ function SettingsContent() {
           </CardContent>
         </Card>
 
+        <SubscriptionCard />
+
         <NotificationPreferences />
 
         <Card>
@@ -217,6 +222,168 @@ function SettingsContent() {
         </Card>
       </div>
     </div>
+  )
+}
+
+function SubscriptionCard() {
+  const { subscription, isPro, isTrialing, willCancel, daysUntilExpiry, loading } = useSubscription()
+  const { openPortal } = useSubscriptionActions()
+  const [portalLoading, setPortalLoading] = useState(false)
+
+  const handleManageSubscription = async () => {
+    setPortalLoading(true)
+    try {
+      await openPortal()
+    } catch (error) {
+      console.error('Failed to open portal:', error)
+    } finally {
+      setPortalLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Subscription
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Subscription
+          </CardTitle>
+          {isPro && (
+            <Badge variant="default" className="bg-primary">
+              <Crown className="h-3 w-3 mr-1" />
+              Pro
+            </Badge>
+          )}
+        </div>
+        <CardDescription>
+          Manage your subscription and billing
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isPro ? (
+          <div className="space-y-4">
+            {/* Subscription Status */}
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <div>
+                <p className="font-medium">Pro Subscription</p>
+                <p className="text-sm text-muted-foreground">
+                  {isTrialing ? 'Trial period' : 'Active'}
+                  {willCancel && ' (Cancels at end of period)'}
+                </p>
+              </div>
+              <Badge variant={willCancel ? 'secondary' : 'default'}>
+                {subscription?.status}
+              </Badge>
+            </div>
+
+            {/* Period Info */}
+            {subscription?.currentPeriodEnd && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                <span>
+                  {willCancel ? 'Access until' : 'Renews on'}:{' '}
+                  {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </span>
+              </div>
+            )}
+
+            {/* Warning Messages */}
+            {willCancel && daysUntilExpiry !== null && daysUntilExpiry <= 7 && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Your subscription ends in {daysUntilExpiry} day{daysUntilExpiry !== 1 ? 's' : ''}.
+                  Renew to keep access to Pro features.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Manage Button */}
+            <Button
+              onClick={handleManageSubscription}
+              disabled={portalLoading}
+              className="w-full"
+            >
+              {portalLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Opening...
+                </>
+              ) : (
+                <>
+                  Manage Subscription
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              Update payment method, change plan, or cancel
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="font-medium">Free Plan</p>
+              <p className="text-sm text-muted-foreground">
+                Limited to {3} courses
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Upgrade to Pro for:</p>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                  Unlimited course access
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                  Skill assessments
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                  Verified certificates
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                  Priority support
+                </li>
+              </ul>
+            </div>
+
+            <Button asChild className="w-full">
+              <Link href="/pricing">
+                <Crown className="mr-2 h-4 w-4" />
+                Upgrade to Pro
+              </Link>
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
-import rateLimiter, { RATE_LIMITS } from '@/lib/rate-limit'
+import rateLimiter, { RATE_LIMITS, getRateLimitHeaders } from '@/lib/rate-limit'
 
 /**
  * Get client IP address from request
@@ -47,6 +47,19 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
 }
 
 /**
+ * Add rate limit headers to response
+ */
+function addRateLimitHeaders(
+  response: NextResponse,
+  headers: Record<string, string>
+): NextResponse {
+  for (const [key, value] of Object.entries(headers)) {
+    response.headers.set(key, value)
+  }
+  return response
+}
+
+/**
  * Next.js middleware for authentication, rate limiting, and security
  * Protects API routes (except auth endpoints) by requiring authentication
  */
@@ -56,66 +69,67 @@ export async function middleware(request: NextRequest) {
 
   // Apply rate limiting to auth endpoints (stricter)
   if (pathname.startsWith('/api/auth/')) {
-    const { success, remaining, resetTime } = rateLimiter.check(
+    const rateLimitResult = await rateLimiter.check(
       `auth:${clientIp}`,
       RATE_LIMITS.AUTH.limit,
       RATE_LIMITS.AUTH.windowMs
     )
 
-    if (!success) {
-      const retryAfter = Math.ceil((resetTime - Date.now()) / 1000)
+    const rateLimitHeaders = getRateLimitHeaders(rateLimitResult)
+
+    if (!rateLimitResult.success) {
       return NextResponse.json(
         {
           error: 'Too Many Requests',
           message: 'Too many authentication attempts. Please try again later.',
           timestamp: new Date().toISOString(),
-          retryAfter,
+          retryAfter: parseInt(rateLimitHeaders['Retry-After'] || '0', 10),
         },
         {
           status: 429,
-          headers: {
-            'Retry-After': retryAfter.toString(),
-            'X-RateLimit-Limit': RATE_LIMITS.AUTH.limit.toString(),
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': new Date(resetTime).toISOString(),
-          },
+          headers: rateLimitHeaders,
         }
       )
     }
 
     const response = NextResponse.next()
-    response.headers.set('X-RateLimit-Limit', RATE_LIMITS.AUTH.limit.toString())
-    response.headers.set('X-RateLimit-Remaining', remaining.toString())
-    response.headers.set('X-RateLimit-Reset', new Date(resetTime).toISOString())
+    addRateLimitHeaders(response, rateLimitHeaders)
+    return addSecurityHeaders(response)
+  }
 
+  // Skip rate limiting and auth for health endpoint
+  if (pathname === '/api/health') {
+    const response = NextResponse.next()
+    return addSecurityHeaders(response)
+  }
+
+  // Skip auth for Stripe webhook (Stripe authenticates via signature)
+  if (pathname === '/api/stripe/webhook') {
+    const response = NextResponse.next()
     return addSecurityHeaders(response)
   }
 
   // Apply rate limiting to other API routes (excluding auth)
   if (pathname.startsWith('/api/') && !pathname.startsWith('/api/auth/')) {
-    const { success, remaining, resetTime } = rateLimiter.check(
+    const rateLimitResult = await rateLimiter.check(
       `api:${clientIp}`,
       RATE_LIMITS.API.limit,
       RATE_LIMITS.API.windowMs
     )
 
-    if (!success) {
-      const retryAfter = Math.ceil((resetTime - Date.now()) / 1000)
+    const rateLimitHeaders = getRateLimitHeaders(rateLimitResult)
+
+    if (!rateLimitResult.success) {
       return NextResponse.json(
         {
           error: 'Too Many Requests',
           message: 'Rate limit exceeded. Please try again later.',
           timestamp: new Date().toISOString(),
-          retryAfter,
+          retryAfter: parseInt(rateLimitHeaders['Retry-After'] || '0', 10),
         },
         {
           status: 429,
-          headers: {
-            'Retry-After': retryAfter.toString(),
-            'X-RateLimit-Limit': RATE_LIMITS.API.limit.toString(),
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': new Date(resetTime).toISOString(),
-          },
+          headers: rateLimitHeaders,
         }
       )
     }
@@ -148,10 +162,7 @@ export async function middleware(request: NextRequest) {
       },
     })
 
-    response.headers.set('X-RateLimit-Limit', RATE_LIMITS.API.limit.toString())
-    response.headers.set('X-RateLimit-Remaining', remaining.toString())
-    response.headers.set('X-RateLimit-Reset', new Date(resetTime).toISOString())
-
+    addRateLimitHeaders(response, rateLimitHeaders)
     return addSecurityHeaders(response)
   }
 
