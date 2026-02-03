@@ -1,97 +1,188 @@
 {
   "name": "VivanceData Learning",
   "short_name": "VivanceData",
-  "description": "Learn AI and Data Science with structured learning paths",
+  "description": "Learn AI, Data Science & Programming with structured learning paths",
   "start_url": "/",
+  "id": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#0f172a",
   "theme_color": "#6366f1",
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en",
-  "categories": ["education", "productivity"],
+  "dir": "ltr",
+  "categories": ["education", "productivity", "utilities"],
+  "iarc_rating_id": "",
   "icons": [
     {
       "src": "/icons/icon-72.png",
       "sizes": "72x72",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-96.png",
       "sizes": "96x96",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-128.png",
       "sizes": "128x128",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-144.png",
       "sizes": "144x144",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-152.png",
       "sizes": "152x152",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-384.png",
       "sizes": "384x384",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "screenshots": [
     {
-      "src": "/screenshots/desktop.png",
+      "src": "/screenshots/mobile-home.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "VivanceData Home - Mobile"
+    },
+    {
+      "src": "/screenshots/mobile-courses.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Browse Courses - Mobile"
+    },
+    {
+      "src": "/screenshots/mobile-lesson.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Learn a Lesson - Mobile"
+    },
+    {
+      "src": "/screenshots/desktop-home.png",
       "sizes": "1920x1080",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "VivanceData Learning Platform - Desktop View"
+      "label": "VivanceData Home - Desktop"
     },
     {
-      "src": "/screenshots/mobile.png",
-      "sizes": "750x1334",
+      "src": "/screenshots/desktop-dashboard.png",
+      "sizes": "1920x1080",
       "type": "image/png",
-      "form_factor": "narrow",
-      "label": "VivanceData Learning Platform - Mobile View"
+      "form_factor": "wide",
+      "label": "Learning Dashboard - Desktop"
     }
   ],
   "shortcuts": [
     {
-      "name": "My Courses",
+      "name": "Continue Learning",
+      "short_name": "Continue",
+      "description": "Resume your last lesson",
+      "url": "/dashboard?action=continue",
+      "icons": [
+        {
+          "src": "/icons/shortcut-continue.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "My Progress",
+      "short_name": "Progress",
+      "description": "View your learning progress",
+      "url": "/dashboard#progress",
+      "icons": [
+        {
+          "src": "/icons/shortcut-progress.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Browse Courses",
       "short_name": "Courses",
-      "description": "View your enrolled courses",
-      "url": "/dashboard",
-      "icons": [{ "src": "/icons/courses-96.png", "sizes": "96x96" }]
+      "description": "Explore available courses",
+      "url": "/courses",
+      "icons": [
+        {
+          "src": "/icons/shortcut-courses.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Learning Paths",
       "short_name": "Paths",
-      "description": "Browse learning paths",
+      "description": "Browse structured learning paths",
       "url": "/paths",
-      "icons": [{ "src": "/icons/paths-96.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/icons/shortcut-paths.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
     }
   ],
   "related_applications": [],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }

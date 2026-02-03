@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Github, Flag, ArrowLeft, ArrowRight, CheckCircle, Loader2 } from "lucide-react"
+import { Github, Flag, ArrowLeft, ArrowRight, CheckCircle, Loader2, MessageSquare } from "lucide-react"
 import Link from "next/link"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
@@ -19,6 +19,8 @@ import { useAuth } from "@/hooks/useAuth"
 import { PageSpinner } from "@/components/ui/spinner"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { InteractiveCodeBlock, parseCodeBlockLanguage } from "@/components/interactive-code-block"
+import { useAiTutor } from "@/hooks/useAiTutor"
+import { AiTutorButton } from "@/components/ai-tutor/chat-container"
 
 interface TableOfContentsItem {
   id: string
@@ -99,6 +101,7 @@ function LessonContent() {
   const params = useParams()
   const courseId = params.courseId as string
   const lessonId = params.lessonId as string
+  const { setLessonContext } = useAiTutor()
 
   const [isCompleted, setIsCompleted] = useState(false)
   const [completionLoading, setCompletionLoading] = useState(false)
@@ -180,6 +183,19 @@ function LessonContent() {
 
     loadData()
   }, [courseId, lessonId, user])
+
+  // Set AI Tutor context when lesson loads
+  useEffect(() => {
+    if (course && lesson) {
+      setLessonContext({
+        lessonId: lesson.id,
+        lessonTitle: lesson.title,
+        courseId: course.id,
+        courseName: course.title,
+        currentTopic: lesson.title,
+      })
+    }
+  }, [course, lesson, setLessonContext])
 
   if (loading) {
     return <PageSpinner />
@@ -306,25 +322,33 @@ function LessonContent() {
           {/* Main Content */}
           <div className="col-span-12 lg:col-span-8 xl:col-span-9">
             <div className="space-y-8">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-4">
                 <h1 className="text-3xl font-bold">{lesson.title}</h1>
-                <Button
-                  variant={isCompleted ? "default" : "outline"}
-                  onClick={handleMarkComplete}
-                  disabled={completionLoading}
-                >
-                  {completionLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className={`mr-2 h-4 w-4 ${isCompleted ? "text-white" : "text-muted-foreground"}`} />
-                      {isCompleted ? "Completed" : "Mark as Complete"}
-                    </>
-                  )}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <AiTutorButton
+                    label="Ask AI"
+                    variant="outline"
+                    size="default"
+                    prefillMessage={`Help me understand ${lesson.title}`}
+                  />
+                  <Button
+                    variant={isCompleted ? "default" : "outline"}
+                    onClick={handleMarkComplete}
+                    disabled={completionLoading}
+                  >
+                    {completionLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className={`mr-2 h-4 w-4 ${isCompleted ? "text-white" : "text-muted-foreground"}`} />
+                        {isCompleted ? "Completed" : "Mark as Complete"}
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
 
               <Card>
@@ -415,7 +439,7 @@ function LessonContent() {
           <div className="hidden lg:block lg:col-span-4 xl:col-span-3">
             <div className="sticky top-20">
               <h3 className="font-semibold mb-4">Table of Contents</h3>
-              <div className="h-[calc(100vh-12rem)] overflow-auto">
+              <div className="h-[calc(100vh-16rem)] overflow-auto">
                 <nav className="space-y-1">
                   {tableOfContents.map((item) => (
                     <a
@@ -430,6 +454,22 @@ function LessonContent() {
                     </a>
                   ))}
                 </nav>
+              </div>
+              {/* AI Tutor Help Card */}
+              <div className="mt-6 p-4 rounded-lg border border-border bg-card/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <MessageSquare className="h-4 w-4 text-primary" />
+                  <h4 className="font-medium text-sm">Need Help?</h4>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Ask the AI Tutor any questions about this lesson.
+                </p>
+                <AiTutorButton
+                  label="Ask AI Tutor"
+                  variant="default"
+                  size="sm"
+                  className="w-full"
+                />
               </div>
             </div>
           </div>

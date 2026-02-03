@@ -1,7 +1,28 @@
 import type { NextConfig } from 'next'
 import { withSentryConfig } from '@sentry/nextjs'
 
+/**
+ * Determine if we're building for mobile (Capacitor)
+ * Set CAPACITOR_BUILD=true when running npm run build:mobile
+ */
+const isCapacitorBuild = process.env.CAPACITOR_BUILD === 'true'
+
 const nextConfig: NextConfig = {
+  /**
+   * Static export configuration for Capacitor builds
+   * When building for mobile, we export as static HTML/JS/CSS
+   * that can be loaded in the native WebView
+   */
+  ...(isCapacitorBuild && {
+    output: 'export',
+    // Disable image optimization for static export
+    images: {
+      unoptimized: true,
+    },
+    // Trailing slashes help with static file serving
+    trailingSlash: true,
+  }),
+
   async headers() {
     return [
       {

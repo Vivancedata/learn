@@ -111,6 +111,7 @@ model User {
   leaderboardEntries      LeaderboardCache[]
   assessmentAttempts      AssessmentAttempt[]
   subscription            Subscription?
+  conversations           Conversation[]
 }
 
 model Course {
@@ -622,4 +623,53 @@ model WebhookEvent {
 
   @@index([stripeEventId])
   @@index([processed])
+}
+
+// ============================================================================
+// AI Tutor Models
+// ============================================================================
+
+model Conversation {
+  id        String                @id @default(uuid())
+  userId    String
+  title     String?
+  lessonId  String?
+  courseId  String?
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ConversationMessage[]
+
+  @@index([userId])
+  @@index([lessonId])
+  @@index([courseId])
+}
+
+model ConversationMessage {
+  id             String       @id @default(uuid())
+  conversationId String
+  role           String       // 'user' | 'assistant' | 'system'
+  content        String
+  tokenCount     Int?         // Track token usage
+  createdAt      DateTime     @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
+
+// AI Tutor usage tracking for rate limiting
+model AITutorUsage {
+  id        String   @id @default(uuid())
+  userId    String
+  date      DateTime // Date only, for daily limit tracking
+  messages  Int      @default(0)
+  tokens    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
 }

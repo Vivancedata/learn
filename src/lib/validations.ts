@@ -674,3 +674,47 @@ export const createPortalSessionSchema = z.object({
 
 export type CreateCheckoutSessionInput = z.infer<typeof createCheckoutSessionSchema>
 export type CreatePortalSessionInput = z.infer<typeof createPortalSessionSchema>
+
+// ============================================================================
+// AI Tutor Schemas
+// ============================================================================
+
+export const tutorContextSchema = z.object({
+  lessonId: z.string().uuid('Invalid lesson ID').optional(),
+  lessonTitle: z.string().max(200, 'Lesson title too long').optional(),
+  courseId: z.string().max(100, 'Course ID too long').optional(),
+  courseName: z.string().max(200, 'Course name too long').optional(),
+  currentContent: z.string().max(10000, 'Content too long').optional(),
+})
+
+export const chatMessageSchema = z.object({
+  message: z
+    .string()
+    .min(1, 'Message cannot be empty')
+    .max(4000, 'Message must be less than 4000 characters')
+    .transform(sanitizeHtml),
+  conversationId: z.string().uuid('Invalid conversation ID').optional(),
+  context: tutorContextSchema.optional(),
+})
+
+export const createConversationSchema = z.object({
+  context: tutorContextSchema.optional(),
+})
+
+export const getConversationsQuerySchema = z.object({
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 20))
+    .pipe(z.number().int().min(1).max(50, 'Limit must be between 1 and 50')),
+})
+
+export const conversationIdParamsSchema = z.object({
+  id: z.string().uuid('Invalid conversation ID'),
+})
+
+export type TutorContextInput = z.infer<typeof tutorContextSchema>
+export type ChatMessageInput = z.infer<typeof chatMessageSchema>
+export type CreateConversationInput = z.infer<typeof createConversationSchema>
+export type GetConversationsQueryInput = z.infer<typeof getConversationsQuerySchema>
+export type ConversationIdParamsInput = z.infer<typeof conversationIdParamsSchema>
