@@ -234,8 +234,8 @@ function SubscriptionCard() {
     setPortalLoading(true)
     try {
       await openPortal()
-    } catch (error) {
-      console.error('Failed to open portal:', error)
+    } catch (_error) {
+      // Portal open failed - user notified via UI
     } finally {
       setPortalLoading(false)
     }

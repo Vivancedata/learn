@@ -91,14 +91,6 @@ export async function PATCH(request: NextRequest) {
       },
     })
 
-    console.log('=================================')
-    console.log('PROFILE UPDATED')
-    console.log('=================================')
-    console.log('User:', updatedUser.email)
-    console.log('Name:', updatedUser.name)
-    console.log('GitHub:', updatedUser.githubUsername)
-    console.log('=================================')
-
     return apiSuccess({
       user: updatedUser,
       message: 'Profile updated successfully',

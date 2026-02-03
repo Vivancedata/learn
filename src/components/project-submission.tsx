@@ -59,8 +59,8 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
           setSubmitted(true)
         }
       }
-    } catch (err) {
-      console.error('Failed to fetch existing submission:', err)
+    } catch (_err) {
+      // Non-critical - user can still submit new project
     } finally {
       setFetchingExisting(false)
     }

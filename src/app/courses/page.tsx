@@ -14,8 +14,8 @@ export default function CoursesPage() {
       try {
         const loadedCourses = await getAllCourses()
         setCourses(loadedCourses)
-      } catch (error) {
-        console.error("Error loading courses:", error)
+      } catch (_error) {
+        // Error handled by empty state
       } finally {
         setLoading(false)
       }

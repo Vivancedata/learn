@@ -24,8 +24,8 @@ export default function CoursePage() {
       try {
         const course = await getCourseById(courseId)
         setCourseData(course)
-      } catch (error) {
-        console.error("Error loading course:", error)
+      } catch (_error) {
+        // Error handled by null course state
       } finally {
         setLoading(false)
       }

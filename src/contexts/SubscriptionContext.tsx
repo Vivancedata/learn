@@ -64,8 +64,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       } else {
         setSubscription(null)
       }
-    } catch (err) {
-      console.error('Failed to fetch subscription:', err)
+    } catch (_err) {
       setError('Failed to load subscription status')
       setSubscription(null)
     } finally {

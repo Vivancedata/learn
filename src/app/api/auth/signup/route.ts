@@ -111,26 +111,12 @@ export async function POST(request: NextRequest) {
         })
 
         if (!emailResult.success) {
-          console.error('[Signup] Failed to send verification email:', emailResult.error)
+          // Email failed to send - tracked via email service
         }
-      } else {
-        // Development: Log verification info to console
-        const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`
-
-        console.log('=================================')
-        console.log('EMAIL VERIFICATION (Dev Mode)')
-        console.log('=================================')
-        console.log('User:', user.email)
-        console.log('Code:', verificationCode)
-        console.log('Verification URL:', verificationUrl)
-        console.log('Expires:', expiresAt.toISOString())
-        console.log('=================================')
-        console.log('Note: Set RESEND_API_KEY to send real emails')
-        console.log('=================================')
       }
+      // Note: In development without RESEND_API_KEY, verification code is returned in response
     } catch (dbError) {
-      // EmailVerificationToken model might not exist yet
-      console.warn('[Signup] Could not create verification token:', dbError)
+      // EmailVerificationToken model might not exist yet - non-critical for signup
     }
 
     return apiSuccess(

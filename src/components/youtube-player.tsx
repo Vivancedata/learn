@@ -149,14 +149,12 @@ export function YouTubePlayer({
                 onComplete?.()
               }
             },
-            onError: (event: YT.OnErrorEvent) => {
-              console.error("YouTube player error:", event.data)
+            onError: (_event: YT.OnErrorEvent) => {
               setError("Failed to load video. Please try again.")
             },
           },
         })
-      } catch (err) {
-        console.error("Failed to initialize YouTube player:", err)
+      } catch (_err) {
         if (isMounted) {
           setError("Failed to initialize video player.")
         }

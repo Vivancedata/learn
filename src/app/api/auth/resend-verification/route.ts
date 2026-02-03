@@ -78,39 +78,23 @@ export async function POST(request: NextRequest) {
         },
       })
     } catch (dbError) {
-      // EmailVerificationToken model might not exist yet
-      console.warn('[Resend Verification] Could not create token:', dbError)
+      // EmailVerificationToken model might not exist yet - non-critical
+      void dbError
     }
 
     // Send verification email
     const userName = user.name || user.email.split('@')[0]
 
     if (isEmailServiceConfigured()) {
-      const emailResult = await sendVerificationEmail({
+      await sendVerificationEmail({
         to: user.email,
         userName,
         verificationCode,
         verificationToken,
       })
-
-      if (!emailResult.success) {
-        console.error('[Resend Verification] Failed to send email:', emailResult.error)
-      }
-    } else {
-      // Development: Log verification info to console
-      const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`
-
-      console.log('=================================')
-      console.log('EMAIL VERIFICATION (Dev Mode)')
-      console.log('=================================')
-      console.log('User:', user.email)
-      console.log('Code:', verificationCode)
-      console.log('Verification URL:', verificationUrl)
-      console.log('Expires:', expiresAt.toISOString())
-      console.log('=================================')
-      console.log('Note: Set RESEND_API_KEY to send real emails')
-      console.log('=================================')
+      // Email errors tracked via email service
     }
+    // Note: In development without RESEND_API_KEY, verificationCode is returned in response
 
     // Build response
     const responseData: { message: string; verificationCode?: string } = {

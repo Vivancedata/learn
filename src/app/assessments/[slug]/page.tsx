@@ -85,7 +85,6 @@ function AssessmentDetailContent({
       setUserStats(data.data.userStats)
       setRelatedCourse(data.data.relatedCourse)
     } catch (err) {
-      console.error('Error fetching assessment:', err)
       setError(err instanceof Error ? err.message : 'Failed to load assessment')
     } finally {
       setLoading(false)

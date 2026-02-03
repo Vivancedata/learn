@@ -68,20 +68,17 @@ export async function sendPasswordResetEmail(
     })
 
     if (result.error) {
-      console.error('[Email Service] Failed to send password reset email:', result.error)
       return {
         success: false,
         error: result.error.message,
       }
     }
 
-    console.log('[Email Service] Password reset email sent:', result.data?.id)
     return {
       success: true,
       messageId: result.data?.id,
     }
   } catch (error) {
-    console.error('[Email Service] Error sending password reset email:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -117,20 +114,17 @@ export async function sendVerificationEmail(
     })
 
     if (result.error) {
-      console.error('[Email Service] Failed to send verification email:', result.error)
       return {
         success: false,
         error: result.error.message,
       }
     }
 
-    console.log('[Email Service] Verification email sent:', result.data?.id)
     return {
       success: true,
       messageId: result.data?.id,
     }
   } catch (error) {
-    console.error('[Email Service] Error sending verification email:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

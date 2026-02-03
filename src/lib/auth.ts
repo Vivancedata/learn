@@ -64,8 +64,8 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET)
     return payload as JWTPayload
-  } catch (error) {
-    console.error('Token verification failed:', error)
+  } catch (_error) {
+    // Invalid or expired token
     return null
   }
 }

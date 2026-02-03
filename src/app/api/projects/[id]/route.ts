@@ -126,17 +126,6 @@ export async function PATCH(
       },
     })
 
-    console.log('=================================')
-    console.log('PROJECT SUBMISSION UPDATED')
-    console.log('=================================')
-    console.log('Submission ID:', id)
-    console.log('User:', user.email)
-    console.log('Lesson:', updatedSubmission.lesson.title)
-    if (body.isPublic !== undefined) {
-      console.log('Public:', updatedSubmission.isPublic)
-    }
-    console.log('=================================')
-
     return apiSuccess({
       submission: updatedSubmission,
       message: 'Project submission updated successfully',
@@ -186,15 +175,6 @@ export async function DELETE(
     await prisma.projectSubmission.delete({
       where: { id },
     })
-
-    console.log('=================================')
-    console.log('PROJECT SUBMISSION DELETED')
-    console.log('=================================')
-    console.log('Submission ID:', id)
-    console.log('User:', user.email)
-    console.log('Lesson:', submission.lesson.title)
-    console.log('Status:', submission.status)
-    console.log('=================================')
 
     return apiSuccess({
       message: 'Project submission deleted successfully',

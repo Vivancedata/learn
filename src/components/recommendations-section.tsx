@@ -64,7 +64,6 @@ export function RecommendationsSection({
       const data = await response.json()
       setRecommendations(data.data.recommendations.slice(0, maxItems))
     } catch (err) {
-      console.error('Failed to fetch recommendations:', err)
       setError(err instanceof Error ? err.message : 'Failed to load recommendations')
     } finally {
       setIsLoading(false)
@@ -87,8 +86,8 @@ export function RecommendationsSection({
       const data = await response.json()
       setRecommendations(data.data.recommendations.slice(0, maxItems))
       setCarouselIndex(0)
-    } catch (err) {
-      console.error('Failed to refresh recommendations:', err)
+    } catch (_err) {
+      // Refresh failed - user can try again
     } finally {
       setIsRefreshing(false)
     }

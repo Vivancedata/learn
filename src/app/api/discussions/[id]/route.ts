@@ -105,14 +105,6 @@ export async function DELETE(
       where: { id },
     })
 
-    console.log('=================================')
-    console.log('DISCUSSION DELETED')
-    console.log('=================================')
-    console.log('Discussion ID:', id)
-    console.log('User:', user.email)
-    console.log('Deleted Replies:', discussion.replies.length)
-    console.log('=================================')
-
     return apiSuccess({
       message: 'Discussion and all replies deleted successfully',
       deletedReplies: discussion.replies.length,

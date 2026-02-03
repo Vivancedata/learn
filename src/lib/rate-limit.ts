@@ -200,9 +200,8 @@ class RedisRateLimiter {
         resetTime: result.reset,
         limit: result.limit,
       }
-    } catch (error) {
-      // Log error and fail open to prevent blocking requests on Redis errors
-      console.error('[RateLimit] Redis error, failing open:', error)
+    } catch (_error) {
+      // Fail open to prevent blocking requests on Redis errors
       return {
         success: true,
         remaining: limit,
@@ -233,7 +232,6 @@ class RateLimiter {
     if (redisConfigured) {
       this.redis = new RedisRateLimiter()
       this.useRedis = true
-      console.log('[RateLimit] Using Redis-based rate limiting')
     } else if (isProduction) {
       // In production, Redis MUST be configured
       throw new Error(

@@ -8,6 +8,41 @@ import { z } from 'zod'
 import * as Sentry from '@sentry/nextjs'
 import { formatZodErrors } from './validations'
 
+/**
+ * Sanitizes data by redacting sensitive fields before logging/reporting
+ */
+function sanitizeData(data: unknown): unknown {
+  if (!data || typeof data !== 'object') {
+    return data
+  }
+
+  const sensitiveKeys = [
+    'password',
+    'token',
+    'secret',
+    'apiKey',
+    'api_key',
+    'authorization',
+    'creditCard',
+    'credit_card',
+    'cvv',
+    'ssn',
+    'social_security',
+  ]
+
+  const sanitized = { ...data } as Record<string, unknown>
+
+  for (const key of Object.keys(sanitized)) {
+    if (sensitiveKeys.some((sk) => key.toLowerCase().includes(sk.toLowerCase()))) {
+      sanitized[key] = '[REDACTED]'
+    } else if (typeof sanitized[key] === 'object') {
+      sanitized[key] = sanitizeData(sanitized[key])
+    }
+  }
+
+  return sanitized
+}
+
 // ============================================================================
 // Error Response Types
 // ============================================================================
@@ -258,7 +293,7 @@ function reportToSentry(
         statusCode,
       },
       request: context?.requestData ? {
-        body: sanitizeRequestData(context.requestData),
+        body: sanitizeData(context.requestData),
       } : undefined,
     },
     tags: {
@@ -280,26 +315,6 @@ function reportToSentry(
       route: context?.route,
     },
   })
-}
-
-/**
- * Sanitizes request data to remove sensitive fields before sending to Sentry
- */
-function sanitizeRequestData(data: unknown): unknown {
-  if (!data || typeof data !== 'object') {
-    return data
-  }
-
-  const sensitiveFields = ['password', 'token', 'secret', 'apiKey', 'creditCard']
-  const sanitized = { ...data } as Record<string, unknown>
-
-  for (const field of sensitiveFields) {
-    if (field in sanitized) {
-      sanitized[field] = '[REDACTED]'
-    }
-  }
-
-  return sanitized
 }
 
 // ============================================================================

@@ -48,7 +48,7 @@ export async function GET(
 
     return NextResponse.json(submission)
   } catch (error) {
-    console.error('Error fetching submission:', error)
+    void error // Error handled via response
     return NextResponse.json(
       { error: 'Failed to fetch submission' },
       { status: 500 }
@@ -100,7 +100,7 @@ export async function PATCH(
 
     return NextResponse.json(updated)
   } catch (error) {
-    console.error('Error updating submission:', error)
+    void error // Error handled via response
     return NextResponse.json(
       { error: 'Failed to update submission' },
       { status: 500 }
@@ -139,7 +139,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Submission deleted' })
   } catch (error) {
-    console.error('Error deleting submission:', error)
+    void error // Error handled via response
     return NextResponse.json(
       { error: 'Failed to delete submission' },
       { status: 500 }

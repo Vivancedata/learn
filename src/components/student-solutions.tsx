@@ -142,8 +142,8 @@ export function StudentSolutions({ lessonId, courseId }: StudentSolutionsProps) 
             : s
         )
       )
-    } catch (err) {
-      console.error('Failed to like solution:', err)
+    } catch (_err) {
+      // Error is non-critical - like state will be stale until page refresh
     } finally {
       setLikingIds((prev) => {
         const newSet = new Set(prev)

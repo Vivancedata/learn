@@ -124,7 +124,7 @@ export async function POST(
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    console.error('Error marking lesson complete:', error)
+    void error // Error handled via response
     return NextResponse.json(
       { error: 'Failed to mark lesson as complete' },
       { status: 500 }
@@ -178,7 +178,7 @@ export async function DELETE(
       courseId,
     })
   } catch (error) {
-    console.error('Error marking lesson incomplete:', error)
+    void error // Error handled via response
     return NextResponse.json(
       { error: 'Failed to mark lesson as incomplete' },
       { status: 500 }
