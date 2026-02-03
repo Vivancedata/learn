@@ -89,7 +89,6 @@ function DashboardContent() {
         if (coursesResult.status === 'fulfilled') {
           setCourses(coursesResult.value)
         } else {
-          console.error('Failed to load courses:', coursesResult.reason)
           setError((prev) => prev ? `${prev}; Failed to load courses` : 'Failed to load courses')
         }
 
@@ -97,7 +96,6 @@ function DashboardContent() {
         if (pathsResult.status === 'fulfilled') {
           setPaths(pathsResult.value)
         } else {
-          console.error('Failed to load paths:', pathsResult.reason)
           setError((prev) => prev ? `${prev}; Failed to load paths` : 'Failed to load paths')
         }
 
@@ -129,19 +127,18 @@ function DashboardContent() {
             setCourses(coursesWithProgress)
           }
         } else {
-          console.error('Failed to load progress:', progressResult.reason)
           // Don't set error here - progress is optional
+          void progressResult.reason
         }
 
         // Handle points result
         if (pointsResult.status === 'fulfilled') {
           setUserPoints(pointsResult.value.data)
         } else {
-          console.error('Failed to load points:', pointsResult.reason)
           // Don't set error here - points is optional
+          void pointsResult.reason
         }
-      } catch (error) {
-        console.error('Error loading dashboard data:', error)
+      } catch (_error) {
         setError('An unexpected error occurred while loading dashboard data')
       } finally {
         setLoading(false)

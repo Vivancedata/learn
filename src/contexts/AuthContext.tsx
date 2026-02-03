@@ -54,8 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUser(null)
       }
-    } catch (err) {
-      console.error('Failed to fetch user:', err)
+    } catch (_err) {
+      // Auth check failed - user not logged in
       setUser(null)
     } finally {
       setLoading(false)
@@ -222,8 +222,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       analytics.reset()
 
       setUser(null)
-    } catch (err) {
-      console.error('Logout failed:', err)
+    } catch (_err) {
+      // Logout API failed - clear local state anyway
       setError('Logout failed')
 
       // Track logout failures in Sentry

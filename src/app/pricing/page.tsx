@@ -83,8 +83,7 @@ export default function PricingPage() {
         : SUBSCRIPTION_PLANS.PRO_MONTHLY.priceId
 
       await redirectToCheckout(priceId)
-    } catch (error) {
-      console.error('Checkout error:', error)
+    } catch (_error) {
       alert('Failed to start checkout. Please try again.')
     } finally {
       setLoading(null)

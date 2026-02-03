@@ -73,25 +73,12 @@ export async function POST(request: NextRequest) {
       })
 
       if (!emailResult.success) {
-        console.error('[Forgot Password] Failed to send email:', emailResult.error)
+        // Email failed to send - tracked via email service
         // Still return success to prevent email enumeration
         // The token is created, user can request again if needed
       }
-    } else {
-      // Development: Log reset URL to console
-      const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`
-
-      console.log('=================================')
-      console.log('PASSWORD RESET REQUEST (Dev Mode)')
-      console.log('=================================')
-      console.log('User:', user.email)
-      console.log('Reset URL:', resetUrl)
-      console.log('Token:', resetToken)
-      console.log('Expires:', expiresAt.toISOString())
-      console.log('=================================')
-      console.log('Note: Set RESEND_API_KEY to send real emails')
-      console.log('=================================')
     }
+    // Note: In development without RESEND_API_KEY, resetUrl is returned in response
 
     // Build response - include resetUrl only in development when email service is not configured
     const responseData: { message: string; resetUrl?: string } = {

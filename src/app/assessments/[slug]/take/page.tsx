@@ -115,8 +115,7 @@ function AssessmentTakeContent({
       const data: AssessmentStartResponse = await response.json()
       setAssessmentData(data.data)
       startTimeRef.current = Date.now()
-    } catch (err) {
-      console.error('Error starting assessment:', err)
+    } catch (_err) {
       setError('Failed to start assessment. Please try again.')
     } finally {
       setLoading(false)
@@ -175,8 +174,7 @@ function AssessmentTakeContent({
 
       // Navigate to results page
       router.push(`/assessments/${slug}/results`)
-    } catch (err) {
-      console.error('Error submitting assessment:', err)
+    } catch (_err) {
       submittedRef.current = false
       setIsSubmitting(false)
       setError('Failed to submit assessment. Please try again.')

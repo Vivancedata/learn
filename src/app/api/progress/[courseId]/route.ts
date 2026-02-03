@@ -98,7 +98,7 @@ export async function GET(
       lastAccessed: progress.lastAccessed,
     })
   } catch (error) {
-    console.error('Error fetching progress:', error)
+    void error // Error handled via response
     return NextResponse.json(
       { error: 'Failed to fetch progress' },
       { status: 500 }

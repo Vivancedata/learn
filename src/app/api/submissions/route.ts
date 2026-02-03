@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(filteredSubmissions)
   } catch (error) {
-    console.error('Error fetching submissions:', error)
+    void error // Error handled via response
     return NextResponse.json(
       { error: 'Failed to fetch submissions' },
       { status: 500 }
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    console.error('Error creating submission:', error)
+    void error // Error handled via response
     return NextResponse.json(
       { error: 'Failed to create submission' },
       { status: 500 }

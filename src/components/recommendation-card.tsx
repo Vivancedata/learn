@@ -65,8 +65,8 @@ export function RecommendationCard({
         setIsDismissed(true)
         onDismiss?.(courseId)
       }
-    } catch (error) {
-      console.error('Failed to dismiss recommendation:', error)
+    } catch (_error) {
+      // Dismiss failed - card will remain visible
     } finally {
       setIsDismissing(false)
     }
@@ -80,8 +80,8 @@ export function RecommendationCard({
         body: JSON.stringify({ userId, courseId }),
       })
       onClick?.(courseId)
-    } catch (error) {
-      console.error('Failed to track recommendation click:', error)
+    } catch (_error) {
+      // Click tracking is non-critical
     }
   }
 

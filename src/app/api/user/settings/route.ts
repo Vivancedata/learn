@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    console.error('Error fetching user settings:', error)
+    void error // Error handled via response
     return NextResponse.json(
       { error: 'Failed to fetch user settings' },
       { status: 500 }
@@ -86,7 +86,7 @@ export async function PATCH(request: NextRequest) {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    console.error('Error updating user settings:', error)
+    void error // Error handled via response
     return NextResponse.json(
       { error: 'Failed to update user settings' },
       { status: 500 }

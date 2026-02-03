@@ -103,8 +103,7 @@ function AssessmentsCatalogContent() {
       setAssessments(data.data.assessments)
       setPagination(data.data.pagination)
       setFilters(data.data.filters)
-    } catch (err) {
-      console.error('Error fetching assessments:', err)
+    } catch (_err) {
       setError('Failed to load assessments. Please try again.')
     } finally {
       setLoading(false)
@@ -124,8 +123,8 @@ function AssessmentsCatalogContent() {
         const data: UserProfileResponse = await response.json()
         setUserStats(data.data.profile)
       }
-    } catch (err) {
-      console.error('Error fetching user stats:', err)
+    } catch (_err) {
+      // User stats are optional - non-critical failure
     }
   }, [user?.id])
 

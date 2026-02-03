@@ -77,8 +77,7 @@ function LeaderboardContent() {
 
       const result: ApiResponse<LeaderboardResponse> = await response.json()
       setLeaderboardData(result.data)
-    } catch (err) {
-      console.error('Error fetching leaderboard:', err)
+    } catch (_err) {
       setError('Failed to load leaderboard. Please try again.')
     } finally {
       setLoading(false)

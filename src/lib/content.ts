@@ -23,8 +23,8 @@ export async function getAllCourses(): Promise<Course[]> {
     })
 
     return adaptCourses(courses)
-  } catch (error) {
-    console.error('Error fetching courses:', error)
+  } catch (_error) {
+    // Database error - return empty array
     return []
   }
 }
@@ -56,8 +56,8 @@ export async function getCourseById(courseId: string): Promise<Course | null> {
     if (!course) return null
 
     return adaptCourse(course)
-  } catch (error) {
-    console.error(`Error fetching course ${courseId}:`, error)
+  } catch (_error) {
+    // Database error - return null
     return null
   }
 }
@@ -89,8 +89,8 @@ export async function getLessonById(courseId: string, lessonId: string): Promise
     }
 
     return adaptLessonWithQuiz(lesson)
-  } catch (error) {
-    console.error(`Error fetching lesson ${lessonId}:`, error)
+  } catch (_error) {
+    // Database error - return null
     return null
   }
 }
@@ -139,8 +139,8 @@ export async function getAllPaths(): Promise<Path[]> {
     })
 
     return adaptPaths(paths)
-  } catch (error) {
-    console.error('Error fetching paths:', error)
+  } catch (_error) {
+    // Database error - return empty array
     return []
   }
 }
@@ -164,8 +164,8 @@ export async function getPathById(pathId: string): Promise<Path | null> {
     if (!path) return null
 
     return adaptPath(path)
-  } catch (error) {
-    console.error(`Error fetching path ${pathId}:`, error)
+  } catch (_error) {
+    // Database error - return null
     return null
   }
 }

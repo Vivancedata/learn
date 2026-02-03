@@ -277,8 +277,8 @@ export async function POST(request: NextRequest) {
             }
           }
         } catch (xpError) {
-          // Log XP errors but don't fail the lesson completion
-          console.error('Error awarding XP:', xpError)
+          // XP errors should not fail the lesson completion - silently continue
+          void xpError
         }
       }
     }

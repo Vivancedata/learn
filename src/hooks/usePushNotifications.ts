@@ -96,8 +96,8 @@ export function usePushNotifications(): UsePushNotificationsResult {
       const registration = await navigator.serviceWorker.ready
       const subscription = await registration.pushManager.getSubscription()
       setIsSubscribed(!!subscription)
-    } catch (err) {
-      console.error('[Push] Failed to check subscription:', err)
+    } catch (_err) {
+      // Failed to check subscription - default to not subscribed
     }
   }, [isSupported])
 
@@ -212,7 +212,6 @@ export function usePushNotifications(): UsePushNotificationsResult {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to subscribe'
       setError(message)
-      console.error('[Push] Subscribe error:', err)
       return false
     } finally {
       setIsLoading(false)
@@ -254,16 +253,14 @@ export function usePushNotifications(): UsePushNotificationsResult {
         }),
       })
 
-      if (!response.ok) {
-        console.warn('[Push] Server unsubscribe failed, but browser unsubscribed')
-      }
+      // Server unsubscribe may fail but browser is unsubscribed - that's OK
+      void response
 
       setIsSubscribed(false)
       return true
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to unsubscribe'
       setError(message)
-      console.error('[Push] Unsubscribe error:', err)
       return false
     } finally {
       setIsLoading(false)

@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     try {
       event = constructWebhookEvent(body, signature)
     } catch (err) {
-      console.error('Webhook signature verification failed:', err)
+      void err // Signature verification failed - logged via Stripe dashboard
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 400 }
@@ -96,7 +96,8 @@ export async function POST(request: NextRequest) {
           break
 
         default:
-          console.log(`Unhandled event type: ${event.type}`)
+          // Unhandled event types are logged in webhook event record
+          break
       }
 
       // Mark event as processed
@@ -108,9 +109,7 @@ export async function POST(request: NextRequest) {
         },
       })
     } catch (error) {
-      // Log error but don't fail the webhook
-      console.error(`Error processing webhook ${event.type}:`, error)
-
+      // Error is recorded in webhook event - don't fail the webhook
       await prisma.webhookEvent.update({
         where: { stripeEventId: event.id },
         data: {
@@ -121,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('Webhook error:', error)
+    void error // Webhook errors tracked via Stripe dashboard
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }
@@ -139,7 +138,7 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   const subscriptionId = session.subscription as string
 
   if (!userId) {
-    console.error('No userId in checkout session metadata')
+    // Missing userId in metadata - checkout was not initiated correctly
     return
   }
 
@@ -159,7 +158,6 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     },
   })
 
-  console.log(`Subscription activated for user ${userId}`)
 }
 
 /**
@@ -175,7 +173,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   })
 
   if (!existingSubscription) {
-    console.error(`No subscription found for customer ${customerId}`)
+    // Subscription not found - may have been deleted or customer not synced
     return
   }
 
@@ -208,7 +206,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     },
   })
 
-  console.log(`Subscription updated for customer ${customerId}`)
 }
 
 /**
@@ -224,7 +221,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   })
 
   if (!existingSubscription) {
-    console.error(`No subscription found for customer ${customerId}`)
+    // Subscription not found - may have already been deleted
     return
   }
 
@@ -237,7 +234,6 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     },
   })
 
-  console.log(`Subscription canceled for customer ${customerId}`)
 }
 
 /**
@@ -273,7 +269,6 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     })
   }
 
-  console.log(`Payment succeeded for customer ${customerId}`)
 }
 
 /**
@@ -306,8 +301,6 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     where: { id: existingSubscription.id },
     data: { status: 'past_due' },
   })
-
-  console.log(`Payment failed for customer ${customerId}`)
 
   // TODO: Send notification to user about failed payment
 }

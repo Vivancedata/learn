@@ -118,7 +118,6 @@ export async function sendPushNotification(
       }
     }
 
-    console.error('[Push] Failed to send notification:', webPushError.message)
     return {
       success: false,
       error: webPushError.message || 'Unknown error',

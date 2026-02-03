@@ -69,13 +69,6 @@ export async function POST(request: NextRequest) {
       }),
     ])
 
-    console.log('=================================')
-    console.log('PASSWORD RESET SUCCESSFUL')
-    console.log('=================================')
-    console.log('User:', resetToken.user.email)
-    console.log('Time:', new Date().toISOString())
-    console.log('=================================')
-
     return apiSuccess({
       message: 'Password has been reset successfully. You can now sign in with your new password.',
     })

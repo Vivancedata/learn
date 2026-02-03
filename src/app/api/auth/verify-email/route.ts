@@ -94,13 +94,6 @@ export async function POST(request: NextRequest) {
       }),
     ])
 
-    console.log('=================================')
-    console.log('EMAIL VERIFIED')
-    console.log('=================================')
-    console.log('User:', verificationRecord.user.email)
-    console.log('Time:', new Date().toISOString())
-    console.log('=================================')
-
     return apiSuccess({
       message: 'Email verified successfully',
       verified: true,

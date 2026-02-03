@@ -21,8 +21,8 @@ export default function PathsPage() {
         
         setPaths(loadedPaths)
         setCourses(loadedCourses)
-      } catch (error) {
-        console.error("Error loading paths data:", error)
+      } catch (_error) {
+        // Error handled by empty state
       } finally {
         setLoading(false)
       }

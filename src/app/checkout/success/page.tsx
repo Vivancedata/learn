@@ -21,8 +21,8 @@ function CheckoutSuccessContent() {
     const refreshSubscription = async () => {
       try {
         await refreshUser()
-      } catch (error) {
-        console.error('Failed to refresh user:', error)
+      } catch (_error) {
+        // Refresh failed - user may need to reload page
       } finally {
         setLoading(false)
       }

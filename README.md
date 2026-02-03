@@ -14,7 +14,7 @@ This platform is **production-ready** with:
 - ✅ Full authorization and access control
 - ✅ Production deployment documentation
 
-See [PRODUCTION_CHECKLIST.md](./PRODUCTION_CHECKLIST.md) for deployment guide.
+See the [Production Deployment](#production-deployment) section below for deployment guide.
 
 ## Overview
 
@@ -382,10 +382,76 @@ All API endpoints (except `/api/auth/*`) require authentication. Include the JWT
 - ✅ **Relationship Management**: Proper handling of paths → courses → sections → lessons
 
 ### Platform Status
-- **Build Status**: ✅ Zero TypeScript errors
-- **Security**: ✅ Zero vulnerabilities
+- **Build Status**: Zero TypeScript errors
+- **Security**: Zero vulnerabilities
 - **Styling Consistency**: 9/10 (up from 7.5/10)
 - **Infrastructure**: 100% production-ready
+
+## Production Deployment
+
+### Environment Variables (Required)
+
+```bash
+# Database (use PostgreSQL in production)
+DATABASE_URL="postgresql://user:password@host:5432/database"
+
+# Authentication (generate with: openssl rand -base64 32)
+JWT_SECRET="your-secure-random-secret"
+
+# CORS - comma-separated list of allowed origins
+ALLOWED_ORIGINS="https://yourdomain.com,https://www.yourdomain.com"
+
+# Redis for rate limiting (recommended for production)
+UPSTASH_REDIS_REST_URL="https://xxx.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="xxx"
+
+# Environment
+NODE_ENV="production"
+```
+
+### Deployment Steps
+
+```bash
+# 1. Install dependencies
+npm ci
+
+# 2. Generate Prisma client
+npx prisma generate
+
+# 3. Run database migrations
+npx prisma migrate deploy
+
+# 4. Build the application
+npm run build
+
+# 5. Start production server
+npm start
+```
+
+### Security Checklist
+
+The platform includes these security features out of the box:
+
+- **Authentication**: JWT-based with HTTP-only secure cookies (7-day expiration)
+- **Authorization**: Middleware protection on all API routes with resource ownership verification
+- **Password Security**: bcryptjs hashing with 10 salt rounds, strength requirements enforced
+- **Security Headers**: CSP, HSTS, X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
+- **Rate Limiting**: 5 req/15min for auth, 100 req/15min for API endpoints
+- **Input Validation**: Zod validation on all API endpoints
+- **Error Handling**: Standardized responses with React Error Boundaries
+
+### Post-Deployment Verification
+
+```bash
+# Test API health endpoint
+curl https://yourdomain.com/api/health
+
+# Verify security headers
+curl -I https://yourdomain.com
+
+# Check SSL certificate at ssllabs.com
+# Check security headers at securityheaders.com
+```
 
 ## Contributing
 

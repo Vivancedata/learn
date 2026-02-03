@@ -99,14 +99,6 @@ export async function PATCH(request: NextRequest) {
       },
     })
 
-    console.log('=================================')
-    console.log('USER ROLE UPDATED')
-    console.log('=================================')
-    console.log('User:', updatedUser.email)
-    console.log('New Role:', updatedUser.role)
-    console.log('Updated By:', admin.email)
-    console.log('=================================')
-
     return apiSuccess({
       user: updatedUser,
       message: `User role updated to ${body.role}`,

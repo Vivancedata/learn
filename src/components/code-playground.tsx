@@ -207,8 +207,8 @@ export function CodePlayground({
       await navigator.clipboard.writeText(code)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      console.error('Failed to copy:', err)
+    } catch (_err) {
+      // Copy failed - user can try manual copy
     }
   }, [code])
 
