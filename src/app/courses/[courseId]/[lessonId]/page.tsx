@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Github, Flag, ArrowLeft, ArrowRight, CheckCircle, Loader2 } from "lucide-react"
@@ -18,6 +18,7 @@ import { Course, Lesson } from "@/types/course"
 import { useAuth } from "@/hooks/useAuth"
 import { PageSpinner } from "@/components/ui/spinner"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
+import { InteractiveCodeBlock, parseCodeBlockLanguage } from "@/components/interactive-code-block"
 
 interface TableOfContentsItem {
   id: string
@@ -39,21 +40,57 @@ function extractTableOfContents(content: string): TableOfContentsItem[] {
   })
 }
 
-const markdownComponents: Components = {
-  h1: (props) => <h1 className="mt-2" {...props} />,
-  pre: (props) => (
-    <pre className="bg-muted p-4 rounded-lg overflow-x-auto" {...props} />
-  ),
-  code: ({ className, children, ...props }) => {
-    const isInline = !className
-    return (
-      <code 
-        className={isInline ? "bg-muted px-1 py-0.5 rounded" : ""} 
-        {...props}
-      >
-        {children}
-      </code>
-    )
+/**
+ * Creates markdown components with support for interactive code blocks
+ * Code blocks marked with 'interactive' (e.g., ```python interactive)
+ * will be rendered as full code playgrounds
+ */
+function createMarkdownComponents(): Components {
+  return {
+    h1: (props) => <h1 className="mt-2" {...props} />,
+    h2: ({ children, ...props }) => {
+      const id = String(children).toLowerCase().replace(/[^\w]+/g, '-')
+      return <h2 id={id} {...props}>{children}</h2>
+    },
+    h3: ({ children, ...props }) => {
+      const id = String(children).toLowerCase().replace(/[^\w]+/g, '-')
+      return <h3 id={id} {...props}>{children}</h3>
+    },
+    // Handle pre tags - pass through to let code handle it
+    pre: ({ children }) => <>{children}</>,
+    // Handle code blocks with interactive support
+    code: ({ className, children, ...props }) => {
+      // Extract language from className (e.g., "language-python" or "language-python-interactive")
+      const match = /language-(\S+)/.exec(className || '')
+
+      // Check if this is an inline code block (no language class)
+      const isInline = !match
+
+      if (isInline) {
+        return (
+          <code
+            className="bg-muted px-1 py-0.5 rounded text-sm"
+            {...props}
+          >
+            {children}
+          </code>
+        )
+      }
+
+      // Parse the language string for interactive flag
+      const fullLang = match[1] || ''
+      const { language, interactive } = parseCodeBlockLanguage(fullLang)
+      const code = String(children).replace(/\n$/, '')
+
+      // Render as interactive code block for Python
+      return (
+        <InteractiveCodeBlock
+          code={code}
+          language={language}
+          interactive={interactive}
+        />
+      )
+    }
   }
 }
 
@@ -70,6 +107,9 @@ function LessonContent() {
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Memoize markdown components to avoid re-creation on every render
+  const markdownComponents = useMemo(() => createMarkdownComponents(), [])
 
   useEffect(() => {
     async function loadData() {

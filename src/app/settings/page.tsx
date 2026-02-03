@@ -5,20 +5,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Moon, Sun, Bell, Globe, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Moon, Sun, Globe, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { useAuth } from "@/hooks/useAuth"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useTheme } from "next-themes"
+import { NotificationPreferences } from "@/components/notification-preferences"
 
 function SettingsContent() {
   const { user, refreshUser } = useAuth()
   const { theme, setTheme } = useTheme()
-  const [notifications, setNotifications] = useState({
-    projectFeedback: true,
-    courseUpdates: true,
-    communityMessages: false
-  })
 
   // Profile form state
   const [name, setName] = useState("")
@@ -152,74 +148,7 @@ function SettingsContent() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Notifications</CardTitle>
-            <CardDescription>
-              Choose what you want to be notified about
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Project Feedback</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Get notified when someone comments on your project submissions
-                  </p>
-                </div>
-                <Button 
-                  variant={notifications.projectFeedback ? "default" : "outline"}
-                  onClick={() => setNotifications(prev => ({
-                    ...prev,
-                    projectFeedback: !prev.projectFeedback
-                  }))}
-                >
-                  <Bell className="mr-2 h-4 w-4" />
-                  {notifications.projectFeedback ? "Enabled" : "Disabled"}
-                </Button>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Course Updates</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Get notified about new lessons and course content
-                  </p>
-                </div>
-                <Button 
-                  variant={notifications.courseUpdates ? "default" : "outline"}
-                  onClick={() => setNotifications(prev => ({
-                    ...prev,
-                    courseUpdates: !prev.courseUpdates
-                  }))}
-                >
-                  <Bell className="mr-2 h-4 w-4" />
-                  {notifications.courseUpdates ? "Enabled" : "Disabled"}
-                </Button>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Community Messages</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Get notified about messages from other students
-                  </p>
-                </div>
-                <Button 
-                  variant={notifications.communityMessages ? "default" : "outline"}
-                  onClick={() => setNotifications(prev => ({
-                    ...prev,
-                    communityMessages: !prev.communityMessages
-                  }))}
-                >
-                  <Bell className="mr-2 h-4 w-4" />
-                  {notifications.communityMessages ? "Enabled" : "Disabled"}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <NotificationPreferences />
 
         <Card>
           <CardHeader>

@@ -36,33 +36,83 @@ enum UserRole {
   admin
 }
 
+enum RecommendationType {
+  CONTINUE_PATH      // Next course in learning path
+  SIMILAR_TOPIC      // Based on completed courses
+  SKILL_GAP          // Based on assessment results
+  POPULAR            // Trending among similar users
+  PREREQUISITE_MET   // User now qualifies for this
+  COMPLEMENT         // Complements recent learning
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  CODE_OUTPUT
+  FILL_BLANK
+}
+
+// Leaderboard enums
+enum LeaderboardType {
+  XP
+  STREAKS
+  COURSES_COMPLETED
+  LESSONS_COMPLETED
+  HELPING_POINTS
+}
+
+enum LeaderboardPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  ALL_TIME
+}
+
+enum VideoProvider {
+  YOUTUBE
+  VIMEO
+  WISTIA
+  SELF_HOSTED
+}
+
 model User {
-  id                   String                @id @default(uuid())
-  email                String                @unique
-  name                 String?
-  password             String
-  githubUsername       String?
-  role                 UserRole              @default(student)
-  emailVerified        Boolean               @default(false)
-  points               Int                   @default(0)
-  showOnLeaderboard    Boolean               @default(true)
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  courses              CourseProgress[]
-  paths                PathProgress[]
-  discussions          Discussion[]
-  discussionReplies    DiscussionReply[]
-  projectSubmissions   ProjectSubmission[]
-  certificates         Certificate[]
-  achievements         UserAchievement[]
-  passwordResetTokens  PasswordResetToken[]
-  pointsReceived       CommunityPoint[]      @relation("PointsReceived")
-  pointsGiven          CommunityPoint[]      @relation("PointsGiven")
-  projectLikes         ProjectLike[]
+  id                      String                   @id @default(uuid())
+  email                   String                   @unique
+  name                    String?
+  password                String
+  githubUsername          String?
+  role                    UserRole                 @default(student)
+  emailVerified           Boolean                  @default(false)
+  points                  Int                      @default(0)
+  showOnLeaderboard       Boolean                  @default(true)
+  currentStreak           Int                      @default(0)
+  longestStreak           Int                      @default(0)
+  lastActivityDate        DateTime?
+  streakFreezes           Int                      @default(0)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  courses                 CourseProgress[]
+  paths                   PathProgress[]
+  discussions             Discussion[]
+  discussionReplies       DiscussionReply[]
+  projectSubmissions      ProjectSubmission[]
+  certificates            Certificate[]
+  achievements            UserAchievement[]
+  passwordResetTokens     PasswordResetToken[]
+  pointsReceived          CommunityPoint[]         @relation("PointsReceived")
+  pointsGiven             CommunityPoint[]         @relation("PointsGiven")
+  projectLikes            ProjectLike[]
+  pushSubscriptions       PushSubscription[]
+  notificationPreference  NotificationPreference?
+  recommendations         CourseRecommendation[]
+  dailyActivities         DailyActivity[]
+  leaderboardEntries      LeaderboardCache[]
+  assessmentAttempts      AssessmentAttempt[]
 }
 
 model Course {
-  id               String           @id
+  id               String                 @id
   title            String
   description      String
   difficulty       CourseDifficulty
@@ -70,13 +120,15 @@ model Course {
   pathId           String
   prerequisites    String? // JSON array - SQLite doesn't support native JSON type
   learningOutcomes String? // JSON array - SQLite doesn't support native JSON type
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
   sections         CourseSection[]
   progress         CourseProgress[]
   discussions      Discussion[]
   certificates     Certificate[]
-  path             Path             @relation(fields: [pathId], references: [id])
+  recommendations  CourseRecommendation[]
+  assessments      SkillAssessment[]
+  path             Path                   @relation(fields: [pathId], references: [id])
 
   @@index([pathId])
 }
@@ -106,6 +158,12 @@ model Lesson {
   nextLessonId       String?
   prevLessonId       String?
   sectionId          String
+  // Video content fields
+  videoUrl           String?             // YouTube, Vimeo, or self-hosted URL
+  videoDuration      Int?                // Duration in seconds
+  videoProvider      VideoProvider?
+  videoTranscript    String?             // Optional video transcript
+  videoChapters      String?             // JSON array of chapter markers
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   section            CourseSection       @relation(fields: [sectionId], references: [id])
@@ -113,6 +171,7 @@ model Lesson {
   completedBy        CourseProgress[]    @relation("CompletedLessons")
   projectSubmissions ProjectSubmission[]
   discussions        Discussion[]
+  videoProgress      VideoProgress[]
 
   @@index([sectionId])
 }
@@ -335,4 +394,165 @@ model CommunityPoint {
   @@index([giverId])
   @@index([discussionId])
   @@index([replyId])
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String   // Public key for push encryption
+  auth      String   // Auth secret for push encryption
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model NotificationPreference {
+  id                String  @id @default(uuid())
+  userId            String  @unique
+  streakReminders   Boolean @default(true)
+  courseUpdates     Boolean @default(true)
+  achievementAlerts Boolean @default(true)
+  weeklyProgress    Boolean @default(true)
+  communityReplies  Boolean @default(true)
+  marketingEmails   Boolean @default(false)
+  quietHoursStart   Int?    // Hour (0-23)
+  quietHoursEnd     Int?    // Hour (0-23)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CourseRecommendation {
+  id         String             @id @default(uuid())
+  userId     String
+  courseId   String
+  score      Float // 0-1 relevance score
+  reason     String // Human-readable explanation of why recommended
+  reasonType RecommendationType
+  dismissed  Boolean            @default(false)
+  clicked    Boolean            @default(false)
+  enrolled   Boolean            @default(false)
+  createdAt  DateTime           @default(now())
+  expiresAt  DateTime
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId, dismissed])
+  @@index([expiresAt])
+}
+
+model DailyActivity {
+  id               String   @id @default(uuid())
+  userId           String
+  date             DateTime
+  xpEarned         Int      @default(0)
+  lessonsCompleted Int      @default(0)
+  quizzesTaken     Int      @default(0)
+  timeSpentMinutes Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+model LeaderboardCache {
+  id           String            @id @default(uuid())
+  type         LeaderboardType
+  period       LeaderboardPeriod
+  rank         Int
+  userId       String
+  score        Int
+  previousRank Int?
+  metadata     String?           // JSON for extra data like streak days, course names
+  calculatedAt DateTime          @default(now())
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([type, period, userId])
+  @@index([type, period, rank])
+  @@index([userId])
+}
+
+model VideoProgress {
+  id             String   @id @default(uuid())
+  lessonId       String
+  userId         String
+  watchedSeconds Int      @default(0)  // Current position in seconds
+  totalSeconds   Int                   // Total video duration in seconds
+  completed      Boolean  @default(false)
+  lastWatched    DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  lesson         Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, userId])
+  @@index([lessonId])
+  @@index([userId])
+}
+
+// Skill Assessment Models
+model SkillAssessment {
+  id             String             @id @default(uuid())
+  name           String             // "Python Fundamentals", "SQL Basics"
+  slug           String             @unique
+  description    String
+  courseId       String?            // Optional link to course
+  difficulty     CourseDifficulty
+  timeLimit      Int                // minutes
+  passingScore   Int                // percentage
+  totalQuestions Int
+  skillArea      String             // "Python", "SQL", "Machine Learning", etc.
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  questions AssessmentQuestion[]
+  attempts  AssessmentAttempt[]
+  course    Course?              @relation(fields: [courseId], references: [id])
+
+  @@index([courseId])
+  @@index([skillArea])
+}
+
+model AssessmentQuestion {
+  id            String       @id @default(uuid())
+  assessmentId  String
+  question      String
+  questionType  QuestionType
+  options       String       // JSON array - SQLite doesn't support native JSON type
+  correctAnswer String       // JSON (supports multiple correct for multi-select)
+  explanation   String
+  difficulty    Int          // 1-5, for adaptive scoring
+  points        Int          @default(10)
+  codeSnippet   String?      // Optional code snippet for CODE_OUTPUT questions
+
+  assessment SkillAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+  @@index([difficulty])
+}
+
+model AssessmentAttempt {
+  id           String   @id @default(uuid())
+  userId       String
+  assessmentId String
+  score        Int      // percentage
+  correctCount Int
+  totalCount   Int
+  timeSpent    Int      // seconds
+  answers      String   // JSON of user answers
+  passed       Boolean
+  completedAt  DateTime @default(now())
+
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessment SkillAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([assessmentId])
+  @@index([userId, assessmentId])
 }
