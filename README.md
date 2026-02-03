@@ -220,6 +220,82 @@ The platform currently offers the following learning paths:
 2. **Data Science** - Statistical analysis, data visualization, and machine learning
 3. **Mobile Development** - Cross-platform and native mobile application development
 
+## Rate Limiting with Redis
+
+The platform uses Redis-based rate limiting for production scalability. This ensures rate limits persist across server restarts and work correctly in distributed environments (multiple instances, serverless).
+
+### Rate Limit Configuration
+
+| Endpoint Type | Limit | Window |
+|---------------|-------|--------|
+| Authentication (`/api/auth/*`) | 5 requests | 15 minutes |
+| API (`/api/*`) | 100 requests | 15 minutes |
+| General | 1000 requests | 15 minutes |
+
+### Setting Up Redis (Upstash)
+
+For production deployments, you need to configure Redis. We recommend [Upstash](https://upstash.com/) for serverless-compatible Redis.
+
+1. **Create an Upstash account** at [upstash.com](https://upstash.com/)
+
+2. **Create a new Redis database**:
+   - Select your preferred region
+   - Choose the free tier (10,000 requests/day) for development/small apps
+
+3. **Get your credentials**:
+   - Copy the `UPSTASH_REDIS_REST_URL` from the dashboard
+   - Copy the `UPSTASH_REDIS_REST_TOKEN` from the dashboard
+
+4. **Add to your environment**:
+   ```bash
+   UPSTASH_REDIS_REST_URL="https://xxx.upstash.io"
+   UPSTASH_REDIS_REST_TOKEN="xxx"
+   ```
+
+### Development Mode
+
+In development, if Redis is not configured, the rate limiter automatically falls back to in-memory storage. You will see a warning in the console:
+
+```
+[RateLimit] WARNING: Using in-memory rate limiting (development only).
+```
+
+This is acceptable for local development but NOT suitable for:
+- Production deployments
+- Multiple server instances
+- Serverless environments (Vercel, AWS Lambda)
+
+### Health Check Endpoint
+
+The `/api/health` endpoint provides status information including Redis connectivity:
+
+```bash
+curl http://localhost:3000/api/health
+```
+
+Response:
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-01-01T00:00:00.000Z",
+  "version": "0.1.0",
+  "uptime": 3600,
+  "checks": {
+    "database": { "status": "up", "latencyMs": 5 },
+    "redis": { "status": "up", "latencyMs": 10, "mode": "redis" }
+  }
+}
+```
+
+### Rate Limit Headers
+
+All API responses include rate limit information:
+
+- `X-RateLimit-Limit`: Maximum requests allowed
+- `X-RateLimit-Remaining`: Requests remaining in current window
+- `X-RateLimit-Reset`: ISO timestamp when the window resets
+- `Retry-After`: Seconds to wait (only on 429 responses)
+
 ## Authentication
 
 The platform uses JWT (JSON Web Token) based authentication with secure HTTP-only cookies.

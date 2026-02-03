@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { hash } from 'bcryptjs'
 import { importContent } from './content-importer'
+import { seedAssessments } from './seed-assessments'
 
 const prisma = new PrismaClient()
 
@@ -104,6 +105,9 @@ async function main() {
 
     console.log('  ✅ Created sample discussions')
   }
+
+  // Seed skill assessments
+  await seedAssessments()
 }
 
 main()

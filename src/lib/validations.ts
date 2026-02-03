@@ -274,6 +274,26 @@ export const userPointsParamsSchema = z.object({
 })
 
 // ============================================================================
+// Daily Streak Schemas
+// ============================================================================
+
+export const recordActivitySchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  xpEarned: z.number().int().min(0).optional().default(0),
+  lessonsCompleted: z.number().int().min(0).optional().default(0),
+  quizzesTaken: z.number().int().min(0).optional().default(0),
+  timeSpentMinutes: z.number().int().min(0).optional().default(0),
+})
+
+export const useStreakFreezeSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+})
+
+export const streakUserParamsSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+})
+
+// ============================================================================
 // Pagination Schemas
 // ============================================================================
 
@@ -288,6 +308,229 @@ export const paginationSchema = z.object({
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : 10))
     .pipe(z.number().int().min(1).max(100, 'Limit must be between 1 and 100')),
+})
+
+// ============================================================================
+// Push Notification Schemas
+// ============================================================================
+
+export const pushSubscriptionSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  subscription: z.object({
+    endpoint: z.string().url('Invalid endpoint URL'),
+    keys: z.object({
+      p256dh: z.string().min(1, 'P256dh key is required'),
+      auth: z.string().min(1, 'Auth key is required'),
+    }),
+  }),
+})
+
+export const unsubscribePushSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  endpoint: z.string().url('Invalid endpoint URL'),
+})
+
+export const notificationPreferencesSchema = z.object({
+  streakReminders: z.boolean().optional(),
+  courseUpdates: z.boolean().optional(),
+  achievementAlerts: z.boolean().optional(),
+  weeklyProgress: z.boolean().optional(),
+  communityReplies: z.boolean().optional(),
+  marketingEmails: z.boolean().optional(),
+  quietHoursStart: z.number().int().min(0).max(23).nullable().optional(),
+  quietHoursEnd: z.number().int().min(0).max(23).nullable().optional(),
+})
+
+export const sendNotificationSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  title: z
+    .string()
+    .min(1, 'Title is required')
+    .max(100, 'Title must be less than 100 characters')
+    .transform(sanitizeHtml),
+  body: z
+    .string()
+    .min(1, 'Body is required')
+    .max(500, 'Body must be less than 500 characters')
+    .transform(sanitizeHtml),
+  url: z.string().url('Invalid URL').optional(),
+  icon: z.string().optional(),
+  tag: z.string().optional(),
+  requireInteraction: z.boolean().optional(),
+  data: z.record(z.unknown()).optional(),
+})
+
+// ============================================================================
+// Recommendation Schemas
+// ============================================================================
+
+export const userIdParamsSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+})
+
+export const dismissRecommendationSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  courseId: z.string().min(1, 'Course ID is required'),
+})
+
+export const clickRecommendationSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  courseId: z.string().min(1, 'Course ID is required'),
+})
+
+export const refreshRecommendationsSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+})
+
+// ============================================================================
+// Leaderboard Schemas
+// ============================================================================
+
+export const leaderboardTypeValues = ['xp', 'streaks', 'courses', 'lessons', 'helping'] as const
+export const leaderboardPeriodValues = ['daily', 'weekly', 'monthly', 'all_time'] as const
+
+export const getLeaderboardSchema = z.object({
+  type: z.enum(leaderboardTypeValues).default('xp'),
+  period: z.enum(leaderboardPeriodValues).default('all_time'),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 50))
+    .pipe(z.number().int().min(1).max(100, 'Limit must be between 1 and 100')),
+})
+
+export const leaderboardUserParamsSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+})
+
+export const refreshLeaderboardSchema = z.object({
+  type: z.enum(leaderboardTypeValues).optional(),
+  period: z.enum(leaderboardPeriodValues).optional(),
+})
+
+// ============================================================================
+// Video Progress Schemas
+// ============================================================================
+
+export const videoProgressSchema = z.object({
+  lessonId: z.string().uuid('Invalid lesson ID'),
+  watchedSeconds: z.number().int().min(0, 'Watched seconds must be non-negative'),
+  totalSeconds: z.number().int().min(1, 'Total seconds must be at least 1'),
+  completed: z.boolean().optional().default(false),
+})
+
+export const getVideoProgressSchema = z.object({
+  lessonId: z.string().uuid('Invalid lesson ID'),
+})
+
+export const videoProgressParamsSchema = z.object({
+  lessonId: z.string().uuid('Invalid lesson ID'),
+})
+
+// ============================================================================
+// XP (Experience Points) Schemas
+// ============================================================================
+
+export const xpSourceValues = [
+  'LESSON_COMPLETE',
+  'QUIZ_PERFECT',
+  'QUIZ_PASS',
+  'PROJECT_SUBMIT',
+  'PROJECT_APPROVED',
+  'STREAK_BONUS',
+  'ACHIEVEMENT',
+  'DAILY_LOGIN',
+  'HELPING_OTHERS',
+] as const
+
+export const xpUserParamsSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+})
+
+export const awardXpSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  amount: z.number().int().min(1, 'Amount must be at least 1').max(10000, 'Amount too large'),
+  source: z.enum(xpSourceValues),
+  sourceId: z.string().optional(),
+  description: z
+    .string()
+    .min(1, 'Description is required')
+    .max(500, 'Description must be less than 500 characters')
+    .transform(sanitizeHtml),
+})
+
+export const xpHistoryQuerySchema = z.object({
+  page: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 1))
+    .pipe(z.number().int().min(1, 'Page must be at least 1')),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 10))
+    .pipe(z.number().int().min(1).max(100, 'Limit must be between 1 and 100')),
+  source: z.enum(xpSourceValues).optional(),
+})
+
+// ============================================================================
+// Skill Assessment Schemas
+// ============================================================================
+
+export const questionTypeValues = [
+  'SINGLE_CHOICE',
+  'MULTIPLE_CHOICE',
+  'TRUE_FALSE',
+  'CODE_OUTPUT',
+  'FILL_BLANK',
+] as const
+
+export const difficultyValues = ['Beginner', 'Intermediate', 'Advanced'] as const
+
+export const assessmentSlugParamsSchema = z.object({
+  slug: z.string().min(1, 'Assessment slug is required'),
+})
+
+export const getAssessmentsQuerySchema = z.object({
+  skillArea: z.string().optional(),
+  difficulty: z.enum(difficultyValues).optional(),
+  page: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 1))
+    .pipe(z.number().int().min(1, 'Page must be at least 1')),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 10))
+    .pipe(z.number().int().min(1).max(50, 'Limit must be between 1 and 50')),
+})
+
+export const startAssessmentSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+})
+
+export const submitAssessmentSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  answers: z.record(
+    z.string(),
+    z.union([
+      z.string(),
+      z.array(z.string()),
+      z.number(),
+    ])
+  ).refine(
+    (answers) => Object.keys(answers).length > 0,
+    { message: 'Answers are required' }
+  ),
+})
+
+export const getUserAssessmentsSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+})
+
+export const assessmentUserParamsSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
 })
 
 // ============================================================================
@@ -313,6 +556,32 @@ export type GetSolutionsQueryInput = z.infer<typeof getSolutionsQuerySchema>
 export type ToggleSolutionLikeInput = z.infer<typeof toggleSolutionLikeSchema>
 export type GivePointInput = z.infer<typeof givePointSchema>
 export type UserPointsParamsInput = z.infer<typeof userPointsParamsSchema>
+export type RecordActivityInput = z.infer<typeof recordActivitySchema>
+export type UseStreakFreezeInput = z.infer<typeof useStreakFreezeSchema>
+export type StreakUserParamsInput = z.infer<typeof streakUserParamsSchema>
+export type UserIdParamsInput = z.infer<typeof userIdParamsSchema>
+export type DismissRecommendationInput = z.infer<typeof dismissRecommendationSchema>
+export type ClickRecommendationInput = z.infer<typeof clickRecommendationSchema>
+export type RefreshRecommendationsInput = z.infer<typeof refreshRecommendationsSchema>
+export type GetLeaderboardInput = z.infer<typeof getLeaderboardSchema>
+export type LeaderboardUserParamsInput = z.infer<typeof leaderboardUserParamsSchema>
+export type RefreshLeaderboardInput = z.infer<typeof refreshLeaderboardSchema>
+export type PushSubscriptionInput = z.infer<typeof pushSubscriptionSchema>
+export type UnsubscribePushInput = z.infer<typeof unsubscribePushSchema>
+export type NotificationPreferencesInput = z.infer<typeof notificationPreferencesSchema>
+export type SendNotificationInput = z.infer<typeof sendNotificationSchema>
+export type VideoProgressInput = z.infer<typeof videoProgressSchema>
+export type GetVideoProgressInput = z.infer<typeof getVideoProgressSchema>
+export type VideoProgressParamsInput = z.infer<typeof videoProgressParamsSchema>
+export type XpUserParamsInput = z.infer<typeof xpUserParamsSchema>
+export type AwardXpInput = z.infer<typeof awardXpSchema>
+export type XpHistoryQueryInput = z.infer<typeof xpHistoryQuerySchema>
+export type AssessmentSlugParamsInput = z.infer<typeof assessmentSlugParamsSchema>
+export type GetAssessmentsQueryInput = z.infer<typeof getAssessmentsQuerySchema>
+export type StartAssessmentInput = z.infer<typeof startAssessmentSchema>
+export type SubmitAssessmentInput = z.infer<typeof submitAssessmentSchema>
+export type GetUserAssessmentsInput = z.infer<typeof getUserAssessmentsSchema>
+export type AssessmentUserParamsInput = z.infer<typeof assessmentUserParamsSchema>
 
 // ============================================================================
 // Validation Helper Functions
@@ -380,3 +649,28 @@ export function validateBody<T>(
     throw error
   }
 }
+
+// ============================================================================
+// Stripe Payment Schemas
+// ============================================================================
+
+export const subscriptionStatusValues = [
+  'active',
+  'canceled',
+  'past_due',
+  'trialing',
+  'incomplete',
+  'incomplete_expired',
+  'unpaid',
+] as const
+
+export const createCheckoutSessionSchema = z.object({
+  priceId: z.string().min(1, 'Price ID is required'),
+})
+
+export const createPortalSessionSchema = z.object({
+  returnUrl: z.string().url('Invalid return URL').optional(),
+})
+
+export type CreateCheckoutSessionInput = z.infer<typeof createCheckoutSessionSchema>
+export type CreatePortalSessionInput = z.infer<typeof createPortalSessionSchema>

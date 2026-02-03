@@ -28,6 +28,23 @@ export interface CourseSection {
   order: number
 }
 
+export type VideoProvider = "YOUTUBE" | "VIMEO" | "WISTIA" | "SELF_HOSTED"
+
+export interface VideoChapter {
+  title: string
+  startTime: number // in seconds
+  endTime?: number  // in seconds
+}
+
+export interface VideoProgress {
+  lessonId: string
+  userId: string
+  watchedSeconds: number
+  totalSeconds: number
+  completed: boolean
+  lastWatched: string
+}
+
 export interface Lesson {
   id: string
   title: string
@@ -39,6 +56,12 @@ export interface Lesson {
   githubUrl?: string
   nextLessonId?: string
   prevLessonId?: string
+  // Video content fields
+  videoUrl?: string
+  videoDuration?: number // in seconds
+  videoProvider?: VideoProvider
+  videoTranscript?: string
+  videoChapters?: VideoChapter[]
   knowledgeCheck?: {
     questions: {
       question: string

@@ -3,8 +3,9 @@
  * This file bridges the gap between database models and application interfaces
  */
 
-import type { Course as PrismaCourse, Path as PrismaPath, Lesson as PrismaLesson, CourseSection as PrismaCourseSection } from '@prisma/client'
-import type { Course, Path, Lesson, CourseSection } from '@/types/course'
+import type { Course as PrismaCourse, Path as PrismaPath, Lesson as PrismaLesson, CourseSection as PrismaCourseSection, VideoProgress as PrismaVideoProgress, SkillAssessment as PrismaSkillAssessment, AssessmentQuestion as PrismaAssessmentQuestion, AssessmentAttempt as PrismaAssessmentAttempt, QuestionType as PrismaQuestionType } from '@prisma/client'
+import type { Course, Path, Lesson, CourseSection, VideoProvider, VideoChapter, VideoProgress } from '@/types/course'
+import type { SkillAssessment, AssessmentQuestion, AssessmentAttempt, QuestionType, CourseDifficulty } from '@/types/assessment'
 
 type PrismaCourseWithRelations = PrismaCourse & {
   sections: (PrismaCourseSection & {
@@ -90,6 +91,14 @@ export function adaptLesson(prismaLesson: PrismaLesson): Lesson {
     githubUrl: prismaLesson.githubUrl ?? undefined,
     nextLessonId: prismaLesson.nextLessonId ?? undefined,
     prevLessonId: prismaLesson.prevLessonId ?? undefined,
+    // Video content fields
+    videoUrl: prismaLesson.videoUrl ?? undefined,
+    videoDuration: prismaLesson.videoDuration ?? undefined,
+    videoProvider: prismaLesson.videoProvider as VideoProvider | undefined,
+    videoTranscript: prismaLesson.videoTranscript ?? undefined,
+    videoChapters: prismaLesson.videoChapters
+      ? safeJsonParse<VideoChapter[]>(prismaLesson.videoChapters, [])
+      : undefined,
   }
 }
 
@@ -144,3 +153,105 @@ export function adaptCourses(prismaCourses: PrismaCourseWithRelations[]): Course
 export function adaptPaths(prismaPaths: PrismaPathWithRelations[]): Path[] {
   return prismaPaths.map(adaptPath)
 }
+
+/**
+ * Convert Prisma VideoProgress to domain VideoProgress type
+ */
+export function adaptVideoProgress(prismaProgress: PrismaVideoProgress): VideoProgress {
+  return {
+    lessonId: prismaProgress.lessonId,
+    userId: prismaProgress.userId,
+    watchedSeconds: prismaProgress.watchedSeconds,
+    totalSeconds: prismaProgress.totalSeconds,
+    completed: prismaProgress.completed,
+    lastWatched: prismaProgress.lastWatched.toISOString(),
+  }
+}
+
+// ============================================================================
+// Skill Assessment Adapters
+// ============================================================================
+
+type PrismaSkillAssessmentWithQuestions = PrismaSkillAssessment & {
+  questions?: PrismaAssessmentQuestion[]
+}
+
+type PrismaAssessmentAttemptWithAssessment = PrismaAssessmentAttempt & {
+  assessment?: PrismaSkillAssessment
+}
+
+/**
+ * Convert Prisma SkillAssessment to domain SkillAssessment type
+ */
+export function adaptSkillAssessment(prismaAssessment: PrismaSkillAssessmentWithQuestions): SkillAssessment {
+  return {
+    id: prismaAssessment.id,
+    name: prismaAssessment.name,
+    slug: prismaAssessment.slug,
+    description: prismaAssessment.description,
+    courseId: prismaAssessment.courseId ?? undefined,
+    difficulty: prismaAssessment.difficulty as CourseDifficulty,
+    timeLimit: prismaAssessment.timeLimit,
+    passingScore: prismaAssessment.passingScore,
+    totalQuestions: prismaAssessment.totalQuestions,
+    skillArea: prismaAssessment.skillArea,
+    questions: prismaAssessment.questions
+      ? prismaAssessment.questions.map(adaptAssessmentQuestion)
+      : undefined,
+  }
+}
+
+/**
+ * Convert Prisma AssessmentQuestion to domain AssessmentQuestion type
+ */
+export function adaptAssessmentQuestion(prismaQuestion: PrismaAssessmentQuestion): AssessmentQuestion {
+  return {
+    id: prismaQuestion.id,
+    question: prismaQuestion.question,
+    questionType: prismaQuestion.questionType as QuestionType,
+    options: safeJsonParse<string[]>(prismaQuestion.options, []),
+    correctAnswer: safeJsonParse<string | string[] | number>(prismaQuestion.correctAnswer, 0),
+    explanation: prismaQuestion.explanation,
+    difficulty: prismaQuestion.difficulty,
+    points: prismaQuestion.points,
+    codeSnippet: prismaQuestion.codeSnippet ?? undefined,
+  }
+}
+
+/**
+ * Convert Prisma AssessmentAttempt to domain AssessmentAttempt type
+ */
+export function adaptAssessmentAttempt(prismaAttempt: PrismaAssessmentAttemptWithAssessment): AssessmentAttempt {
+  return {
+    id: prismaAttempt.id,
+    userId: prismaAttempt.userId,
+    assessmentId: prismaAttempt.assessmentId,
+    score: prismaAttempt.score,
+    correctCount: prismaAttempt.correctCount,
+    totalCount: prismaAttempt.totalCount,
+    timeSpent: prismaAttempt.timeSpent,
+    answers: safeJsonParse<Record<string, string | string[] | number>>(prismaAttempt.answers, {}),
+    passed: prismaAttempt.passed,
+    completedAt: prismaAttempt.completedAt.toISOString(),
+    assessment: prismaAttempt.assessment
+      ? adaptSkillAssessment(prismaAttempt.assessment)
+      : undefined,
+  }
+}
+
+/**
+ * Convert array of Prisma SkillAssessments to domain SkillAssessment array
+ */
+export function adaptSkillAssessments(prismaAssessments: PrismaSkillAssessmentWithQuestions[]): SkillAssessment[] {
+  return prismaAssessments.map(adaptSkillAssessment)
+}
+
+/**
+ * Convert array of Prisma AssessmentAttempts to domain AssessmentAttempt array
+ */
+export function adaptAssessmentAttempts(prismaAttempts: PrismaAssessmentAttemptWithAssessment[]): AssessmentAttempt[] {
+  return prismaAttempts.map(adaptAssessmentAttempt)
+}
+
+// Export safeJsonParse for use in other modules
+export { safeJsonParse }

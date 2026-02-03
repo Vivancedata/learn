@@ -1,6 +1,7 @@
 'use client'
 
 import React, { Component, ErrorInfo, ReactNode } from 'react'
+import * as Sentry from '@sentry/nextjs'
 import { AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -13,11 +14,13 @@ interface Props {
 interface State {
   hasError: boolean
   error: Error | null
+  eventId: string | null
 }
 
 /**
  * Error Boundary component that catches JavaScript errors anywhere in the child component tree
  * Logs those errors and displays a fallback UI instead of the component tree that crashed
+ * Integrates with Sentry for error tracking in production
  */
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
@@ -25,10 +28,11 @@ class ErrorBoundary extends Component<Props, State> {
     this.state = {
       hasError: false,
       error: null,
+      eventId: null,
     }
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     // Update state so the next render will show the fallback UI
     return {
       hasError: true,
@@ -42,20 +46,52 @@ class ErrorBoundary extends Component<Props, State> {
       console.error('Error Boundary caught an error:', error, errorInfo)
     }
 
+    // Report to Sentry with React-specific context
+    const eventId = Sentry.captureException(error, {
+      contexts: {
+        react: {
+          componentStack: errorInfo.componentStack,
+        },
+      },
+      tags: {
+        errorBoundary: 'ErrorBoundary',
+        component: 'global',
+      },
+    })
+
+    // Store the event ID for user feedback
+    this.setState({ eventId })
+
     // Call custom error handler if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo)
     }
-
-    // In production, you might want to log this to an error reporting service
-    // Example: Sentry.captureException(error, { contexts: { react: errorInfo } })
   }
 
   handleReset = () => {
     this.setState({
       hasError: false,
       error: null,
+      eventId: null,
     })
+  }
+
+  handleReportFeedback = () => {
+    if (this.state.eventId) {
+      // Open Sentry feedback dialog
+      Sentry.showReportDialog({
+        eventId: this.state.eventId,
+        title: 'It looks like we had an error.',
+        subtitle: 'Our team has been notified.',
+        subtitle2: 'If you would like to help, tell us what happened below.',
+        labelName: 'Name',
+        labelEmail: 'Email',
+        labelComments: 'What happened?',
+        labelClose: 'Close',
+        labelSubmit: 'Submit',
+        successMessage: 'Your feedback has been sent. Thank you!',
+      })
+    }
   }
 
   render() {
@@ -84,6 +120,12 @@ class ErrorBoundary extends Component<Props, State> {
               support if the problem persists.
             </p>
 
+            {this.state.eventId && (
+              <p className="text-sm text-muted-foreground font-mono">
+                Error ID: {this.state.eventId}
+              </p>
+            )}
+
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <div className="mt-4 p-4 bg-muted rounded-lg text-left">
                 <p className="font-mono text-sm text-destructive break-words">
@@ -108,6 +150,15 @@ class ErrorBoundary extends Component<Props, State> {
               >
                 Go Home
               </Button>
+
+              {this.state.eventId && (
+                <Button
+                  onClick={this.handleReportFeedback}
+                  variant="outline"
+                >
+                  Report Issue
+                </Button>
+              )}
             </div>
           </div>
         </div>

@@ -6,6 +6,7 @@ import {
   handleApiError,
   parseRequestBody,
 } from '@/lib/api-errors'
+import { sendPasswordResetEmail, isEmailServiceConfigured } from '@/lib/email'
 import crypto from 'crypto'
 
 const forgotPasswordSchema = z.object({
@@ -59,31 +60,49 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // TODO: Send email with reset link
-    // For now, log the reset token (in production, this would be emailed)
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`
+    // Send password reset email
+    const userName = user.name || user.email.split('@')[0]
 
-    console.log('=================================')
-    console.log('PASSWORD RESET REQUEST')
-    console.log('=================================')
-    console.log('User:', user.email)
-    console.log('Reset URL:', resetUrl)
-    console.log('Token:', resetToken)
-    console.log('Expires:', expiresAt.toISOString())
-    console.log('=================================')
+    if (isEmailServiceConfigured()) {
+      // Production: Send actual email via Resend
+      const emailResult = await sendPasswordResetEmail({
+        to: user.email,
+        userName,
+        resetToken,
+        expiresInHours: 1,
+      })
 
-    // TODO: In production, integrate with email service:
-    // await sendEmail({
-    //   to: user.email,
-    //   subject: 'Password Reset Request',
-    //   html: `Click here to reset your password: ${resetUrl}`
-    // })
+      if (!emailResult.success) {
+        console.error('[Forgot Password] Failed to send email:', emailResult.error)
+        // Still return success to prevent email enumeration
+        // The token is created, user can request again if needed
+      }
+    } else {
+      // Development: Log reset URL to console
+      const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`
 
-    return apiSuccess({
+      console.log('=================================')
+      console.log('PASSWORD RESET REQUEST (Dev Mode)')
+      console.log('=================================')
+      console.log('User:', user.email)
+      console.log('Reset URL:', resetUrl)
+      console.log('Token:', resetToken)
+      console.log('Expires:', expiresAt.toISOString())
+      console.log('=================================')
+      console.log('Note: Set RESEND_API_KEY to send real emails')
+      console.log('=================================')
+    }
+
+    // Build response - include resetUrl only in development when email service is not configured
+    const responseData: { message: string; resetUrl?: string } = {
       message: 'If an account with that email exists, a password reset link has been sent.',
-      // Only include resetUrl in development
-      ...(process.env.NODE_ENV !== 'production' && { resetUrl }),
-    })
+    }
+
+    if (process.env.NODE_ENV !== 'production' && !isEmailServiceConfigured()) {
+      responseData.resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`
+    }
+
+    return apiSuccess(responseData)
   } catch (error) {
     return handleApiError(error)
   }

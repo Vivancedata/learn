@@ -10,6 +10,7 @@ import {
 } from '@/lib/api-errors'
 import { submitQuizSchema } from '@/lib/validations'
 import { requireOwnership } from '@/lib/authorization'
+import { serverAnalytics } from '@/lib/analytics-server'
 
 /**
  * POST /api/quiz/submit
@@ -105,16 +106,28 @@ export async function POST(request: NextRequest) {
       data: { lastAccessed: new Date() },
     })
 
+    const passed = percentage >= 70
+
+    // Track quiz completion with analytics
+    serverAnalytics.trackQuizCompleted(userId, {
+      lesson_id: lessonId,
+      course_id: courseId,
+      score,
+      max_score: maxScore,
+      percentage,
+      passed,
+    })
+
     return apiSuccess(
       {
         quizScoreId: quizScore.id,
         score,
         maxScore,
         percentage,
-        passed: percentage >= 70, // 70% passing grade
+        passed, // 70% passing grade
         results,
         message:
-          percentage >= 70
+          passed
             ? 'Congratulations! You passed the quiz.'
             : 'Keep studying and try again.',
       },
