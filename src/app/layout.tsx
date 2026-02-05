@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next"
-import { Inter } from "next/font/google"
 import { Suspense } from "react"
 import "./globals.css"
 import { Navbar } from "@/components/ui/navbar"
@@ -12,8 +11,6 @@ import { PostHogProvider } from "@/components/providers/posthog-provider"
 import { TutorProvider } from "@/components/ai-tutor/tutor-provider"
 import { ChatContainer } from "@/components/ai-tutor/chat-container"
 import { MobileProvider } from "@/components/mobile/mobile-provider"
-
-const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "VivanceData Learning Platform",
@@ -62,7 +59,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
-      <body className={inter.className}>
+      <body className="font-sans">
         <ErrorBoundary>
           <Suspense fallback={null}>
             <PostHogProvider>
