@@ -101,6 +101,8 @@ model User {
   achievements            UserAchievement[]
   passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
+  discussionLikes         DiscussionLike[]
+  discussionReplyLikes    DiscussionReplyLike[]
   pointsReceived          CommunityPoint[]         @relation("PointsReceived")
   pointsGiven             CommunityPoint[]         @relation("PointsGiven")
   projectLikes            ProjectLike[]
@@ -303,6 +305,7 @@ model Discussion {
   lesson          Lesson?           @relation(fields: [lessonId], references: [id])
   replies         DiscussionReply[]
   communityPoints CommunityPoint[]
+  likesBy         DiscussionLike[]
 
   @@index([userId])
   @@index([courseId])
@@ -320,6 +323,7 @@ model DiscussionReply {
   user            User             @relation(fields: [userId], references: [id])
   discussion      Discussion       @relation(fields: [discussionId], references: [id])
   communityPoints CommunityPoint[]
+  likesBy         DiscussionReplyLike[]
 
   @@index([userId])
   @@index([discussionId])
@@ -381,16 +385,15 @@ model PasswordResetToken {
 model EmailVerificationToken {
   id        String   @id @default(uuid())
   userId    String
-  token     String   @unique
-  code      String   // 6-digit verification code
+  codeHash  String
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([token])
-  @@index([code])
+  @@index([expiresAt])
+  @@index([codeHash])
 }
 
 model CommunityPoint {
@@ -672,4 +675,37 @@ model AITutorUsage {
   @@unique([userId, date])
   @@index([userId])
   @@index([date])
+}
+
+model DiscussionLike {
+  id           String     @id @default(uuid())
+  userId       String
+  discussionId String
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, discussionId])
+  @@index([discussionId])
+}
+
+model DiscussionReplyLike {
+  id              String          @id @default(uuid())
+  userId          String
+  discussionReplyId String
+  createdAt       DateTime        @default(now())
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discussionReply DiscussionReply @relation(fields: [discussionReplyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, discussionReplyId])
+  @@index([discussionReplyId])
+}
+
+model ResendWebhookEvent {
+  id        String   @id @default(uuid())
+  svixId    String   @unique
+  eventType String
+  payload   String
+  receivedAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 }
