@@ -52,8 +52,10 @@ export interface DiscussionReply {
 }
 
 export interface CommunityDiscussionsProps {
+  discussions: Discussion[]
   courseId?: string
   lessonId?: string
+  onRefresh?: () => Promise<void> | void
 }
 
 // Helper function to transform API data to component format

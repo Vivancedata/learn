@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,55 +13,17 @@ import { PointsBadge } from "@/components/helper-badge"
 import {
   CommunityDiscussionsProps,
   Discussion,
-  ApiDiscussion,
-  transformApiDiscussion,
 } from "@/types/discussion"
 
-export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussionsProps) {
+export function CommunityDiscussions({ discussions, courseId, lessonId, onRefresh }: CommunityDiscussionsProps) {
   const { user } = useAuth()
-  const [discussions, setDiscussions] = useState<Discussion[]>([])
   const [newDiscussion, setNewDiscussion] = useState("")
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [replyContent, setReplyContent] = useState("")
   const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({})
-  const [initialLoading, setInitialLoading] = useState(true)
   const [loading, setLoading] = useState(false)
   const [replyLoading, setReplyLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Fetch discussions from API
-  const fetchDiscussions = useCallback(async () => {
-    try {
-      const params = new URLSearchParams()
-      if (courseId) params.append('courseId', courseId)
-      if (lessonId) params.append('lessonId', lessonId)
-
-      const response = await fetch(`/api/discussions?${params.toString()}`, {
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch discussions')
-      }
-
-      const data = await response.json()
-      const apiDiscussions: ApiDiscussion[] = data.data?.discussions || []
-      const transformedDiscussions = apiDiscussions.map(transformApiDiscussion)
-      setDiscussions(transformedDiscussions)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load discussions')
-    }
-  }, [courseId, lessonId])
-
-  // Fetch discussions on mount and when courseId/lessonId changes
-  useEffect(() => {
-    const loadDiscussions = async () => {
-      setInitialLoading(true)
-      await fetchDiscussions()
-      setInitialLoading(false)
-    }
-    loadDiscussions()
-  }, [fetchDiscussions])
 
   const handlePostDiscussion = async () => {
     if (!newDiscussion.trim()) return
@@ -95,7 +57,10 @@ export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussion
 
       // Clear the input and refresh discussions from the API
       setNewDiscussion("")
-      await fetchDiscussions()
+
+      if (onRefresh) {
+        await onRefresh()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to post discussion')
     } finally {
@@ -135,8 +100,10 @@ export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussion
       // Clear the input, close the reply form, and refresh discussions
       setReplyContent("")
       setReplyingTo(null)
-      setExpandedReplies(prev => ({ ...prev, [discussionId]: true }))
-      await fetchDiscussions()
+
+      if (onRefresh) {
+        await onRefresh()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to post reply')
     } finally {
@@ -144,9 +111,34 @@ export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussion
     }
   }
 
-  const handleLike = async (_discussionId: string) => {
-    // TODO: Implement like functionality when API endpoint is available
-    // This would require a new endpoint like PUT /api/discussions/[id]/like
+  const handleLike = async (id: string, type: "discussion" | "reply") => {
+    if (!user) {
+      setError("You must be logged in to like posts")
+      return
+    }
+
+    try {
+      const endpoint =
+        type === "discussion"
+          ? `/api/discussions/${id}/like`
+          : `/api/discussions/replies/${id}/like`
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        credentials: "include",
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to update like")
+      }
+
+      if (onRefresh) {
+        await onRefresh()
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update like")
+    }
   }
   
   const toggleReplies = (discussionId: string) => {
@@ -184,6 +176,8 @@ export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussion
     }
   }
   
+  const displayedDiscussions: Discussion[] = discussions || []
+
   return (
     <Card>
       <CardHeader>
@@ -227,13 +221,8 @@ export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussion
         </div>
         
         <div className="space-y-6">
-          {initialLoading ? (
-            <div className="text-center py-6">
-              <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin text-muted-foreground" />
-              <p className="text-muted-foreground">Loading discussions...</p>
-            </div>
-          ) : discussions.length > 0 ? (
-            discussions.map(discussion => (
+          {displayedDiscussions.length > 0 ? (
+            displayedDiscussions.map(discussion => (
               <div key={discussion.id} className="space-y-4">
                 <div className="bg-muted/40 p-4 rounded-lg">
                   <div className="flex justify-between">
@@ -265,7 +254,7 @@ export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussion
                       variant="ghost"
                       size="sm"
                       className="flex items-center gap-1 h-auto py-1"
-                      onClick={() => handleLike(discussion.id)}
+                      onClick={() => handleLike(discussion.id, "discussion")}
                     >
                       <ThumbsUp className="h-4 w-4" />
                       <span className="text-xs">{discussion.likes}</span>
@@ -275,7 +264,7 @@ export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussion
                       recipientId={discussion.userId}
                       recipientName={discussion.username}
                       discussionId={discussion.id}
-                      onPointGiven={fetchDiscussions}
+                      onPointGiven={onRefresh}
                     />
                     
                     <Button 
@@ -377,7 +366,7 @@ export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussion
                             variant="ghost"
                             size="sm"
                             className="flex items-center gap-1 h-auto py-1"
-                            onClick={() => handleLike(reply.id)}
+                            onClick={() => handleLike(reply.id, "reply")}
                           >
                             <ThumbsUp className="h-3 w-3" />
                             <span className="text-xs">{reply.likes}</span>
@@ -387,7 +376,7 @@ export function CommunityDiscussions({ courseId, lessonId }: CommunityDiscussion
                             recipientId={reply.userId}
                             recipientName={reply.username}
                             replyId={reply.id}
-                            onPointGiven={fetchDiscussions}
+                            onPointGiven={onRefresh}
                             size="sm"
                           />
                         </div>
