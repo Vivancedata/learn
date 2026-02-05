@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
         email: true,
         name: true,
         githubUsername: true,
+        emailVerified: true,
         createdAt: true,
       },
     })

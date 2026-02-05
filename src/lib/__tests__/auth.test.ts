@@ -105,6 +105,7 @@ describe('Auth Utilities', () => {
         email: 'test@example.com',
         name: 'Test User',
         role: 'student',
+        emailVerified: false,
       }
 
       const token = await generateToken(payload)
@@ -118,6 +119,7 @@ describe('Auth Utilities', () => {
         userId: 'user-123',
         email: 'test@example.com',
         role: 'student',
+        emailVerified: false,
       }
 
       const token = await generateToken(payload)
@@ -132,6 +134,7 @@ describe('Auth Utilities', () => {
         userId: 'user-123',
         email: 'test@example.com',
         role: 'student',
+        emailVerified: true,
       }
       mockJwtVerify.mockResolvedValueOnce({ payload: mockPayload })
 

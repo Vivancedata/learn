@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
@@ -35,7 +35,6 @@ function ResetPasswordForm() {
   const [success, setSuccess] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Password strength validation
   const passwordStrength = {
     hasMinLength: password.length >= 8,
     hasUpperCase: /[A-Z]/.test(password),
@@ -46,18 +45,15 @@ function ResetPasswordForm() {
   const isPasswordValid = Object.values(passwordStrength).every(Boolean)
   const passwordsMatch = password === confirmPassword && password.length > 0
 
-  // Redirect to forgot password if no token
-  useEffect(() => {
-    if (!token) {
-      router.push('/forgot-password')
-    }
-  }, [token, router])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
-    // Client-side validation
+    if (!token) {
+      setError('Reset token is missing or invalid')
+      return
+    }
+
     if (!password || !confirmPassword) {
       setError('Please fill in all fields')
       return

@@ -141,6 +141,11 @@ export default function SignInPage() {
                 Sign Up
               </Link>
             </div>
+            <div className="text-sm text-center">
+              <Link href="/forgot-password" className="text-muted-foreground hover:underline">
+                Forgot your password?
+              </Link>
+            </div>
           </CardFooter>
         </form>
       </Card>

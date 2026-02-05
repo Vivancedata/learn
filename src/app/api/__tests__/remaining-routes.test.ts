@@ -256,7 +256,7 @@ describe('Discussions API', () => {
         user: { id: validUserId, name: 'Test User', email: 'test@example.com' },
       }
 
-      mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student' })
+      mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student', emailVerified: true })
       // @ts-expect-error - mock implementation
       prisma.discussion.findUnique.mockResolvedValue(mockDiscussion)
       // @ts-expect-error - mock implementation
@@ -283,7 +283,7 @@ describe('Discussions API', () => {
     })
 
     it('should return 404 for non-existent discussion', async () => {
-      mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student' })
+      mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student', emailVerified: true })
       // @ts-expect-error - mock implementation
       prisma.discussion.findUnique.mockResolvedValue(null)
 
@@ -315,7 +315,7 @@ describe('Discussions API', () => {
         content: 'Original content here',
       }
 
-      mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student' })
+      mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student', emailVerified: true })
       // @ts-expect-error - mock implementation
       prisma.discussion.findUnique.mockResolvedValue(mockDiscussion)
 
@@ -363,7 +363,7 @@ describe('Discussions API', () => {
         replies: [{ id: 'reply-1' }, { id: 'reply-2' }],
       }
 
-      mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student' })
+      mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student', emailVerified: true })
       // @ts-expect-error - mock implementation
       prisma.discussion.findUnique.mockResolvedValue(mockDiscussion)
       // @ts-expect-error - mock implementation
@@ -384,7 +384,7 @@ describe('Discussions API', () => {
     })
 
     it('should return 404 for non-existent discussion', async () => {
-      mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student' })
+      mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student', emailVerified: true })
       // @ts-expect-error - mock implementation
       prisma.discussion.findUnique.mockResolvedValue(null)
 
@@ -411,7 +411,7 @@ describe('Discussions API', () => {
         replies: [],
       }
 
-      mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student' })
+      mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student', emailVerified: true })
       // @ts-expect-error - mock implementation
       prisma.discussion.findUnique.mockResolvedValue(mockDiscussion)
 
@@ -437,7 +437,7 @@ describe('Discussions API', () => {
         replies: [],
       }
 
-      mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student' })
+      mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student', emailVerified: true })
       // @ts-expect-error - mock implementation
       prisma.discussion.findUnique.mockResolvedValue(mockDiscussion)
       // @ts-expect-error - mock implementation
@@ -464,7 +464,7 @@ describe('Submissions API', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student' })
+    mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student', emailVerified: true })
   })
 
   describe('GET /api/submissions', () => {
@@ -753,7 +753,7 @@ describe('User Settings API', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student' })
+    mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student', emailVerified: true })
   })
 
   describe('GET /api/user/settings', () => {

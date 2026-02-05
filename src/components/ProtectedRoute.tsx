@@ -12,6 +12,15 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loading && !user) {
       router.push("/sign-in")
+      return
+    }
+
+    if (!loading && user && user.emailVerified === false) {
+      const params = new URLSearchParams({
+        userId: user.id,
+        email: user.email,
+      })
+      router.push(`/verify-email?${params.toString()}`)
     }
   }, [user, loading, router])
 

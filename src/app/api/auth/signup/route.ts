@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/db'
-import crypto from 'crypto'
 import {
   apiSuccess,
   handleApiError,
@@ -9,16 +8,10 @@ import {
   ApiError,
 } from '@/lib/api-errors'
 import { signUpSchema } from '@/lib/validations'
-import {
-  hashPassword,
-  generateToken,
-  setAuthCookie,
-} from '@/lib/auth'
-import {
-  sendVerificationEmail,
-  generateVerificationCode,
-  isEmailServiceConfigured,
-} from '@/lib/email'
+import { hashPassword, generateToken, setAuthCookie } from '@/lib/auth'
+import { createEmailVerificationToken } from '@/lib/email-verification'
+import { sendEmail, isEmailServiceConfigured } from '@/lib/email'
+import { verificationEmailTemplate } from '@/lib/email-templates'
 
 /**
  * POST /api/auth/signup
@@ -31,12 +24,9 @@ import {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Parse and validate request body
     const body = await parseRequestBody(request, signUpSchema)
-
     const { email, password, name, githubUsername } = body
 
-    // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
     })
@@ -48,17 +38,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Hash password
     const hashedPassword = await hashPassword(password)
 
-    // Create user
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         name: name || null,
         githubUsername: githubUsername || null,
-        role: 'student', // Default role
+        role: 'student',
       },
       select: {
         id: true,
@@ -66,58 +54,40 @@ export async function POST(request: NextRequest) {
         name: true,
         githubUsername: true,
         role: true,
+        emailVerified: true,
       },
     })
 
-    // Generate JWT token
     const token = await generateToken({
       userId: user.id,
       email: user.email,
       name: user.name || undefined,
       role: user.role,
+      emailVerified: user.emailVerified,
     })
 
-    // Set authentication cookie
     await setAuthCookie(token)
 
-    // Generate and store email verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex')
-    const verificationCode = generateVerificationCode()
-    const expiresAt = new Date()
-    expiresAt.setHours(expiresAt.getHours() + 24) // 24 hour expiry
+    const { verificationCode, expiresAt } = await createEmailVerificationToken(user.id)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const verificationUrl = `${appUrl}/verify-email?userId=${user.id}&email=${encodeURIComponent(
+      user.email
+    )}`
 
-    // Create verification token in database
-    // Note: This will fail if EmailVerificationToken model doesn't exist yet
-    // In that case, skip verification token creation
-    try {
-      await prisma.emailVerificationToken.create({
-        data: {
-          userId: user.id,
-          token: verificationToken,
-          code: verificationCode,
-          expiresAt,
-        },
-      })
+    const verificationTemplate = verificationEmailTemplate({
+      code: verificationCode,
+      verificationUrl,
+    })
 
-      // Send verification email
-      const userName = user.name || user.email.split('@')[0]
+    await sendEmail({
+      to: user.email,
+      subject: verificationTemplate.subject,
+      text: verificationTemplate.text,
+      html: verificationTemplate.html,
+    })
 
-      if (isEmailServiceConfigured()) {
-        const emailResult = await sendVerificationEmail({
-          to: user.email,
-          userName,
-          verificationCode,
-          verificationToken,
-        })
-
-        if (!emailResult.success) {
-          // Email failed to send - tracked via email service
-        }
-      }
-      // Note: In development without RESEND_API_KEY, verification code is returned in response
-    } catch (dbError) {
-      // EmailVerificationToken model might not exist yet - non-critical for signup
-    }
+    const shouldExposeCode =
+      process.env.NODE_ENV !== 'production' || !isEmailServiceConfigured()
 
     return apiSuccess(
       {
@@ -126,10 +96,11 @@ export async function POST(request: NextRequest) {
           email: user.email,
           name: user.name,
           githubUsername: user.githubUsername,
-          emailVerified: false,
+          emailVerified: user.emailVerified,
         },
         token,
-        message: 'Account created successfully. Please check your email to verify your account.',
+        message: 'Account created successfully. Please verify your email.',
+        ...(shouldExposeCode ? { verificationCode, expiresAt } : {}),
       },
       HTTP_STATUS.CREATED
     )

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -25,10 +25,13 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 
 function VerifyEmailContent() {
-  const router = useRouter()
   const searchParams = useSearchParams()
-  const token = searchParams.get('token')
   const { user } = useAuth()
+
+  const userIdParam = searchParams.get('userId') || ''
+  const emailParam = searchParams.get('email') || ''
+  const userId = user?.id || userIdParam
+  const email = user?.email || emailParam
 
   const [verificationCode, setVerificationCode] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -37,46 +40,12 @@ function VerifyEmailContent() {
   const [isResending, setIsResending] = useState(false)
   const [resendSuccess, setResendSuccess] = useState(false)
 
-  // Auto-verify if token is present in URL
-  useEffect(() => {
-    if (token) {
-      verifyWithToken(token)
-    }
-  }, [token])
-
-  const verifyWithToken = async (verificationToken: string) => {
-    setIsVerifying(true)
-    setError(null)
-
-    try {
-      const response = await fetch('/api/auth/verify-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token: verificationToken }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to verify email')
-      }
-
-      setSuccess(true)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Verification failed')
-    } finally {
-      setIsVerifying(false)
-    }
-  }
-
   const handleCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
-    if (!user?.id) {
-      setError('Please sign in to verify your email')
+    if (!userId) {
+      setError('Please sign in or use the link from your email to verify.')
       return
     }
 
@@ -94,7 +63,7 @@ function VerifyEmailContent() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: user.id,
+          userId,
           code: verificationCode,
         }),
       })
@@ -114,8 +83,8 @@ function VerifyEmailContent() {
   }
 
   const handleResendCode = async () => {
-    if (!user?.id) {
-      setError('Please sign in to resend verification email')
+    if (!userId && !email) {
+      setError('Please sign in or use the link from your email to resend the code')
       return
     }
 
@@ -129,7 +98,7 @@ function VerifyEmailContent() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify(userId ? { userId } : { email }),
       })
 
       const result = await response.json()
@@ -146,24 +115,6 @@ function VerifyEmailContent() {
     }
   }
 
-  // Loading state when auto-verifying via token
-  if (token && isVerifying) {
-    return (
-      <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-            <CardTitle>Verifying Your Email</CardTitle>
-            <CardDescription>Please wait while we verify your email address...</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    )
-  }
-
-  // Success state
   if (success) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
@@ -200,7 +151,6 @@ function VerifyEmailContent() {
     )
   }
 
-  // Main verification form
   return (
     <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
       <Card className="w-full max-w-md">

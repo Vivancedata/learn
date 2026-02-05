@@ -10,6 +10,8 @@ export interface User {
   name?: string
   githubUsername?: string
   createdAt?: string
+  emailVerified?: boolean
+  emailVerified?: boolean
 }
 
 export interface AuthContextType {
@@ -18,7 +20,7 @@ export interface AuthContextType {
   error: string | null
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
-  signup: (email: string, password: string, name?: string, githubUsername?: string) => Promise<void>
+  signup: (email: string, password: string, name?: string, githubUsername?: string) => Promise<User>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
   clearError: () => void
@@ -148,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string,
     name?: string,
     githubUsername?: string
-  ) => {
+  ): Promise<User> => {
     try {
       setLoading(true)
       setError(null)
@@ -166,7 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.message || 'Signup failed')
       }
 
-      const newUser = data.data.user
+      const newUser = data.data.user as User
       setUser(newUser)
 
       // Track sign up with PostHog analytics
@@ -177,6 +179,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signup_date: new Date().toISOString(),
       })
       analytics.trackUserSignedUp({ signup_method: 'email', plan_type: 'free' })
+
+      return newUser
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Signup failed'
       setError(message)

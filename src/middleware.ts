@@ -148,6 +148,17 @@ export async function middleware(request: NextRequest) {
       )
     }
 
+    if (!user.emailVerified) {
+      return NextResponse.json(
+        {
+          error: 'Forbidden',
+          message: 'Email verification required.',
+          timestamp: new Date().toISOString(),
+        },
+        { status: 403 }
+      )
+    }
+
     // Add user info and rate limit headers to request
     const requestHeaders = new Headers(request.headers)
     requestHeaders.set('x-user-id', user.userId)

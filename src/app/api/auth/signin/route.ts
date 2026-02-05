@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
         password: true,
         role: true,
         githubUsername: true,
+        emailVerified: true,
       },
     })
 
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
       email: user.email,
       name: user.name || undefined,
       role: user.role,
+      emailVerified: user.emailVerified,
     })
 
     // Set authentication cookie
@@ -70,6 +72,9 @@ export async function POST(request: NextRequest) {
           email: user.email,
           name: user.name,
           githubUsername: user.githubUsername,
+          emailVerified: user.emailVerified,
+          githubUsername: user.githubUsername,
+          emailVerified: user.emailVerified,
         },
         token,
         message: 'Sign in successful',

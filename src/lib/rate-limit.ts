@@ -27,6 +27,12 @@ export const RATE_LIMITS = {
     windowMs: 15 * 60 * 1000, // 15 minutes
     windowSeconds: 15 * 60,
   },
+  // Email-related auth flows (forgot password, resend verification)
+  AUTH_EMAIL: {
+    limit: 3,
+    windowMs: 60 * 60 * 1000, // 60 minutes
+    windowSeconds: 60 * 60,
+  },
   // API endpoints - moderate limits for normal usage
   API: {
     limit: 100,
@@ -400,6 +406,13 @@ export async function checkRateLimit(
   config: { limit: number; windowMs: number }
 ): Promise<RateLimitResult> {
   return rateLimiter.check(identifier, config.limit, config.windowMs)
+}
+
+export async function checkRateLimitAsync(
+  identifier: string,
+  config: { limit: number; windowMs: number }
+): Promise<RateLimitResult> {
+  return checkRateLimit(identifier, config)
 }
 
 /**

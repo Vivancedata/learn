@@ -105,12 +105,14 @@ describe('Protected API Routes', () => {
       email: 'test@example.com',
       name: 'Test User',
       role: 'student',
+      emailVerified: true,
     })
     ;(getAuthUser as jest.Mock).mockResolvedValue({
       userId: TEST_USER_ID,
       email: 'test@example.com',
       name: 'Test User',
       role: 'student',
+      emailVerified: true,
     })
   })
 

@@ -5,9 +5,13 @@ import {
   apiSuccess,
   handleApiError,
   parseRequestBody,
+  ApiError,
+  HTTP_STATUS,
 } from '@/lib/api-errors'
-import { sendPasswordResetEmail, isEmailServiceConfigured } from '@/lib/email'
+import { sendEmail, isEmailServiceConfigured } from '@/lib/email'
+import { passwordResetTemplate } from '@/lib/email-templates'
 import crypto from 'crypto'
+import { checkRateLimitAsync, getClientIdentifier, RATE_LIMITS } from '@/lib/rate-limit'
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -23,27 +27,29 @@ export async function POST(request: NextRequest) {
   try {
     const body = await parseRequestBody(request, forgotPasswordSchema)
 
-    // Find user by email
+    const clientId = getClientIdentifier(request)
+    const rateLimit = await checkRateLimitAsync(`forgot:${clientId}`, RATE_LIMITS.AUTH_EMAIL)
+    if (!rateLimit.success) {
+      throw new ApiError(
+        HTTP_STATUS.TOO_MANY_REQUESTS,
+        'Too many password reset requests. Please try again later.'
+      )
+    }
+
     const user = await prisma.user.findUnique({
       where: { email: body.email },
     })
 
-    // SECURITY: Always return success even if user doesn't exist
-    // This prevents email enumeration attacks
     if (!user) {
       return apiSuccess({
         message: 'If an account with that email exists, a password reset link has been sent.',
       })
     }
 
-    // Generate secure random token
     const resetToken = crypto.randomBytes(32).toString('hex')
-
-    // Token expires in 1 hour
     const expiresAt = new Date()
     expiresAt.setHours(expiresAt.getHours() + 1)
 
-    // Delete any existing unused tokens for this user
     await prisma.passwordResetToken.deleteMany({
       where: {
         userId: user.id,
@@ -51,7 +57,6 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create new reset token
     await prisma.passwordResetToken.create({
       data: {
         userId: user.id,
@@ -60,36 +65,26 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Send password reset email
-    const userName = user.name || user.email.split('@')[0]
+    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`
+    const resetTemplate = passwordResetTemplate({ resetUrl })
 
-    if (isEmailServiceConfigured()) {
-      // Production: Send actual email via Resend
-      const emailResult = await sendPasswordResetEmail({
+    try {
+      await sendEmail({
         to: user.email,
-        userName,
-        resetToken,
-        expiresInHours: 1,
+        subject: resetTemplate.subject,
+        text: resetTemplate.text,
+        html: resetTemplate.html,
       })
-
-      if (!emailResult.success) {
-        // Email failed to send - tracked via email service
-        // Still return success to prevent email enumeration
-        // The token is created, user can request again if needed
-      }
+    } catch (_error) {
+      // Intentionally swallow errors to avoid leaking account existence.
     }
-    // Note: In development without RESEND_API_KEY, resetUrl is returned in response
 
-    // Build response - include resetUrl only in development when email service is not configured
-    const responseData: { message: string; resetUrl?: string } = {
+    const shouldExpose = process.env.NODE_ENV !== 'production' || !isEmailServiceConfigured()
+
+    return apiSuccess({
       message: 'If an account with that email exists, a password reset link has been sent.',
-    }
-
-    if (process.env.NODE_ENV !== 'production' && !isEmailServiceConfigured()) {
-      responseData.resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`
-    }
-
-    return apiSuccess(responseData)
+      ...(shouldExpose ? { resetUrl } : {}),
+    })
   } catch (error) {
     return handleApiError(error)
   }

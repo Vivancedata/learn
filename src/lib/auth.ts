@@ -26,6 +26,7 @@ export interface JWTPayload extends JoseJWTPayload {
   email: string
   name?: string
   role: UserRole
+  emailVerified: boolean
 }
 
 export interface AuthSession {
@@ -33,6 +34,7 @@ export interface AuthSession {
   email: string
   name?: string
   role: UserRole
+  emailVerified: boolean
 }
 
 /**
@@ -46,6 +48,7 @@ export async function generateToken(payload: JWTPayload): Promise<string> {
     email: payload.email,
     name: payload.name,
     role: payload.role,
+    emailVerified: payload.emailVerified,
   })
     .setProtectedHeader({ alg: JWT_ALGORITHM })
     .setIssuedAt()
@@ -149,6 +152,7 @@ export async function getCurrentUser(): Promise<AuthSession | null> {
     email: payload.email,
     name: payload.name,
     role: payload.role,
+    emailVerified: Boolean(payload.emailVerified),
   }
 }
 
@@ -174,6 +178,7 @@ export async function getAuthUser(
         email: payload.email,
         name: payload.name,
         role: payload.role,
+        emailVerified: Boolean(payload.emailVerified),
       }
     }
   }
@@ -191,6 +196,7 @@ export async function getAuthUser(
         email: payload.email,
         name: payload.name,
         role: payload.role,
+        emailVerified: Boolean(payload.emailVerified),
       }
     }
   }

@@ -48,13 +48,17 @@ export default function SignUpPage() {
     }
 
     try {
-      await signup(
+      const createdUser = await signup(
         formData.email,
         formData.password,
         formData.name || undefined,
         formData.githubUsername || undefined
       )
-      router.push("/dashboard")
+      const params = new URLSearchParams({
+        userId: createdUser.id,
+        email: createdUser.email,
+      })
+      router.push(`/verify-email?${params.toString()}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to sign up")
     }
