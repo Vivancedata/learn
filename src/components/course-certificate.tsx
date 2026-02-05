@@ -6,9 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Award, Download, CheckCircle, XCircle } from "lucide-react"
 import { CourseCertificateProps } from "@/types/certificate"
+import { useAuth } from "@/hooks/useAuth"
 
 export function CourseCertificate({ course, progress }: CourseCertificateProps) {
+  const { user } = useAuth()
   const [showPreview, setShowPreview] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   
   // Check if all requirements are met
   const requirementsStatus = {
@@ -19,9 +23,45 @@ export function CourseCertificate({ course, progress }: CourseCertificateProps) 
   
   const allRequirementsMet = Object.values(requirementsStatus).every(Boolean)
   
-  const handleDownload = () => {
-    // TODO: Generate and download PDF certificate via backend API
-    alert("Certificate download would start in a real application")
+  const handleDownload = async () => {
+    if (!user) {
+      setError("You must be logged in to download a certificate")
+      return
+    }
+
+    setDownloading(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/certificates/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          userId: user.id,
+          courseId: course.id,
+        }),
+      })
+
+      const payload = await response.json()
+      if (!response.ok) {
+        throw new Error(payload.message || 'Failed to generate certificate')
+      }
+
+      const certificate = payload.data?.certificate
+      if (!certificate?.id) {
+        throw new Error('Certificate not available for download')
+      }
+
+      const downloadUrl = `/api/certificates/download?certificateId=${certificate.id}`
+      window.open(downloadUrl, '_blank', 'noopener,noreferrer')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to download certificate')
+    } finally {
+      setDownloading(false)
+    }
   }
   
   return (
@@ -37,6 +77,11 @@ export function CourseCertificate({ course, progress }: CourseCertificateProps) 
       </CardHeader>
       
       <CardContent className="space-y-6">
+        {error && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </div>
+        )}
         {!showPreview ? (
           <div className="space-y-4">
             <h3 className="font-medium">{course.certificate?.title || `${course.title} Certificate`}</h3>
@@ -145,9 +190,9 @@ export function CourseCertificate({ course, progress }: CourseCertificateProps) 
         </Button>
         
         {allRequirementsMet && (
-          <Button onClick={handleDownload} disabled={!allRequirementsMet}>
+          <Button onClick={handleDownload} disabled={!allRequirementsMet || downloading}>
             <Download className="mr-2 h-4 w-4" />
-            Download Certificate
+            {downloading ? "Preparing..." : "Download Certificate"}
           </Button>
         )}
       </CardFooter>
