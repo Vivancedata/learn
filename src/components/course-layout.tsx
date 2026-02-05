@@ -10,10 +10,11 @@ import Link from "next/link"
 interface CourseLayoutProps {
   course: Course
   currentLessonId?: string
+  completedLessonIds?: string[]
   children: React.ReactNode
 }
 
-export function CourseLayout({ course, currentLessonId, children }: CourseLayoutProps) {
+export function CourseLayout({ course, currentLessonId, completedLessonIds, children }: CourseLayoutProps) {
   const [nextLesson, setNextLesson] = useState<Lesson | null>(null)
   const [prevLesson, setPrevLesson] = useState<Lesson | null>(null)
 
@@ -64,7 +65,7 @@ export function CourseLayout({ course, currentLessonId, children }: CourseLayout
 
   return (
     <div className="flex min-h-screen">
-      <CourseSidebar course={course} />
+      <CourseSidebar course={course} completedLessonIds={completedLessonIds} />
 
       <div className="flex-1">
         <div className="container py-8">

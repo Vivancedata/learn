@@ -28,8 +28,40 @@ interface TableOfContentsItem {
   level: number
 }
 
-interface CourseProgressData {
-  courseId: string
+interface DiscussionReply {
+  id: string
+  userId: string
+  user: { name: string | null; email: string }
+  content: string
+  createdAt: string
+  likes: number
+}
+
+interface DiscussionData {
+  id: string
+  userId: string
+  user: { name: string | null; email: string }
+  content: string
+  createdAt: string
+  likes: number
+  replies?: DiscussionReply[]
+}
+
+interface TransformedDiscussion {
+  id: string
+  userId: string
+  username: string
+  content: string
+  createdAt: string
+  likes: number
+  replies: {
+    id: string
+    userId: string
+    username: string
+    content: string
+    createdAt: string
+    likes: number
+  }[]
 }
 
 function extractTableOfContents(content: string): TableOfContentsItem[] {
@@ -108,36 +140,57 @@ function LessonContent() {
   const [tableOfContents, setTableOfContents] = useState<TableOfContentsItem[]>([])
   const [course, setCourse] = useState<Course | null>(null)
   const [lesson, setLesson] = useState<Lesson | null>(null)
+  const [discussions, setDiscussions] = useState<TransformedDiscussion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   // Memoize markdown components to avoid re-creation on every render
   const markdownComponents = useMemo(() => createMarkdownComponents(), [])
 
+  const fetchDiscussions = async () => {
+    const response = await fetch(`/api/discussions?lessonId=${lessonId}`)
+    const payload = await response.json()
+    const transformedDiscussions = payload.data?.discussions?.map((d: DiscussionData) => ({
+      id: d.id,
+      userId: d.userId,
+      username: d.user.name || d.user.email.split('@')[0],
+      content: d.content,
+      createdAt: d.createdAt,
+      likes: d.likes,
+      replies: d.replies?.map((r: DiscussionReply) => ({
+        id: r.id,
+        userId: r.userId,
+        username: r.user.name || r.user.email.split('@')[0],
+        content: r.content,
+        createdAt: r.createdAt,
+        likes: r.likes,
+      })) || [],
+    })) || []
+    setDiscussions(transformedDiscussions)
+  }
+
   useEffect(() => {
     async function loadData() {
       try {
-        // Prepare promises for course and lesson data
+        // Prepare promises
         const promises: Promise<unknown>[] = [
           getCourseById(courseId),
           getLessonById(courseId, lessonId),
+          fetchDiscussions(),
         ]
 
-        // If user is logged in, also fetch their progress
+        // If user is logged in, also fetch their lesson progress
         if (user) {
-          const token = localStorage.getItem('token')
-          if (token) {
-            promises.push(
-              fetch(`/api/progress/user/${user.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-              }).then(res => res.json())
-            )
-          }
+          promises.push(
+            fetch(`/api/progress/lessons?userId=${user.id}&courseId=${courseId}`, {
+              credentials: 'include',
+            }).then(res => res.json())
+          )
         }
 
         // Get course, lesson, and optionally progress data
         const results = await Promise.allSettled(promises)
-        const [courseResult, lessonResult, progressResult] = results
+        const [courseResult, lessonResult, discussionsResult, progressResult] = results
 
         // Handle course result
         if (courseResult.status === 'fulfilled') {
@@ -163,16 +216,16 @@ function LessonContent() {
           setError('Failed to load lesson content')
         }
 
+        // Handle discussions result
+        if (discussionsResult.status === 'rejected') {
+          console.error('Failed to load discussions:', discussionsResult.reason)
+        }
+
         // Handle progress result - check if this lesson is completed
         if (progressResult && progressResult.status === 'fulfilled') {
-          const userProgress = progressResult.value as { courses?: CourseProgressData[] }
-          // Find the course progress that contains this lesson
-          const courseProgress = userProgress.courses?.find((c: CourseProgressData) => c.courseId === courseId)
-          if (courseProgress) {
-            // Check if we have a way to get completed lesson IDs from the API
-            // For now, we'll fetch it separately when needed
-            // This would require updating the progress API to return lesson IDs
-          }
+          const progressPayload = progressResult.value as { data?: { completedLessons?: { id: string }[] } }
+          const completedLessonIds = progressPayload.data?.completedLessons?.map((lesson) => lesson.id) || []
+          setIsCompleted(completedLessonIds.includes(lessonId))
         }
       } catch {
         setError('An unexpected error occurred while loading lesson data')
@@ -235,20 +288,16 @@ function LessonContent() {
     setCompletionLoading(true)
 
     try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        throw new Error("Authentication required")
-      }
-
       const response = await fetch('/api/progress/lessons', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
+          userId: user.id,
+          courseId,
           lessonId,
-          completed: true,
         }),
       })
 
@@ -265,28 +314,24 @@ function LessonContent() {
     }
   }
 
-  const handleQuizComplete = async (score: number) => {
+  const handleQuizComplete = async (result: { score: number; selectedAnswers: number[] }) => {
     if (!user) {
       setError("You must be logged in to save quiz scores")
       return
     }
 
     try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        throw new Error("Authentication required")
-      }
-
       const response = await fetch('/api/quiz/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
+          userId: user.id,
+          courseId,
           lessonId,
-          score,
-          maxScore: 100,
+          answers: result.selectedAnswers,
         }),
       })
 
@@ -303,11 +348,12 @@ function LessonContent() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
+          userId: user.id,
+          courseId,
           lessonId,
-          completed: true,
         }),
       })
     } catch (err) {
@@ -383,8 +429,10 @@ function LessonContent() {
               )}
 
               <CommunityDiscussions
+                discussions={discussions}
                 courseId={courseId}
                 lessonId={lessonId}
+                onRefresh={fetchDiscussions}
               />
 
               <div className="flex items-center justify-between border-t pt-6">

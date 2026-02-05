@@ -8,10 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ProgressCircle } from "@/components/ui/progress-circle"
 import { Course, Path } from "@/types/course"
 import { getPathById, getAllCourses } from "@/lib/content"
+import { useAuth } from "@/hooks/useAuth"
 
 export default function PathPage() {
   const params = useParams()
   const pathId = params.pathId as string
+  const { user } = useAuth()
   
   const [path, setPath] = useState<Path | null>(null)
   const [courses, setCourses] = useState<Course[]>([])
@@ -25,10 +27,40 @@ export default function PathPage() {
           getPathById(pathId),
           getAllCourses()
         ])
-        
+
         if (loadedPath) {
+          let resolvedCourses = allCourses
+
+          if (user) {
+            const progressResponse = await fetch(`/api/progress/user/${user.id}`, {
+              credentials: 'include',
+            })
+
+            if (progressResponse.ok) {
+              const progressData = await progressResponse.json()
+              resolvedCourses = allCourses.map((course) => {
+                const courseProgress = progressData.courses?.find(
+                  (progress: { courseId: string }) => progress.courseId === course.id
+                )
+
+                if (courseProgress) {
+                  return {
+                    ...course,
+                    progress: {
+                      completed: courseProgress.completedLessons,
+                      total: courseProgress.totalLessons,
+                      lastAccessed: courseProgress.lastAccessed,
+                    },
+                  }
+                }
+
+                return course
+              })
+            }
+          }
+
           setPath(loadedPath)
-          setCourses(allCourses)
+          setCourses(resolvedCourses)
         }
       } catch (_error) {
         // Error handled by null path state
@@ -38,7 +70,7 @@ export default function PathPage() {
     }
     
     loadData()
-  }, [pathId])
+  }, [pathId, user])
 
   if (loading) {
     return (

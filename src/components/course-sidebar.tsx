@@ -10,9 +10,10 @@ import { Course, Lesson } from "@/types/course"
 
 interface CourseSidebarProps {
   course: Course
+  completedLessonIds?: string[]
 }
 
-export function CourseSidebar({ course }: CourseSidebarProps) {
+export function CourseSidebar({ course, completedLessonIds = [] }: CourseSidebarProps) {
   const params = useParams()
   const lessonId = params.lessonId as string
   
@@ -47,7 +48,9 @@ export function CourseSidebar({ course }: CourseSidebarProps) {
   }
   
   const isLessonCompleted = (lesson: Lesson) => {
-    // In a real app, this would check the user's progress
+    if (completedLessonIds.length > 0) {
+      return completedLessonIds.includes(lesson.id)
+    }
     return lesson.completed || false
   }
   

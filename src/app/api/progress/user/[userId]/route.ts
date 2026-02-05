@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { getUserId } from '@/lib/auth'
-import { handleApiError, UnauthorizedError } from '@/lib/api-errors'
+import { handleApiError } from '@/lib/api-errors'
+import { requireOwnership } from '@/lib/authorization'
 
 interface UserProgressResponse {
   userId: string
@@ -28,20 +28,12 @@ export async function GET(
   context: { params: Promise<{ userId: string }> }
 ) {
   try {
-    // Get authenticated user ID from middleware-injected headers
-    const authenticatedUserId = getUserId(request)
-    if (!authenticatedUserId) {
-      throw new UnauthorizedError('Authentication required')
-    }
-
     // Get userId from params
     const params = await context.params
     const { userId } = params
 
     // Authorization check: users can only access their own progress
-    if (authenticatedUserId !== userId) {
-      throw new UnauthorizedError('You can only access your own progress')
-    }
+    requireOwnership(request, userId, 'progress')
 
     // Fetch all course progress for the user
     const courseProgressRecords = await prisma.courseProgress.findMany({

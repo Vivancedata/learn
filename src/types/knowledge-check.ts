@@ -7,7 +7,7 @@ export interface Question {
 
 export interface KnowledgeCheckProps {
   questions: Question[]
-  onComplete?: (score: number) => void
+  onComplete?: (result: { score: number; selectedAnswers: number[] }) => void
 }
 
 export interface QuizResult {

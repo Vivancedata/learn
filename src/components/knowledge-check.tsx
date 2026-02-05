@@ -37,7 +37,7 @@ export function KnowledgeCheck({ questions, onComplete }: KnowledgeCheckProps) {
       const score = Math.round((correctAnswers / questions.length) * 100)
       
       if (onComplete) {
-        onComplete(score)
+        onComplete({ score, selectedAnswers: newSelectedAnswers })
       }
     }
   }

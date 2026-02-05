@@ -4,8 +4,10 @@ import { useState, useEffect } from "react"
 import { CourseList } from "@/components/course-list"
 import { Course } from "@/types/course"
 import { getAllCourses } from "@/lib/content"
+import { useAuth } from "@/hooks/useAuth"
 
 export default function CoursesPage() {
+  const { user } = useAuth()
   const [courses, setCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -13,6 +15,38 @@ export default function CoursesPage() {
     async function loadCourses() {
       try {
         const loadedCourses = await getAllCourses()
+
+        if (user) {
+          const progressResponse = await fetch(`/api/progress/user/${user.id}`, {
+            credentials: 'include',
+          })
+
+          if (progressResponse.ok) {
+            const progressData = await progressResponse.json()
+            const coursesWithProgress = loadedCourses.map((course) => {
+              const courseProgress = progressData.courses?.find(
+                (progress: { courseId: string }) => progress.courseId === course.id
+              )
+
+              if (courseProgress) {
+                return {
+                  ...course,
+                  progress: {
+                    completed: courseProgress.completedLessons,
+                    total: courseProgress.totalLessons,
+                    lastAccessed: courseProgress.lastAccessed,
+                  },
+                }
+              }
+
+              return course
+            })
+
+            setCourses(coursesWithProgress)
+            return
+          }
+        }
+
         setCourses(loadedCourses)
       } catch (_error) {
         // Error handled by empty state
@@ -22,7 +56,7 @@ export default function CoursesPage() {
     }
     
     loadCourses()
-  }, [])
+  }, [user])
 
   return (
     <div className="space-y-8">

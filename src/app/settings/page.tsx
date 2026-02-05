@@ -46,17 +46,12 @@ function SettingsContent() {
     setSuccess(false)
 
     try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        throw new Error("Authentication required")
-      }
-
       const response = await fetch('/api/user/profile', {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: name || undefined,
           githubUsername: githubUsername || undefined,

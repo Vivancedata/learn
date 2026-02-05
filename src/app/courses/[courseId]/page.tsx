@@ -12,27 +12,129 @@ import { CommunityDiscussions } from "@/components/community-discussions"
 import { getCourseById } from "@/lib/content"
 import { useParams } from "next/navigation"
 import { Course } from "@/types/course"
+import { Discussion } from "@/types/discussion"
+import { useAuth } from "@/hooks/useAuth"
+
+interface ApiDiscussionUser {
+  id: string
+  name: string | null
+  email: string
+}
+
+interface ApiDiscussionReply {
+  id: string
+  userId: string
+  user: ApiDiscussionUser
+  content: string
+  createdAt: string
+  likes: number
+}
+
+interface ApiDiscussion {
+  id: string
+  userId: string
+  user: ApiDiscussionUser
+  content: string
+  createdAt: string
+  likes: number
+  replies?: ApiDiscussionReply[]
+}
 
 export default function CoursePage() {
   const params = useParams()
   const courseId = params.courseId as string
+  const { user } = useAuth()
   const [courseData, setCourseData] = useState<Course | null>(null)
+  const [discussions, setDiscussions] = useState<Discussion[]>([])
+  const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+
+  const fetchDiscussions = async () => {
+    const response = await fetch(`/api/discussions?courseId=${courseId}`)
+    const payload = await response.json()
+    const apiDiscussions: ApiDiscussion[] = payload.data?.discussions || []
+    const transformedDiscussions: Discussion[] = apiDiscussions.map((d) => ({
+      id: d.id,
+      userId: d.userId,
+      username: d.user.name || d.user.email.split('@')[0],
+      content: d.content,
+      createdAt: d.createdAt,
+      likes: d.likes,
+      replies: d.replies?.map((r) => ({
+        id: r.id,
+        userId: r.userId,
+        username: r.user.name || r.user.email.split('@')[0],
+        content: r.content,
+        createdAt: r.createdAt,
+        likes: r.likes,
+      })) || [],
+    }))
+    setDiscussions(transformedDiscussions)
+  }
 
   useEffect(() => {
     async function loadCourse() {
       try {
-        const course = await getCourseById(courseId)
-        setCourseData(course)
-      } catch (_error) {
-        // Error handled by null course state
+        const [course, discussionsResult] = await Promise.allSettled([
+          getCourseById(courseId),
+          fetchDiscussions(),
+        ])
+
+        if (course.status === 'fulfilled') {
+          let resolvedCourse = course.value
+
+          if (user) {
+            const progressResponse = await fetch(`/api/progress/user/${user.id}`, {
+              credentials: 'include',
+            })
+
+            if (progressResponse.ok) {
+              const progressData = await progressResponse.json()
+              const courseProgress = progressData.courses?.find(
+                (progress: { courseId: string }) => progress.courseId === courseId
+              )
+
+              if (courseProgress) {
+                resolvedCourse = {
+                  ...resolvedCourse,
+                  progress: {
+                    completed: courseProgress.completedLessons,
+                    total: courseProgress.totalLessons,
+                    lastAccessed: courseProgress.lastAccessed,
+                  },
+                }
+              }
+            }
+
+            const lessonsResponse = await fetch(
+              `/api/progress/lessons?userId=${user.id}&courseId=${courseId}`,
+              { credentials: 'include' }
+            )
+
+            if (lessonsResponse.ok) {
+              const lessonsPayload = await lessonsResponse.json()
+              const lessonIds = lessonsPayload.data?.completedLessons?.map(
+                (lesson: { id: string }) => lesson.id
+              ) || []
+              setCompletedLessonIds(lessonIds)
+            }
+          }
+
+          setCourseData(resolvedCourse)
+        }
+
+        if (discussionsResult.status === 'rejected') {
+          console.error('Failed to load discussions:', discussionsResult.reason)
+        }
+      } catch (error) {
+        console.error("Error loading course:", error)
       } finally {
         setLoading(false)
       }
     }
 
     loadCourse()
-  }, [courseId])
+  }, [courseId, user])
   
   // Show loading state
   if (loading) {
@@ -59,11 +161,7 @@ export default function CoursePage() {
   // Add missing properties to match the CourseType interface
   const course = {
     ...courseData,
-    progress: courseData.progress || {
-      completed: 2,
-      total: 8,
-      lastAccessed: new Date().toISOString()
-    },
+    progress: courseData.progress,
     learningOutcomes: courseData.learningOutcomes || [
       "Understand core concepts and principles",
       "Build practical projects to apply your knowledge",
@@ -106,9 +204,9 @@ export default function CoursePage() {
   const progressMetrics = {
     completedLessons: course.progress?.completed || 0,
     totalLessons,
-    completedProjects: 1,
+    completedProjects: 0,
     totalProjects: projectLessons,
-    averageQuizScore: 85
+    averageQuizScore: 0,
   }
 
   // Default learning outcomes if not provided
@@ -120,7 +218,7 @@ export default function CoursePage() {
   ]
 
   return (
-    <CourseLayout course={course}>
+    <CourseLayout course={course} completedLessonIds={completedLessonIds}>
       <div className="space-y-8">
         <div className="flex items-start justify-between">
           <div>
@@ -217,7 +315,11 @@ export default function CoursePage() {
           <SuccessStories stories={successStories} />
         </div>
 
-        <CommunityDiscussions courseId={course.id} />
+        <CommunityDiscussions 
+          discussions={discussions}
+          courseId={course.id}
+          onRefresh={fetchDiscussions}
+        />
       </div>
     </CourseLayout>
   )
