@@ -1,148 +1,290 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
+/* Import Vivancedata UI design tokens */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
- 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
- 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
- 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
- 
+    /* Vivancedata Color Palette - Light Mode */
+    --background: 38 25% 97%;
+    --foreground: 210 15% 12%;
+    --card: 38 25% 98%;
+    --card-foreground: 210 15% 12%;
+    --popover: 38 25% 98%;
+    --popover-foreground: 210 15% 12%;
+    --primary: 152 52% 20%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 152 38% 36%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 38 18% 92%;
+    --muted-foreground: 215 10% 42%;
+    --accent: 32 50% 92%;
+    --accent-foreground: 215 15% 16%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 30 18% 86%;
+    --input: 30 18% 86%;
+    --ring: 152 52% 20%;
+    --radius: 1.1rem;
 
+    /* Status colors */
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
-
+    --success-muted: 142 76% 36% / 0.1;
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-
+    --warning-foreground: 0 0% 0%;
+    --warning-muted: 38 92% 50% / 0.1;
     --info: 217 91% 60%;
     --info-foreground: 0 0% 100%;
+    --info-muted: 217 91% 60% / 0.1;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Chart colors */
+    --chart-1: 152 52% 35%;
+    --chart-2: 162 55% 40%;
+    --chart-3: 142 76% 36%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 217 91% 60%;
 
-    --radius: 0.5rem;
+    /* Transition durations */
+    --duration-fast: 150ms;
+    --duration-default: 200ms;
+    --duration-slow: 300ms;
+
+    /* Z-index scale */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+
+    /* Neumorphic shadows - Light mode */
+    --neu-shadow-light: rgba(255, 255, 255, 0.9);
+    --neu-shadow-dark: rgba(120, 110, 90, 0.18);
+    --neu-shadow-sm: 4px 4px 6px -1px var(--neu-shadow-dark),
+      -3px -3px 6px var(--neu-shadow-light);
+    --neu-shadow: 10px 10px 16px -2px var(--neu-shadow-dark),
+      -8px -8px 16px -2px var(--neu-shadow-light);
+    --neu-shadow-lg: 16px 16px 24px -3px var(--neu-shadow-dark),
+      -12px -12px 24px -3px var(--neu-shadow-light);
+    --neu-shadow-inset: inset -4px -4px 8px -1px var(--neu-shadow-light),
+      inset 3px 3px 8px -1px var(--neu-shadow-dark);
+    --neu-shadow-inset-sm: inset -3px -3px 6px var(--neu-shadow-light),
+      inset 2px 2px 5px var(--neu-shadow-dark);
+
+    /* Glass effect */
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-blur: 12px;
   }
- 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
- 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
- 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
- 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
- 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
- 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
 
+  .dark {
+    /* Vivancedata Color Palette - Dark Mode */
+    --background: 220 15% 8%;
+    --foreground: 0 0% 98%;
+    --card: 220 15% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 220 15% 10%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 152 44% 46%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 152 38% 32%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 220 10% 16%;
+    --muted-foreground: 220 10% 70%;
+    --accent: 210 16% 16%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 10% 18%;
+    --input: 220 10% 18%;
+    --ring: 152 44% 46%;
+
+    /* Status colors - Dark mode */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
-
-    --warning: 48 96% 53%;
+    --success-muted: 142 71% 45% / 0.15;
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 0%;
-
+    --warning-muted: 38 92% 50% / 0.15;
     --info: 217 91% 60%;
     --info-foreground: 0 0% 100%;
+    --info-muted: 217 91% 60% / 0.15;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    /* Chart colors - Dark mode */
+    --chart-1: 152 44% 50%;
+    --chart-2: 162 55% 50%;
+    --chart-3: 142 71% 45%;
+    --chart-4: 38 92% 55%;
+    --chart-5: 217 91% 65%;
+
+    /* Neumorphic shadows - Dark mode */
+    --neu-shadow-light: rgba(60, 70, 90, 0.45);
+    --neu-shadow-dark: rgba(0, 0, 0, 0.65);
+    --neu-shadow-sm: 5px 5px 8px -2px var(--neu-shadow-dark),
+      -4px -4px 8px -2px var(--neu-shadow-light);
+    --neu-shadow: 10px 10px 16px -3px var(--neu-shadow-dark),
+      -8px -8px 16px -3px var(--neu-shadow-light);
+    --neu-shadow-lg: 16px 16px 24px -4px var(--neu-shadow-dark),
+      -12px -12px 24px -4px var(--neu-shadow-light);
+    --neu-shadow-inset: inset -5px -5px 8px -2px var(--neu-shadow-light),
+      inset 3px 3px 10px -2px var(--neu-shadow-dark);
+    --neu-shadow-inset-sm: inset -3px -3px 6px var(--neu-shadow-light),
+      inset 2px 2px 6px var(--neu-shadow-dark);
+
+    /* Glass effect - Dark mode */
+    --glass-bg: rgba(30, 35, 45, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-blur: 12px;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
   }
+  html {
+    @apply scroll-smooth;
+  }
   body {
     @apply bg-background text-foreground;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    line-height: 1.65;
+    background-image:
+      radial-gradient(1200px circle at 8% -10%, hsl(var(--primary) / 0.15), transparent 60%),
+      radial-gradient(900px circle at 95% -5%, hsl(var(--secondary) / 0.2), transparent 55%),
+      radial-gradient(600px circle at 50% 0%, hsl(var(--accent) / 0.6), transparent 60%);
+    background-attachment: fixed;
   }
 }
 
-/* ============================================================================
-   Mobile-Specific Styles
-   ============================================================================ */
+@layer components {
+  /* Neumorphic utility classes */
+  .neu-flat {
+    box-shadow: var(--neu-shadow);
+    background: hsl(var(--background));
+    border-radius: var(--radius);
+    transition: box-shadow var(--duration-default) ease,
+      transform var(--duration-default) ease;
+  }
 
-/* Safe area insets for notched phones (iPhone X+, etc.) */
-@supports (padding: env(safe-area-inset-bottom)) {
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
+  .neu-flat:hover {
+    box-shadow: var(--neu-shadow-lg);
+    transform: translateY(-2px);
   }
-  .safe-area-top {
-    padding-top: env(safe-area-inset-top);
+
+  .neu-flat:active,
+  .neu-pressed {
+    box-shadow: var(--neu-shadow-inset);
+    transform: translateY(0);
   }
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
+
+  .neu-convex {
+    box-shadow: var(--neu-shadow);
+    background: linear-gradient(
+      145deg,
+      hsl(var(--background)),
+      hsl(var(--muted))
+    );
+    border-radius: var(--radius);
   }
-  .pt-safe {
-    padding-top: env(safe-area-inset-top);
+
+  .neu-concave {
+    box-shadow: var(--neu-shadow-inset);
+    background: linear-gradient(
+      145deg,
+      hsl(var(--muted)),
+      hsl(var(--background))
+    );
+    border-radius: var(--radius);
+  }
+
+  /* Glass effect */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+  }
+
+  .glass-card {
+    @apply glass;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  }
+
+  /* Glow effects */
+  .glow-primary {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3),
+      0 0 40px hsl(var(--primary) / 0.2), 0 0 60px hsl(var(--primary) / 0.1);
+  }
+
+  .glow-secondary {
+    box-shadow: 0 0 20px hsl(var(--secondary) / 0.3),
+      0 0 40px hsl(var(--secondary) / 0.2), 0 0 60px hsl(var(--secondary) / 0.1);
+  }
+
+  /* Gradient backgrounds */
+  .gradient-vivance {
+    background-image: radial-gradient(
+        1200px circle at 8% -10%,
+        hsl(var(--primary) / 0.15),
+        transparent 60%
+      ),
+      radial-gradient(
+        900px circle at 95% -5%,
+        hsl(var(--secondary) / 0.2),
+        transparent 55%
+      ),
+      radial-gradient(
+        600px circle at 50% 0%,
+        hsl(var(--accent) / 0.6),
+        transparent 60%
+      );
+    background-attachment: fixed;
+  }
+
+  /* Shimmer/skeleton loading */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted-foreground) / 0.1) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  /* Focus ring */
+  .focus-ring {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 }
 
-/* Touch-friendly tap targets (minimum 44x44px per Apple HIG) */
 @layer utilities {
-  .touch-target {
-    @apply min-h-[44px] min-w-[44px];
+  /* Animation delays */
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+  .animation-delay-500 {
+    animation-delay: 500ms;
   }
 
-  .touch-manipulation {
-    touch-action: manipulation;
+  /* Text balance for headings */
+  .text-balance {
+    text-wrap: balance;
   }
-}
 
-/* Prevent text selection on interactive elements */
-@layer utilities {
-  .no-select {
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-touch-callout: none;
-  }
-}
-
-/* Smooth scrolling with momentum on iOS */
-@layer utilities {
-  .scroll-smooth-touch {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-  }
-}
-
-/* Hide scrollbars on mobile while keeping functionality */
-@layer utilities {
+  /* Hide scrollbar */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -152,236 +294,11 @@
   }
 }
 
-/* Glass morphism effect */
-@layer utilities {
-  .glass {
-    @apply bg-background/80 backdrop-blur-xl;
-  }
-}
-
-/* Mobile-specific animations */
-@keyframes slide-out-left {
+@keyframes shimmer {
   from {
-    transform: translateX(0);
-    opacity: 1;
+    background-position: 200% 0;
   }
   to {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-}
-
-@keyframes slide-out-right {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-}
-
-@keyframes loading-bar {
-  0% {
-    transform: translateX(-100%);
-  }
-  50% {
-    transform: translateX(0%);
-  }
-  100% {
-    transform: translateX(200%);
-  }
-}
-
-@layer utilities {
-  .animate-slide-out-left {
-    animation: slide-out-left 0.15s ease-out forwards;
-  }
-  .animate-slide-out-right {
-    animation: slide-out-right 0.15s ease-out forwards;
-  }
-  .animate-loading-bar {
-    animation: loading-bar 1.5s ease-in-out infinite;
-  }
-}
-
-/* Mobile lesson content styles */
-.mobile-lesson-content {
-  /* Larger text for readability */
-  font-size: 1rem;
-  line-height: 1.75;
-
-  /* Better spacing */
-  & > * + * {
-    margin-top: 1.25em;
-  }
-
-  /* Larger headings */
-  h1, h2, h3, h4 {
-    font-weight: 700;
-    line-height: 1.3;
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-  }
-
-  h1 {
-    font-size: 1.5rem;
-  }
-
-  h2 {
-    font-size: 1.25rem;
-  }
-
-  h3 {
-    font-size: 1.125rem;
-  }
-
-  /* Better code blocks on mobile */
-  pre {
-    font-size: 0.875rem;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  code {
-    font-size: 0.875em;
-  }
-
-  /* Images fill container */
-  img {
-    width: 100%;
-    height: auto;
-    border-radius: 0.5rem;
-  }
-
-  /* Better lists */
-  ul, ol {
-    padding-left: 1.25em;
-  }
-
-  li {
-    padding-left: 0.25em;
-    margin-top: 0.5em;
-  }
-
-  /* Better blockquotes */
-  blockquote {
-    padding: 0.75rem 1rem;
-    border-left: 3px solid hsl(var(--primary));
-    background: hsl(var(--muted));
-    border-radius: 0 0.5rem 0.5rem 0;
-    margin: 1rem 0;
-  }
-
-  /* Better tables on mobile */
-  table {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    border-collapse: collapse;
-  }
-
-  th, td {
-    padding: 0.75rem;
-    border: 1px solid hsl(var(--border));
-    white-space: nowrap;
-  }
-}
-
-/* Responsive improvements */
-@media (max-width: 768px) {
-  /* Hide desktop-only elements */
-  .md\:hidden {
-    display: none !important;
-  }
-
-  /* Full-width cards on mobile */
-  .card-mobile-full {
-    margin-left: -1rem;
-    margin-right: -1rem;
-    border-radius: 0;
-    border-left: 0;
-    border-right: 0;
-  }
-
-  /* Horizontal scroll for tables */
-  .table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Stack buttons on mobile */
-  .button-stack-mobile {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .button-stack-mobile > * {
-    width: 100%;
-  }
-
-  /* Larger form inputs on mobile */
-  input[type="text"],
-  input[type="email"],
-  input[type="password"],
-  input[type="search"],
-  input[type="url"],
-  textarea,
-  select {
-    font-size: 16px !important; /* Prevents zoom on iOS */
-  }
-}
-
-/* Reduce motion for users who prefer it */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* Dark mode adjustments for mobile */
-@media (prefers-color-scheme: dark) {
-  .mobile-lesson-content {
-    pre {
-      background: hsl(var(--muted));
-    }
-  }
-}
-
-/* Focus visible styles for touch devices */
-@media (hover: none) and (pointer: coarse) {
-  /* Remove hover states on touch devices */
-  .hover\:bg-muted:hover {
-    background: inherit;
-  }
-
-  /* Active state instead of hover */
-  .touch-active:active {
-    @apply bg-muted/80;
-  }
-}
-
-/* Improve tap highlight on mobile */
-@layer base {
-  * {
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  /* Add visible tap feedback for buttons */
-  button:active,
-  a:active,
-  [role="button"]:active {
-    opacity: 0.8;
+    background-position: -200% 0;
   }
 }
