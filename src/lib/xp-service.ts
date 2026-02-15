@@ -3,7 +3,7 @@
  * Business logic for awarding XP and managing user levels
  */
 
-import { XpSource } from '@prisma/client'
+import type { XpSource } from './xp-config'
 import prisma from './db'
 import {
   XP_VALUES,
@@ -322,7 +322,11 @@ export async function getUserXpInfo(
     level: user.level,
     xpToNextLevel: user.xpToNextLevel,
     levelProgress: calculateLevelProgress(user.totalXp),
-    recentTransactions: user.xpTransactions,
+    recentTransactions: user.xpTransactions.map(t => ({
+      ...t,
+      source: t.source as XpSource,
+      description: t.description || '',
+    })),
   }
 }
 
@@ -360,7 +364,11 @@ export async function getXpHistory(
   ])
 
   return {
-    transactions,
+    transactions: transactions.map(t => ({
+      ...t,
+      source: t.source as XpSource,
+      description: t.description || '',
+    })),
     total,
     page,
     limit,

@@ -7,7 +7,6 @@ import { CourseList } from "@/components/course-list"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ProgressCircle } from "@/components/ui/progress-circle"
 import { Course, Path } from "@/types/course"
-import { getPathById, getAllCourses } from "@/lib/content"
 import { useAuth } from "@/hooks/useAuth"
 
 export default function PathPage() {
@@ -22,11 +21,16 @@ export default function PathPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        // Load path and courses
-        const [loadedPath, allCourses] = await Promise.all([
-          getPathById(pathId),
-          getAllCourses()
+        // Load path and courses via API routes
+        const [pathRes, coursesRes] = await Promise.all([
+          fetch(`/api/paths`),
+          fetch('/api/courses')
         ])
+        const pathsData = pathRes.ok ? await pathRes.json() : { data: [] }
+        const coursesData = coursesRes.ok ? await coursesRes.json() : { data: [] }
+        const allPaths: Path[] = pathsData.data || []
+        const allCourses: Course[] = coursesData.data || []
+        const loadedPath = allPaths.find((p: Path) => p.id === pathId) || null
 
         if (loadedPath) {
           let resolvedCourses = allCourses

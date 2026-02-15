@@ -357,7 +357,7 @@ export const sendNotificationSchema = z.object({
   icon: z.string().optional(),
   tag: z.string().optional(),
   requireInteraction: z.boolean().optional(),
-  data: z.record(z.unknown()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
 })
 
 // ============================================================================

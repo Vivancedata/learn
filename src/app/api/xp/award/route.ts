@@ -13,7 +13,7 @@ import {
   getTierConfigForLevel,
   getLevelName,
 } from '@/lib/xp-config'
-import type { XpSource } from '@prisma/client'
+import type { XpSource } from '@/lib/xp-config'
 
 /**
  * POST /api/xp/award

@@ -1,5 +1,3 @@
-"use server"
-
 interface SendEmailInput {
   to: string
   subject: string

@@ -13,7 +13,6 @@ import { XpLevelDisplay } from "@/components/xp-level-display"
 import { RecommendationsSection } from "@/components/recommendations-section"
 import { ArrowRight, BookOpen, Award, Calendar, Clock, CheckCircle2, Heart, Users, Target, FileQuestion, Trophy } from "lucide-react"
 import { Course, Path } from "@/types/course"
-import { getAllCourses, getAllPaths } from "@/lib/content"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { useAuth } from "@/hooks/useAuth"
 
@@ -69,8 +68,8 @@ function DashboardContent() {
       try {
         // Load courses, paths, user progress, and user points
         const [coursesResult, pathsResult, progressResult, pointsResult] = await Promise.allSettled([
-          getAllCourses(),
-          getAllPaths(),
+          fetch('/api/courses').then(res => res.ok ? res.json() : { data: [] }).then(d => (d.data || []) as Course[]),
+          fetch('/api/paths').then(res => res.ok ? res.json() : { data: [] }).then(d => (d.data || []) as Path[]),
           fetch(`/api/progress/user/${user.id}`, {
             credentials: 'include', // Send HTTP-only auth cookie
           }).then(res => {

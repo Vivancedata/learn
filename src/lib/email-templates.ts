@@ -1,5 +1,3 @@
-"use server"
-
 export function verificationEmailTemplate(input: { code: string; verificationUrl: string }) {
   const { code, verificationUrl } = input
   const subject = 'Verify your email address'

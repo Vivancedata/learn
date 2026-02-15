@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { CourseList } from "@/components/course-list"
 import { Course } from "@/types/course"
-import { getAllCourses } from "@/lib/content"
 import { useAuth } from "@/hooks/useAuth"
 
 export default function CoursesPage() {
@@ -14,7 +13,9 @@ export default function CoursesPage() {
   useEffect(() => {
     async function loadCourses() {
       try {
-        const loadedCourses = await getAllCourses()
+        const coursesRes = await fetch('/api/courses')
+        const coursesData = coursesRes.ok ? await coursesRes.json() : { data: [] }
+        const loadedCourses: Course[] = coursesData.data || []
 
         if (user) {
           const progressResponse = await fetch(`/api/progress/user/${user.id}`, {

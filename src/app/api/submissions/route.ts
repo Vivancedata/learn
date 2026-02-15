@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting
     const identifier = getClientIdentifier(request)
-    const rateLimitResult = checkRateLimit(identifier, RATE_LIMITS.API)
+    const rateLimitResult = await checkRateLimit(identifier, RATE_LIMITS.API)
     if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: 'Too many requests. Please try again later.' },

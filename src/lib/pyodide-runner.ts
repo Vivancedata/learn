@@ -30,7 +30,7 @@ interface LoadPyodideOptions {
 
 declare global {
   interface Window {
-    loadPyodide: (options: LoadPyodideOptions) => Promise<PyodideInterface>
+    loadPyodide?: (options: LoadPyodideOptions) => Promise<PyodideInterface>
   }
 }
 
@@ -124,7 +124,7 @@ export async function loadPyodide(
       onProgress?.('Initializing Python environment...')
 
       // Initialize Pyodide
-      pyodideInstance = await window.loadPyodide({
+      pyodideInstance = await window.loadPyodide!({
         indexURL: PYODIDE_CDN_URL,
       })
 

@@ -2,13 +2,11 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
 
 // Enums for type safety
@@ -85,6 +83,9 @@ model User {
   role                    UserRole                 @default(student)
   emailVerified           Boolean                  @default(false)
   points                  Int                      @default(0)
+  totalXp                 Int                      @default(0)
+  level                   Int                      @default(1)
+  xpToNextLevel           Int                      @default(100)
   showOnLeaderboard       Boolean                  @default(true)
   currentStreak           Int                      @default(0)
   longestStreak           Int                      @default(0)
@@ -114,6 +115,21 @@ model User {
   assessmentAttempts      AssessmentAttempt[]
   subscription            Subscription?
   conversations           Conversation[]
+  xpTransactions          XpTransaction[]
+}
+
+model XpTransaction {
+  id          String   @id @default(uuid())
+  userId      String
+  amount      Int
+  source      String
+  sourceId    String?
+  description String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model Course {

@@ -1,10 +1,7 @@
+'use client'
+
 import { WifiOff, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-
-export const metadata = {
-  title: 'Offline - VivanceData',
-  description: 'You are currently offline',
-}
 
 export default function OfflinePage() {
   return (

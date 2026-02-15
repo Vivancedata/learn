@@ -11,7 +11,7 @@ import { ProjectSubmission } from "@/components/project-submission"
 import { KnowledgeCheck } from "@/components/knowledge-check"
 import { CommunityDiscussions } from "@/components/community-discussions"
 import { StudentSolutions } from "@/components/student-solutions"
-import { getCourseById, getLessonById, parseKnowledgeCheck } from "@/lib/content"
+import { parseKnowledgeCheck } from "@/lib/content-utils"
 import type { Components } from "react-markdown"
 import { useParams } from "next/navigation"
 import { Course, Lesson } from "@/types/course"
@@ -51,13 +51,16 @@ interface TransformedDiscussion {
   id: string
   userId: string
   username: string
+  userPoints: number
   content: string
   createdAt: string
   likes: number
   replies: {
     id: string
+    discussionId: string
     userId: string
     username: string
+    userPoints: number
     content: string
     createdAt: string
     likes: number
@@ -154,13 +157,16 @@ function LessonContent() {
       id: d.id,
       userId: d.userId,
       username: d.user.name || d.user.email.split('@')[0],
+      userPoints: 0,
       content: d.content,
       createdAt: d.createdAt,
       likes: d.likes,
       replies: d.replies?.map((r: DiscussionReply) => ({
         id: r.id,
+        discussionId: d.id,
         userId: r.userId,
         username: r.user.name || r.user.email.split('@')[0],
+        userPoints: 0,
         content: r.content,
         createdAt: r.createdAt,
         likes: r.likes,
@@ -172,10 +178,13 @@ function LessonContent() {
   useEffect(() => {
     async function loadData() {
       try {
-        // Prepare promises
+        // Prepare promises - use API routes instead of direct Prisma imports
         const promises: Promise<unknown>[] = [
-          getCourseById(courseId),
-          getLessonById(courseId, lessonId),
+          fetch('/api/courses').then(res => res.ok ? res.json() : { data: [] }).then(d => {
+            const courses: Course[] = d.data || []
+            return courses.find(c => c.id === courseId) || null
+          }),
+          fetch(`/api/lessons/${lessonId}`).then(res => res.ok ? res.json() : { data: null }).then(d => d.data || null),
           fetchDiscussions(),
         ]
 

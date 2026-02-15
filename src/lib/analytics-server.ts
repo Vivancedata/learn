@@ -132,7 +132,7 @@ class ServerAnalytics {
   track(
     userId: string,
     event: string,
-    properties?: Record<string, unknown>
+    properties?: Record<string, unknown> | object
   ): void {
     const client = getClient()
     if (!client) return

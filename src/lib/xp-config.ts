@@ -3,7 +3,16 @@
  * Defines XP values, level calculations, and tier configurations
  */
 
-import { XpSource } from '@prisma/client'
+export type XpSource =
+  | 'LESSON_COMPLETE'
+  | 'QUIZ_PASS'
+  | 'QUIZ_PERFECT'
+  | 'PROJECT_SUBMIT'
+  | 'PROJECT_APPROVED'
+  | 'DAILY_LOGIN'
+  | 'STREAK_BONUS'
+  | 'ACHIEVEMENT'
+  | 'HELPING_OTHERS'
 
 // ============================================================================
 // XP Values

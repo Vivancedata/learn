@@ -254,7 +254,7 @@ class Analytics {
    * @param event - Event name
    * @param properties - Optional event properties
    */
-  track(event: string, properties?: Record<string, unknown>): void {
+  track(event: string, properties?: Record<string, unknown> | object): void {
     if (!this.isEnabled()) return
 
     try {

@@ -2,7 +2,6 @@
 
 import { PathCard } from "@/components/path-card"
 import { Course, Path } from "@/types/course"
-import { getAllPaths, getAllCourses } from "@/lib/content"
 import { useEffect, useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
 
@@ -15,11 +14,16 @@ export default function PathsPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        // Load paths and courses
-        const [loadedPaths, loadedCourses] = await Promise.all([
-          getAllPaths(),
-          getAllCourses()
+        // Load paths and courses via API routes (not direct Prisma imports)
+        const [pathsRes, coursesRes] = await Promise.all([
+          fetch('/api/paths'),
+          fetch('/api/courses')
         ])
+
+        const pathsData = pathsRes.ok ? await pathsRes.json() : { data: [] }
+        const coursesData = coursesRes.ok ? await coursesRes.json() : { data: [] }
+        const loadedPaths: Path[] = pathsData.data || []
+        const loadedCourses: Course[] = coursesData.data || []
 
         if (user) {
           const progressResponse = await fetch(`/api/progress/user/${user.id}`, {
@@ -58,12 +62,11 @@ export default function PathsPage() {
         setPaths(loadedPaths)
       } catch (error) {
         console.error("Error loading paths data:", error)
-      }
       } finally {
         setLoading(false)
       }
     }
-    
+
     loadData()
   }, [user])
 

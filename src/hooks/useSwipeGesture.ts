@@ -43,7 +43,7 @@ interface SwipeCallbacks {
 
 interface UseSwipeGestureReturn {
   /** Ref to attach to the swipeable element */
-  ref: React.RefObject<HTMLDivElement>
+  ref: React.RefObject<HTMLDivElement | null>
   /** Current swipe state */
   state: SwipeState
   /** Reset swipe state */

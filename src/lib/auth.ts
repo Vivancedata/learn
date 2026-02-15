@@ -10,12 +10,14 @@ import { NextRequest } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { ForbiddenError } from './api-errors'
 
-// JWT configuration
-const jwtSecret = process.env.JWT_SECRET
-if (!jwtSecret) {
-  throw new Error('JWT_SECRET environment variable is required. Generate one with: openssl rand -base64 32')
+// JWT configuration - lazy initialization to avoid build-time errors
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required. Generate one with: openssl rand -base64 32')
+  }
+  return new TextEncoder().encode(secret)
 }
-const JWT_SECRET = new TextEncoder().encode(jwtSecret)
 const JWT_ALGORITHM = 'HS256'
 const TOKEN_EXPIRATION = '7d' // 7 days
 
@@ -53,7 +55,7 @@ export async function generateToken(payload: JWTPayload): Promise<string> {
     .setProtectedHeader({ alg: JWT_ALGORITHM })
     .setIssuedAt()
     .setExpirationTime(TOKEN_EXPIRATION)
-    .sign(JWT_SECRET)
+    .sign(getJwtSecret())
 
   return token
 }
@@ -65,7 +67,7 @@ export async function generateToken(payload: JWTPayload): Promise<string> {
  */
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
+    const { payload } = await jwtVerify(token, getJwtSecret())
     return payload as JWTPayload
   } catch (_error) {
     // Invalid or expired token

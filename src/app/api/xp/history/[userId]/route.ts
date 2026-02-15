@@ -7,7 +7,7 @@ import {
 import { xpUserParamsSchema, xpHistoryQuerySchema } from '@/lib/validations'
 import { requireOwnership } from '@/lib/authorization'
 import { getXpHistory } from '@/lib/xp-service'
-import type { XpSource } from '@prisma/client'
+import type { XpSource } from '@/lib/xp-config'
 
 /**
  * GET /api/xp/history/[userId]

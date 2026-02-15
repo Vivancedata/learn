@@ -9,7 +9,6 @@ import { ProgressCircle } from "@/components/ui/progress-circle"
 import { CourseCertificate } from "@/components/course-certificate"
 import { SuccessStories } from "@/components/success-stories"
 import { CommunityDiscussions } from "@/components/community-discussions"
-import { getCourseById } from "@/lib/content"
 import { useParams } from "next/navigation"
 import { Course } from "@/types/course"
 import { Discussion } from "@/types/discussion"
@@ -57,13 +56,16 @@ export default function CoursePage() {
       id: d.id,
       userId: d.userId,
       username: d.user.name || d.user.email.split('@')[0],
+      userPoints: 0,
       content: d.content,
       createdAt: d.createdAt,
       likes: d.likes,
       replies: d.replies?.map((r) => ({
         id: r.id,
+        discussionId: d.id,
         userId: r.userId,
         username: r.user.name || r.user.email.split('@')[0],
+        userPoints: 0,
         content: r.content,
         createdAt: r.createdAt,
         likes: r.likes,
@@ -76,7 +78,10 @@ export default function CoursePage() {
     async function loadCourse() {
       try {
         const [course, discussionsResult] = await Promise.allSettled([
-          getCourseById(courseId),
+          fetch(`/api/courses`).then(res => res.ok ? res.json() : { data: [] }).then(d => {
+            const courses: Course[] = d.data || []
+            return courses.find(c => c.id === courseId) || null
+          }),
           fetchDiscussions(),
         ])
 
@@ -102,7 +107,7 @@ export default function CoursePage() {
                     total: courseProgress.totalLessons,
                     lastAccessed: courseProgress.lastAccessed,
                   },
-                }
+                } as Course
               }
             }
 

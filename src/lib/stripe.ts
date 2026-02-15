@@ -5,18 +5,34 @@
 
 import Stripe from 'stripe'
 
-// Validate required environment variable
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY environment variable is required')
-}
-
 /**
- * Stripe server-side client instance
+ * Stripe server-side client instance - lazy initialization
  * Uses the latest API version
  */
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2026-01-28.clover',
-  typescript: true,
+let _stripe: Stripe | null = null
+
+export function getStripe(): Stripe {
+  if (!_stripe) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY environment variable is required')
+    }
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2026-01-28.clover',
+      typescript: true,
+    })
+  }
+  return _stripe
+}
+
+export const stripe = new Proxy({} as Stripe, {
+  get: (_target, prop) => {
+    const instance = getStripe()
+    const value = instance[prop as keyof Stripe]
+    if (typeof value === 'function') {
+      return value.bind(instance)
+    }
+    return value
+  },
 })
 
 // ============================================================================

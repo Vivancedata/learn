@@ -11,7 +11,6 @@ export interface User {
   githubUsername?: string
   createdAt?: string
   emailVerified?: boolean
-  emailVerified?: boolean
 }
 
 export interface AuthContextType {

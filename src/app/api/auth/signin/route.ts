@@ -73,8 +73,6 @@ export async function POST(request: NextRequest) {
           name: user.name,
           githubUsername: user.githubUsername,
           emailVerified: user.emailVerified,
-          githubUsername: user.githubUsername,
-          emailVerified: user.emailVerified,
         },
         token,
         message: 'Sign in successful',

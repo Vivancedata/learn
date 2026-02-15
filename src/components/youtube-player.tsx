@@ -4,6 +4,39 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 
 // Declare global YouTube types
+// eslint-disable-next-line @typescript-eslint/no-namespace
+declare namespace YT {
+  class Player {
+    constructor(elementId: string, options: PlayerOptions)
+    destroy(): void
+    getCurrentTime(): number
+    getDuration(): number
+    getPlayerState(): number
+    pauseVideo(): void
+    playVideo(): void
+    seekTo(seconds: number, allowSeekAhead?: boolean): void
+    setVolume(volume: number): void
+    getVolume(): number
+    isMuted(): boolean
+    mute(): void
+    unMute(): void
+  }
+  interface PlayerOptions {
+    videoId: string
+    playerVars?: Record<string, unknown>
+    events?: Record<string, (event: PlayerEvent) => void>
+  }
+  interface PlayerEvent {
+    data: number
+    target: Player
+  }
+  enum PlayerState {
+    ENDED = 0,
+    PLAYING = 1,
+    PAUSED = 2,
+  }
+}
+
 declare global {
   interface Window {
     YT: typeof YT
@@ -143,13 +176,13 @@ export function YouTubePlayer({
                 progressIntervalRef.current = setInterval(trackProgress, 1000)
               }
             },
-            onStateChange: (event: YT.OnStateChangeEvent) => {
+            onStateChange: (event: YT.PlayerEvent) => {
               // YT.PlayerState.ENDED = 0
               if (event.data === 0) {
                 onComplete?.()
               }
             },
-            onError: (_event: YT.OnErrorEvent) => {
+            onError: (_event: YT.PlayerEvent) => {
               setError("Failed to load video. Please try again.")
             },
           },
