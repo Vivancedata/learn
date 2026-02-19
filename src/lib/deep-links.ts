@@ -55,7 +55,7 @@ export const URL_SCHEME = 'vivancedata'
 export const PRODUCTION_DOMAIN = 'vivancedata.com'
 
 /** Valid deep link routes */
-const VALID_ROUTES = ['course', 'lesson', 'path', 'assessment', 'leaderboard', 'profile', 'settings', 'search'] as const
+const _VALID_ROUTES = ['course', 'lesson', 'path', 'assessment', 'leaderboard', 'profile', 'settings', 'search'] as const
 
 // ============================================================================
 // URL Parsing

@@ -218,6 +218,7 @@ describe('Auth Utilities', () => {
         email: 'test@example.com',
         name: 'Test User',
         role: 'student',
+        emailVerified: false,
       })
     })
 
@@ -330,6 +331,7 @@ describe('Auth Utilities', () => {
         email: 'test@example.com',
         name: 'Test User',
         role: 'student',
+        emailVerified: false,
       })
     })
 
@@ -372,6 +374,7 @@ describe('Auth Utilities', () => {
         email: 'test@example.com',
         name: 'Test User',
         role: 'student',
+        emailVerified: false,
       })
     })
 
@@ -398,6 +401,7 @@ describe('Auth Utilities', () => {
         email: 'cookie@example.com',
         name: undefined,
         role: 'instructor',
+        emailVerified: false,
       })
     })
 
@@ -419,6 +423,7 @@ describe('Auth Utilities', () => {
         email: 'nocookie@example.com',
         name: undefined,
         role: 'admin',
+        emailVerified: false,
       })
     })
 

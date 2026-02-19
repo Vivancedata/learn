@@ -60,10 +60,10 @@ function addRateLimitHeaders(
 }
 
 /**
- * Next.js middleware for authentication, rate limiting, and security
+ * Next.js proxy for authentication, rate limiting, and security
  * Protects API routes (except auth endpoints) by requiring authentication
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const clientIp = getClientIp(request)
 

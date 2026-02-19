@@ -427,7 +427,7 @@ export function CodePlayground({
             {/* Empty state */}
             {state === 'idle' && !output && !error && (
               <div className="text-[#6c7086] italic text-sm">
-                Click "Run" or press Ctrl+Enter to execute your code...
+                Click &quot;Run&quot; or press Ctrl+Enter to execute your code...
               </div>
             )}
 

@@ -288,7 +288,7 @@ export function YouTubePlayer({
   }, [isReady])
 
   // Seek to specific time
-  const seekTo = useCallback((seconds: number) => {
+  const _seekTo = useCallback((seconds: number) => {
     if (playerRef.current && isReady) {
       playerRef.current.seekTo(seconds, true)
     }

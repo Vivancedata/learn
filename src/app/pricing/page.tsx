@@ -64,7 +64,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 }
 
 export default function PricingPage() {
-  const { user, isAuthenticated } = useAuth()
+  const { isAuthenticated } = useAuth()
   const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('year')
   const [loading, setLoading] = useState<string | null>(null)
 

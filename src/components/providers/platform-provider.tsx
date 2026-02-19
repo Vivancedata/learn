@@ -46,7 +46,6 @@ import {
   type StatusBarStyle,
 } from '@/lib/native'
 import {
-  parseDeepLink,
   handleDeepLink,
   registerDeepLinkHandler,
   type DeepLinkParseResult,

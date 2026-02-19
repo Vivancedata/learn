@@ -227,7 +227,7 @@ export function WelcomeMessage({
         <MessageSquare className="w-8 h-8 text-primary-foreground" />
       </div>
       <div className="space-y-1">
-        <h3 className="text-lg font-semibold">Hi! I'm your AI Tutor</h3>
+        <h3 className="text-lg font-semibold">Hi! I&apos;m your AI Tutor</h3>
         <p className="text-sm text-muted-foreground max-w-xs">
           {lessonTitle
             ? `I'm here to help you learn ${lessonTitle}. Ask me anything!`

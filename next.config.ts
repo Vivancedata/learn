@@ -8,6 +8,11 @@ import { withSentryConfig } from '@sentry/nextjs'
 const isCapacitorBuild = process.env.CAPACITOR_BUILD === 'true'
 
 const nextConfig: NextConfig = {
+  // Avoid incorrect monorepo root inference when multiple lockfiles exist.
+  turbopack: {
+    root: process.cwd(),
+  },
+
   /**
    * Static export configuration for Capacitor builds
    * When building for mobile, we export as static HTML/JS/CSS

@@ -73,19 +73,6 @@ export function usePushNotifications(): UsePushNotificationsResult {
 
   const isSupported = isPushSupported()
 
-  // Check initial permission and subscription state
-  useEffect(() => {
-    if (!isSupported) {
-      setPermission('unsupported')
-      return
-    }
-
-    setPermission(getPermissionState())
-
-    // Check if already subscribed
-    checkSubscriptionStatus()
-  }, [isSupported])
-
   /**
    * Check current subscription status
    */
@@ -100,6 +87,19 @@ export function usePushNotifications(): UsePushNotificationsResult {
       // Failed to check subscription - default to not subscribed
     }
   }, [isSupported])
+
+  // Check initial permission and subscription state
+  useEffect(() => {
+    if (!isSupported) {
+      setPermission('unsupported')
+      return
+    }
+
+    setPermission(getPermissionState())
+
+    // Check if already subscribed
+    checkSubscriptionStatus()
+  }, [checkSubscriptionStatus, isSupported])
 
   /**
    * Request notification permission

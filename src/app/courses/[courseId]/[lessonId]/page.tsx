@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Github, Flag, ArrowLeft, ArrowRight, CheckCircle, Loader2, MessageSquare } from "lucide-react"
@@ -150,7 +150,7 @@ function LessonContent() {
   // Memoize markdown components to avoid re-creation on every render
   const markdownComponents = useMemo(() => createMarkdownComponents(), [])
 
-  const fetchDiscussions = async () => {
+  const fetchDiscussions = useCallback(async () => {
     const response = await fetch(`/api/discussions?lessonId=${lessonId}`)
     const payload = await response.json()
     const transformedDiscussions = payload.data?.discussions?.map((d: DiscussionData) => ({
@@ -173,7 +173,7 @@ function LessonContent() {
       })) || [],
     })) || []
     setDiscussions(transformedDiscussions)
-  }
+  }, [lessonId])
 
   useEffect(() => {
     async function loadData() {
@@ -244,7 +244,7 @@ function LessonContent() {
     }
 
     loadData()
-  }, [courseId, lessonId, user])
+  }, [courseId, fetchDiscussions, lessonId, user])
 
   // Set AI Tutor context when lesson loads
   useEffect(() => {

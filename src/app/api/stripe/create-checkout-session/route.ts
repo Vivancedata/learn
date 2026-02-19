@@ -8,7 +8,6 @@ import {
 import { createCheckoutSessionSchema } from '@/lib/validations'
 import { getAuthenticatedUserId } from '@/lib/authorization'
 import {
-  stripe,
   createCheckoutSession,
   getOrCreateCustomer,
   STRIPE_PRICES,

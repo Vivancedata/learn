@@ -84,12 +84,23 @@ async function checkDatabaseHealth(): Promise<{
 export async function GET(): Promise<NextResponse<HealthStatus>> {
   const timestamp = new Date().toISOString()
   const uptime = Math.floor((Date.now() - startTime) / 1000)
+  const exposeInternalErrors = process.env.NODE_ENV !== 'production'
 
   // Run health checks in parallel
   const [databaseHealth, redisHealth] = await Promise.all([
     checkDatabaseHealth(),
     checkRedisHealth(),
   ])
+
+  const databaseStatus: HealthStatus['checks']['database'] = {
+    status: databaseHealth.status,
+    latencyMs: databaseHealth.latencyMs,
+    error: databaseHealth.error
+      ? exposeInternalErrors
+        ? databaseHealth.error
+        : 'Database unavailable'
+      : undefined,
+  }
 
   // Determine Redis status and mode
   const redisConfigured = isRedisConfigured()
@@ -102,7 +113,11 @@ export async function GET(): Promise<NextResponse<HealthStatus>> {
         : 'down'
       : 'not_configured',
     latencyMs: redisHealth.latencyMs,
-    error: redisHealth.error,
+    error: redisHealth.error
+      ? exposeInternalErrors
+        ? redisHealth.error
+        : 'Redis unavailable'
+      : undefined,
     mode: usingRedis ? 'redis' : 'in-memory',
   }
 
@@ -110,7 +125,7 @@ export async function GET(): Promise<NextResponse<HealthStatus>> {
   let overallStatus: HealthStatus['status'] = 'healthy'
 
   // Database is critical - if down, we're unhealthy
-  if (databaseHealth.status === 'down') {
+  if (databaseStatus.status === 'down') {
     overallStatus = 'unhealthy'
   }
   // Redis down in production (when configured) means degraded
@@ -131,7 +146,7 @@ export async function GET(): Promise<NextResponse<HealthStatus>> {
     version: process.env.npm_package_version || '0.1.0',
     uptime,
     checks: {
-      database: databaseHealth,
+      database: databaseStatus,
       redis: redisStatus,
     },
   }

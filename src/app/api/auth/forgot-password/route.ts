@@ -8,7 +8,7 @@ import {
   ApiError,
   HTTP_STATUS,
 } from '@/lib/api-errors'
-import { sendEmail, isEmailServiceConfigured } from '@/lib/email'
+import { sendEmail } from '@/lib/email'
 import { passwordResetTemplate } from '@/lib/email-templates'
 import crypto from 'crypto'
 import { checkRateLimitAsync, getClientIdentifier, RATE_LIMITS } from '@/lib/rate-limit'
@@ -79,11 +79,8 @@ export async function POST(request: NextRequest) {
       // Intentionally swallow errors to avoid leaking account existence.
     }
 
-    const shouldExpose = process.env.NODE_ENV !== 'production' || !isEmailServiceConfigured()
-
     return apiSuccess({
       message: 'If an account with that email exists, a password reset link has been sent.',
-      ...(shouldExpose ? { resetUrl } : {}),
     })
   } catch (error) {
     return handleApiError(error)

@@ -48,8 +48,8 @@
 - [x] Migration system in place
 
 ### Dependencies
-- [x] All npm vulnerabilities fixed (0 vulnerabilities)
-- [x] Next.js updated to latest secure version (15.5.6)
+- [x] Production dependency audit clean (`npm audit --omit=dev` shows 0 vulnerabilities as of February 19, 2026)
+- [x] Next.js updated to latest secure version (16.1.6)
 - [x] Unused dependencies removed (Clerk)
 - [x] Package count optimized (947 packages)
 

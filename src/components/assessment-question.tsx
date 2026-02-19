@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { AssessmentQuestion as AssessmentQuestionType, QuestionType } from '@/types/assessment'
 import { CheckCircle, Circle, Square, CheckSquare, Code } from 'lucide-react'
@@ -213,7 +212,7 @@ function MultipleChoiceInput({
   onAnswerChange,
   disabled,
   showResult,
-  isCorrect,
+  isCorrect: _isCorrect,
   correctAnswers = [],
 }: MultipleChoiceInputProps) {
   const toggleOption = (option: string) => {

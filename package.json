@@ -9,7 +9,7 @@
     "postinstall": "prisma generate",
     "build:webpack": "NEXT_DISABLE_TURBOPACK=1 NEXT_TELEMETRY_DISABLED=1 next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint src --ext .ts,.tsx",
     "db:seed": "ts-node --project prisma/tsconfig.seed.json prisma/seed-sqlite.ts",
     "prisma:studio": "prisma studio",
     "test": "jest",
@@ -42,10 +42,10 @@
     "@capacitor/status-bar": "^7.0.0",
     "@libsql/client": "^0.17.0",
     "@prisma/adapter-libsql": "^7.3.0",
-    "@prisma/client": "^7.3.0",
+    "@prisma/client": "^7.4.1",
     "@radix-ui/react-scroll-area": "^1.2.3",
     "@radix-ui/react-slot": "^1.1.2",
-    "@sentry/nextjs": "^10.38.0",
+    "@sentry/nextjs": "^10.39.0",
     "@stripe/stripe-js": "^8.7.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.2",
@@ -60,7 +60,6 @@
     "next-themes": "^0.4.4",
     "posthog-js": "^1.337.1",
     "posthog-node": "^5.24.9",
-    "prisma": "^7.3.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-markdown": "^10.0.0",
@@ -85,11 +84,12 @@
     "@types/web-push": "^3.6.4",
     "better-sqlite3": "^12.6.2",
     "eslint": "^9.39.2",
-    "eslint-config-next": "15.1.7",
+    "eslint-config-next": "^16.0.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "markdownlint-cli2": "^0.17.0",
+    "markdownlint-cli2": "^0.21.0",
     "postcss": "^8",
+    "prisma": "^7.4.1",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
@@ -100,6 +100,14 @@
     }
   },
   "overrides": {
-    "diff": "^8.0.3"
+    "diff": "^8.0.3",
+    "lodash": "^4.17.23",
+    "hono": "^4.12.0",
+    "@sentry/bundler-plugin-core": {
+      "glob": "^11.1.0"
+    },
+    "@sentry/node": {
+      "minimatch": "^10.2.2"
+    }
   }
 }

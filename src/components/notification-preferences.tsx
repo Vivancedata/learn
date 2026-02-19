@@ -54,14 +54,7 @@ export function NotificationPreferences() {
   const [success, setSuccess] = useState<string | null>(null)
   const [testSent, setTestSent] = useState(false)
 
-  // Fetch preferences on mount
-  useEffect(() => {
-    if (user) {
-      fetchPreferences()
-    }
-  }, [user])
-
-  const fetchPreferences = async () => {
+  const fetchPreferences = useCallback(async () => {
     if (!user) return
 
     setLoading(true)
@@ -81,9 +74,9 @@ export function NotificationPreferences() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
-  const savePreferences = async (updates: Partial<NotificationPreferences>) => {
+  const savePreferences = useCallback(async (updates: Partial<NotificationPreferences>) => {
     if (!user) return
 
     setSaving(true)
@@ -112,7 +105,14 @@ export function NotificationPreferences() {
     } finally {
       setSaving(false)
     }
-  }
+  }, [user])
+
+  // Fetch preferences on mount
+  useEffect(() => {
+    if (user) {
+      fetchPreferences()
+    }
+  }, [fetchPreferences, user])
 
   const togglePreference = useCallback((key: keyof NotificationPreferences) => {
     const currentValue = preferences[key]
@@ -121,7 +121,7 @@ export function NotificationPreferences() {
     const newValue = !currentValue
     setPreferences(prev => ({ ...prev, [key]: newValue }))
     savePreferences({ [key]: newValue })
-  }, [preferences])
+  }, [preferences, savePreferences])
 
   const handleSubscriptionToggle = async () => {
     if (!user) return
@@ -143,7 +143,7 @@ export function NotificationPreferences() {
     }
   }
 
-  const handleQuietHoursChange = (type: 'start' | 'end', value: string) => {
+  const handleQuietHoursChange = useCallback((type: 'start' | 'end', value: string) => {
     const hour = value ? parseInt(value, 10) : null
     const key = type === 'start' ? 'quietHoursStart' : 'quietHoursEnd'
 
@@ -156,7 +156,7 @@ export function NotificationPreferences() {
     if ((hour !== null && otherValue !== null) || (hour === null && otherValue === null)) {
       savePreferences({ [key]: hour })
     }
-  }
+  }, [preferences, savePreferences])
 
   if (!isSupported) {
     return (

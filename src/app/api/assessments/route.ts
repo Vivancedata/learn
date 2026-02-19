@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     ])
 
     // If user is authenticated, get their best scores
-    let userScores: Map<string, { bestScore: number; attempts: number; lastAttempt: Date }> = new Map()
+    const userScores: Map<string, { bestScore: number; attempts: number; lastAttempt: Date }> = new Map()
 
     if (userId) {
       const attempts = await prisma.assessmentAttempt.findMany({

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 // Mock @upstash/redis to avoid ESM issues
 jest.mock('@upstash/redis', () => ({
@@ -26,6 +25,7 @@ describe('Redis Client', () => {
 
   describe('isRedisConfigured()', () => {
     it('should return false when no env vars are set', () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { isRedisConfigured } = require('../redis')
       expect(isRedisConfigured()).toBe(false)
     })
@@ -33,6 +33,7 @@ describe('Redis Client', () => {
     it('should return false when only URL is set', () => {
       process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io'
 
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { isRedisConfigured } = require('../redis')
       expect(isRedisConfigured()).toBe(false)
     })
@@ -40,6 +41,7 @@ describe('Redis Client', () => {
     it('should return false when only token is set', () => {
       process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token'
 
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { isRedisConfigured } = require('../redis')
       expect(isRedisConfigured()).toBe(false)
     })
@@ -48,6 +50,7 @@ describe('Redis Client', () => {
       process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io'
       process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token'
 
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { isRedisConfigured } = require('../redis')
       expect(isRedisConfigured()).toBe(true)
     })
@@ -55,6 +58,7 @@ describe('Redis Client', () => {
 
   describe('getRedisClient()', () => {
     it('should return null when Redis is not configured', () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { getRedisClient } = require('../redis')
       const client = getRedisClient()
       expect(client).toBeNull()
@@ -64,6 +68,7 @@ describe('Redis Client', () => {
       process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io'
       process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token'
 
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { getRedisClient } = require('../redis')
       const client = getRedisClient()
 
@@ -74,6 +79,7 @@ describe('Redis Client', () => {
 
   describe('getRedis()', () => {
     it('should return null when not configured', () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { getRedis } = require('../redis')
       const redis = getRedis()
       expect(redis).toBeNull()
@@ -83,6 +89,7 @@ describe('Redis Client', () => {
       process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io'
       process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token'
 
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { getRedis } = require('../redis')
       const redis1 = getRedis()
       const redis2 = getRedis()
@@ -93,6 +100,7 @@ describe('Redis Client', () => {
 
   describe('checkRedisHealth()', () => {
     it('should return not_configured when Redis is not set up', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { checkRedisHealth } = require('../redis')
       const result = await checkRedisHealth()
 
@@ -104,6 +112,7 @@ describe('Redis Client', () => {
       process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io'
       process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token'
 
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { checkRedisHealth } = require('../redis')
       const result = await checkRedisHealth()
 

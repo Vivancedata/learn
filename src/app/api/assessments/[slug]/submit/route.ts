@@ -9,7 +9,7 @@ import { parseRequestBody } from '@/lib/api-errors'
 import { submitAssessmentSchema } from '@/lib/validations'
 import { requireOwnership } from '@/lib/authorization'
 import prisma from '@/lib/db'
-import { adaptAssessmentQuestion, safeJsonParse } from '@/lib/type-adapters'
+import { adaptAssessmentQuestion } from '@/lib/type-adapters'
 import type { QuestionResult } from '@/types/assessment'
 
 /**

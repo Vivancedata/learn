@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 // Mock @upstash modules to avoid ESM issues
 jest.mock('@upstash/redis', () => ({

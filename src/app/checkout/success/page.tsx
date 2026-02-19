@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { CheckCircle2, Crown, ArrowRight, Sparkles } from 'lucide-react'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { useAuth } from '@/hooks/useAuth'
@@ -56,6 +55,11 @@ function CheckoutSuccessContent() {
         <p className="text-muted-foreground">
           Your subscription is now active. Let&apos;s start your learning journey.
         </p>
+        {sessionId && (
+          <p className="text-xs text-muted-foreground mt-2">
+            Order reference: {sessionId.slice(-8).toUpperCase()}
+          </p>
+        )}
       </div>
 
       <Card className="mb-8 border-success/50">

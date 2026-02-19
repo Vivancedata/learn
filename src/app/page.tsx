@@ -15,6 +15,8 @@ import {
 } from "lucide-react"
 import { getAllCourses, getAllPaths } from "@/lib/content"
 
+export const dynamic = 'force-dynamic'
+
 export default async function Home() {
   const [courses, paths] = await Promise.all([
     getAllCourses(),

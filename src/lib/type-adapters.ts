@@ -3,7 +3,7 @@
  * This file bridges the gap between database models and application interfaces
  */
 
-import type { Course as PrismaCourse, Path as PrismaPath, Lesson as PrismaLesson, CourseSection as PrismaCourseSection, VideoProgress as PrismaVideoProgress, SkillAssessment as PrismaSkillAssessment, AssessmentQuestion as PrismaAssessmentQuestion, AssessmentAttempt as PrismaAssessmentAttempt, QuestionType as PrismaQuestionType } from '@prisma/client'
+import type { Course as PrismaCourse, Path as PrismaPath, Lesson as PrismaLesson, CourseSection as PrismaCourseSection, VideoProgress as PrismaVideoProgress, SkillAssessment as PrismaSkillAssessment, AssessmentQuestion as PrismaAssessmentQuestion, AssessmentAttempt as PrismaAssessmentAttempt } from '@prisma/client'
 import type { Course, Path, Lesson, CourseSection, VideoProvider, VideoChapter, VideoProgress } from '@/types/course'
 import type { SkillAssessment, AssessmentQuestion, AssessmentAttempt, QuestionType, CourseDifficulty } from '@/types/assessment'
 

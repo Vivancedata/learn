@@ -29,7 +29,7 @@ function shuffleArray<T>(array: T[]): T[] {
  * Remove correct answer from question for client
  */
 function sanitizeQuestionForClient(question: AssessmentQuestion): Omit<AssessmentQuestion, 'correctAnswer'> & { correctAnswer: undefined } {
-  const { correctAnswer, ...rest } = question
+  const { correctAnswer: _correctAnswer, ...rest } = question
   return { ...rest, correctAnswer: undefined }
 }
 

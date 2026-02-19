@@ -92,14 +92,12 @@ describe('Content Utilities', () => {
       expect(mockPrisma.course.findMany).toHaveBeenCalled()
     })
 
-    it('should return empty array on error', async () => {
+    it('should throw on error', async () => {
       ;(mockPrisma.course.findMany as jest.Mock).mockRejectedValue(
         new Error('Database error')
       )
 
-      const result = await getAllCourses()
-
-      expect(result).toEqual([])
+      await expect(getAllCourses()).rejects.toThrow('Failed to load courses')
     })
   })
 
@@ -147,14 +145,14 @@ describe('Content Utilities', () => {
       expect(result).toBeNull()
     })
 
-    it('should return null on error', async () => {
+    it('should throw on error', async () => {
       ;(mockPrisma.course.findUnique as jest.Mock).mockRejectedValue(
         new Error('Database error')
       )
 
-      const result = await getCourseById('course-1')
-
-      expect(result).toBeNull()
+      await expect(getCourseById('course-1')).rejects.toThrow(
+        'Failed to load course course-1'
+      )
     })
   })
 
@@ -234,14 +232,14 @@ describe('Content Utilities', () => {
       expect(result).toBeNull()
     })
 
-    it('should return null on error', async () => {
+    it('should throw on error', async () => {
       ;(mockPrisma.lesson.findUnique as jest.Mock).mockRejectedValue(
         new Error('Database error')
       )
 
-      const result = await getLessonById('course-1', 'lesson-1')
-
-      expect(result).toBeNull()
+      await expect(getLessonById('course-1', 'lesson-1')).rejects.toThrow(
+        'Failed to load lesson lesson-1 for course course-1'
+      )
     })
 
     it('should include knowledge check if quiz questions exist', async () => {
@@ -313,14 +311,12 @@ describe('Content Utilities', () => {
       expect(result[0].courses).toEqual(['course-1', 'course-2'])
     })
 
-    it('should return empty array on error', async () => {
+    it('should throw on error', async () => {
       ;(mockPrisma.path.findMany as jest.Mock).mockRejectedValue(
         new Error('Database error')
       )
 
-      const result = await getAllPaths()
-
-      expect(result).toEqual([])
+      await expect(getAllPaths()).rejects.toThrow('Failed to load learning paths')
     })
   })
 
@@ -353,14 +349,14 @@ describe('Content Utilities', () => {
       expect(result).toBeNull()
     })
 
-    it('should return null on error', async () => {
+    it('should throw on error', async () => {
       ;(mockPrisma.path.findUnique as jest.Mock).mockRejectedValue(
         new Error('Database error')
       )
 
-      const result = await getPathById('path-1')
-
-      expect(result).toBeNull()
+      await expect(getPathById('path-1')).rejects.toThrow(
+        'Failed to load learning path path-1'
+      )
     })
   })
 

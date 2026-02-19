@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { CourseLayout } from "@/components/course-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -48,7 +48,7 @@ export default function CoursePage() {
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetchDiscussions = async () => {
+  const fetchDiscussions = useCallback(async () => {
     const response = await fetch(`/api/discussions?courseId=${courseId}`)
     const payload = await response.json()
     const apiDiscussions: ApiDiscussion[] = payload.data?.discussions || []
@@ -72,7 +72,7 @@ export default function CoursePage() {
       })) || [],
     }))
     setDiscussions(transformedDiscussions)
-  }
+  }, [courseId])
 
   useEffect(() => {
     async function loadCourse() {
@@ -139,7 +139,7 @@ export default function CoursePage() {
     }
 
     loadCourse()
-  }, [courseId, user])
+  }, [courseId, fetchDiscussions, user])
   
   // Show loading state
   if (loading) {

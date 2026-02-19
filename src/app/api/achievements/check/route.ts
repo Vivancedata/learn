@@ -84,10 +84,71 @@ export async function POST(request: NextRequest) {
       (Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24)
     )
 
+    // Calculate completed paths from the paths the user has actually started.
+    // This avoids scanning every path in the system on each check.
+    const startedPathIds = Array.from(
+      new Set(
+        user.courses
+          .map((progress) => progress.course.pathId)
+          .filter((pathId): pathId is string => Boolean(pathId))
+      )
+    )
+
+    let completedPathsCount = 0
+
+    if (startedPathIds.length > 0) {
+      const candidatePaths = await prisma.path.findMany({
+        where: {
+          id: {
+            in: startedPathIds,
+          },
+        },
+        select: {
+          id: true,
+          courses: {
+            select: {
+              id: true,
+              sections: {
+                select: {
+                  lessons: {
+                    select: {
+                      id: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      })
+
+      const progressByCourseId = new Map(
+        user.courses.map((progress) => [progress.courseId, progress])
+      )
+
+      completedPathsCount = candidatePaths.filter((path) => {
+        if (path.courses.length === 0) return false
+
+        return path.courses.every((course) => {
+          const totalLessons = course.sections.reduce(
+            (sum, section) => sum + section.lessons.length,
+            0
+          )
+
+          if (totalLessons === 0) return false
+
+          const userProgress = progressByCourseId.get(course.id)
+          if (!userProgress) return false
+
+          return userProgress.completedLessons.length >= totalLessons
+        })
+      }).length
+    }
+
     const stats: UserStats = {
       completedLessons: completedLessonsCount,
       completedCourses: completedCoursesCount,
-      completedPaths: 0, // TODO: Calculate based on path completion
+      completedPaths: completedPathsCount,
       quizzesPassed,
       projectsSubmitted: user.projectSubmissions.length,
       certificatesEarned: user.certificates.length,

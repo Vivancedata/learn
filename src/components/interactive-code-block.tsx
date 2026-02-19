@@ -154,8 +154,8 @@ export function createInteractiveCodeComponent() {
  */
 export function InteractivePreBlock({
   children,
-  className,
-  ...props
+  className: _className,
+  ..._props
 }: React.HTMLAttributes<HTMLPreElement>) {
   // Just pass through - the code component handles everything
   return children
