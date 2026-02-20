@@ -7,6 +7,7 @@ import { Pool } from 'pg'
 // Learn more: https://pris.ly/d/help/next-js-best-practices
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
+const POSTGRES_URL_PATTERN = /^(postgres|postgresql|prisma\+postgres):\/\//
 
 function resolveDatabaseUrl(): string {
   const databaseUrl =
@@ -15,16 +16,13 @@ function resolveDatabaseUrl(): string {
     process.env.POSTGRES_URL?.trim()
 
   if (!databaseUrl) {
-    throw new Error(
-      'Postgres connection string is required. ' +
-      'Set DATABASE_URL (or POSTGRES_PRISMA_URL/POSTGRES_URL on Vercel).'
-    )
-  }
-
-  if (!/^(postgres|postgresql|prisma\+postgres):\/\//.test(databaseUrl)) {
-    throw new Error(
-      'DATABASE_URL must be a PostgreSQL connection string (for example Neon).'
-    )
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'DATABASE_URL is required in production. ' +
+        'Use PostgreSQL (for example Neon) or provide a SQLite file URL.'
+      )
+    }
+    return 'file:./prisma/dev.db'
   }
 
   return databaseUrl
@@ -32,13 +30,31 @@ function resolveDatabaseUrl(): string {
 
 function createPrismaClient() {
   const databaseUrl = resolveDatabaseUrl()
-  const pool = new Pool({
-    connectionString: databaseUrl,
-  })
-  const adapter = new PrismaPg(pool)
+  if (!process.env.DATABASE_URL) {
+    process.env.DATABASE_URL = databaseUrl
+  }
+
+  const log = process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
+
+  if (POSTGRES_URL_PATTERN.test(databaseUrl)) {
+    const pool = new Pool({
+      connectionString: databaseUrl,
+    })
+    const adapter = new PrismaPg(pool)
+    return new PrismaClient({
+      adapter,
+      log,
+    })
+  }
+
+  if (!databaseUrl.startsWith('file:')) {
+    throw new Error(
+      'Unsupported DATABASE_URL scheme. Use PostgreSQL (for example Neon) or file:./prisma/dev.db.'
+    )
+  }
+
   return new PrismaClient({
-    adapter,
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    log,
   })
 }
 

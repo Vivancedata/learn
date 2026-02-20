@@ -90,6 +90,6 @@ jobs:
       - name: Build application
         run: npm run build
         env:
-          DATABASE_URL: "postgresql://ci:ci@127.0.0.1:5432/ci"
+          DATABASE_URL: "file:./prisma/dev.db"
           JWT_SECRET: "ci-test-secret-not-for-production"
           ALLOWED_ORIGINS: "http://localhost:3000"
