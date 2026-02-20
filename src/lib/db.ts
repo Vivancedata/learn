@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 
@@ -34,7 +34,8 @@ function createPrismaClient() {
     process.env.DATABASE_URL = databaseUrl
   }
 
-  const log = process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
+  const log: Prisma.LogLevel[] =
+    process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
 
   if (POSTGRES_URL_PATTERN.test(databaseUrl)) {
     const pool = new Pool({
