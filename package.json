@@ -50,6 +50,7 @@
     "@capacitor/push-notifications": "^7.0.0",
     "@capacitor/splash-screen": "^7.0.0",
     "@capacitor/status-bar": "^7.0.0",
+    "@prisma/adapter-libsql": "^7.4.1",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",
     "@radix-ui/react-scroll-area": "^1.2.3",

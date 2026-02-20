@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client'
+import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 
@@ -48,13 +49,28 @@ function createPrismaClient() {
     })
   }
 
-  if (!databaseUrl.startsWith('file:')) {
+  if (databaseUrl.startsWith('file:')) {
+    const adapter = new PrismaLibSql({
+      url: databaseUrl,
+    })
+    return new PrismaClient({
+      adapter,
+      log,
+    })
+  }
+
+  if (!databaseUrl.startsWith('libsql:')) {
     throw new Error(
-      'Unsupported DATABASE_URL scheme. Use PostgreSQL (for example Neon) or file:./prisma/dev.db.'
+      'Unsupported DATABASE_URL scheme. Use PostgreSQL (for example Neon), libsql, or file:./prisma/dev.db.'
     )
   }
 
+  const adapter = new PrismaLibSql({
+    url: databaseUrl,
+  })
+
   return new PrismaClient({
+    adapter,
     log,
   })
 }
