@@ -2,27 +2,32 @@
 
 set -euo pipefail
 
-PORT="${PORT:-3100}"
+PORT="${PORT:-$(node -e "const net=require('net');const server=net.createServer();server.listen(0,'127.0.0.1',()=>{console.log(server.address().port);server.close();});")}"
 BASE_URL="${BASE_URL:-http://127.0.0.1:${PORT}}"
-SERVER_LOG="${SERVER_LOG:-/tmp/vivance-e2e-server.log}"
-DATABASE_URL="${DATABASE_URL:-file:./prisma/dev.db}"
-ALLOW_FILE_DATABASE_IN_PRODUCTION="${ALLOW_FILE_DATABASE_IN_PRODUCTION:-true}"
+SERVER_LOG="${SERVER_LOG:-/tmp/vivance-e2e-server-${PORT}.log}"
+DATABASE_URL="${DATABASE_URL:-${POSTGRES_PRISMA_URL:-${POSTGRES_URL:-}}}"
 TEST_USER_EMAIL="${TEST_USER_EMAIL:-user@example.com}"
 TEST_USER_PASSWORD="${TEST_USER_PASSWORD:-User1234!}"
 JWT_SECRET="${JWT_SECRET:-e2e-insecure-jwt-secret-change-in-production}"
 PW=(npx --yes --package @playwright/cli playwright-cli)
+TOTAL_ASSERTIONS=0
+PASSED_ASSERTIONS=0
+MIN_E2E_ASSERTION_COVERAGE="${MIN_E2E_ASSERTION_COVERAGE:-85}"
 
 assert_contains() {
   local output="$1"
   local expected="$2"
   local message="$3"
+  TOTAL_ASSERTIONS=$((TOTAL_ASSERTIONS + 1))
   if ! grep -Fq "$expected" <<<"$output"; then
     echo "E2E assertion failed: ${message}"
     echo "Expected to find: ${expected}"
     echo "Command output:"
     echo "$output"
+    echo "Assertion progress: ${PASSED_ASSERTIONS}/${TOTAL_ASSERTIONS}"
     exit 1
   fi
+  PASSED_ASSERTIONS=$((PASSED_ASSERTIONS + 1))
 }
 
 cleanup() {
@@ -35,11 +40,21 @@ cleanup() {
 
 trap cleanup EXIT
 
+if [[ -z "${DATABASE_URL}" ]]; then
+  echo "E2E setup failed: DATABASE_URL must be set to a PostgreSQL URL (for example Neon)."
+  exit 1
+fi
+
+if [[ ! "${DATABASE_URL}" =~ ^(postgres|postgresql|prisma\+postgres):// ]]; then
+  echo "E2E setup failed: DATABASE_URL must start with postgres:// or postgresql://"
+  exit 1
+fi
+
 echo "Starting Next.js app for e2e checks on ${BASE_URL}..."
 rm -f .next/dev/lock
 echo "Preparing database schema for e2e run..."
-if ! DATABASE_URL="${DATABASE_URL}" npx prisma db push >/tmp/vivance-e2e-db.log 2>&1; then
-  echo "Warning: prisma db push failed; proceeding with existing schema."
+if ! DATABASE_URL="${DATABASE_URL}" npx prisma migrate deploy >/tmp/vivance-e2e-db.log 2>&1; then
+  echo "Warning: prisma migrate deploy failed; proceeding with existing schema."
   tail -n 40 /tmp/vivance-e2e-db.log || true
 fi
 
@@ -52,14 +67,14 @@ if ! DATABASE_URL="${DATABASE_URL}" TEST_USER_EMAIL="${TEST_USER_EMAIL}" TEST_US
 fi
 
 echo "Building app for production-like e2e run..."
-if ! DATABASE_URL="${DATABASE_URL}" ALLOW_FILE_DATABASE_IN_PRODUCTION="${ALLOW_FILE_DATABASE_IN_PRODUCTION}" JWT_SECRET="${JWT_SECRET}" npm run build:webpack > /tmp/vivance-e2e-build.log 2>&1; then
+if ! DATABASE_URL="${DATABASE_URL}" JWT_SECRET="${JWT_SECRET}" npm run build:webpack > /tmp/vivance-e2e-build.log 2>&1; then
   echo "E2E setup failed: production build failed."
   echo "Build log tail:"
   tail -n 120 /tmp/vivance-e2e-build.log || true
   exit 1
 fi
 
-DATABASE_URL="${DATABASE_URL}" ALLOW_FILE_DATABASE_IN_PRODUCTION="${ALLOW_FILE_DATABASE_IN_PRODUCTION}" JWT_SECRET="${JWT_SECRET}" npm run start -- --port "${PORT}" >"${SERVER_LOG}" 2>&1 &
+DATABASE_URL="${DATABASE_URL}" JWT_SECRET="${JWT_SECRET}" E2E_AUTH_RATE_LIMIT_BYPASS=1 npm run start -- --port "${PORT}" >"${SERVER_LOG}" 2>&1 &
 SERVER_PID=$!
 
 echo "Waiting for app to be ready..."
@@ -108,6 +123,33 @@ faq_answer=$("${PW[@]}" eval "() => document.body.textContent?.includes('7-day f
 assert_contains "$faq_answer" "true" "expanded faq answer should be visible"
 
 echo "Running authentication and curriculum assertions..."
+guest_assessments_open=$("${PW[@]}" goto "${BASE_URL}/assessments")
+assert_contains "$guest_assessments_open" "Page URL: ${BASE_URL}/assessments" "guest assessments page should load"
+
+guest_assessment_prompt=$("${PW[@]}" eval "() => document.body.textContent?.includes('Sign In to Track Progress')")
+assert_contains "$guest_assessment_prompt" "true" "guest assessments page should show sign-in value prompt"
+
+guest_assessment_cta=$("${PW[@]}" eval "() => [...document.querySelectorAll('a[href]')].some((el) => /^\\/sign-in\\?redirect=/.test(el.getAttribute('href') || '') && el.textContent?.includes('Sign In to Start'))")
+assert_contains "$guest_assessment_cta" "true" "guest assessments cards should gate start action to sign in"
+
+guest_leaderboard_open=$("${PW[@]}" goto "${BASE_URL}/leaderboard")
+assert_contains "$guest_leaderboard_open" "Page URL: ${BASE_URL}/leaderboard" "guest leaderboard page should load"
+
+guest_leaderboard_prompt=$("${PW[@]}" eval "() => document.body.textContent?.includes('Sign In for Personal Rank')")
+assert_contains "$guest_leaderboard_prompt" "true" "guest leaderboard page should show personal rank sign-in prompt"
+
+guest_courses_open=$("${PW[@]}" goto "${BASE_URL}/courses")
+assert_contains "$guest_courses_open" "Page URL: ${BASE_URL}/courses" "guest courses page should load"
+
+guest_open_first_course=$("${PW[@]}" eval "async () => { for (let i = 0; i < 60; i++) { const link = [...document.querySelectorAll('a[href]')].find((el) => /^\\/courses\\/[^\\/]+$/.test(el.getAttribute('href') || '')); if (link) { link.click(); for (let j = 0; j < 60; j++) { await new Promise((resolve) => setTimeout(resolve, 100)); if (/^\\/courses\\/[^\\/]+$/.test(window.location.pathname)) return window.location.pathname; } return window.location.pathname; } await new Promise((resolve) => setTimeout(resolve, 100)); } return 'missing'; }")
+assert_contains "$guest_open_first_course" "/courses/" "guest should be able to open a course detail page"
+
+guest_open_first_lesson=$("${PW[@]}" eval "async () => { for (let i = 0; i < 60; i++) { const link = [...document.querySelectorAll('a[href]')].find((el) => /^\\/courses\\/[^\\/]+\\/[^\\/]+$/.test(el.getAttribute('href') || '')); if (link) { link.click(); for (let j = 0; j < 60; j++) { await new Promise((resolve) => setTimeout(resolve, 100)); if (/^\\/courses\\/[^\\/]+\\/[^\\/]+$/.test(window.location.pathname)) return window.location.pathname; } return window.location.pathname; } await new Promise((resolve) => setTimeout(resolve, 100)); } return 'missing'; }")
+assert_contains "$guest_open_first_lesson" "/courses/" "guest should be able to open a lesson preview page"
+
+guest_lesson_prompt=$("${PW[@]}" eval "() => document.body.textContent?.includes('Sign In to Save Progress')")
+assert_contains "$guest_lesson_prompt" "true" "lesson preview should prompt guests to sign in for progress saving"
+
 signin_open=$("${PW[@]}" goto "${BASE_URL}/sign-in")
 assert_contains "$signin_open" "Page URL: ${BASE_URL}/sign-in" "sign in page should load"
 
@@ -126,13 +168,13 @@ assert_contains "$courses_open" "Page URL: ${BASE_URL}/courses" "courses page sh
 has_course_links=$("${PW[@]}" eval "() => [...document.querySelectorAll('a[href]')].some((el) => /^\\/courses\\/[^\\/]+$/.test(el.getAttribute('href') || ''))")
 assert_contains "$has_course_links" "true" "at least one course should be available"
 
-open_first_course=$("${PW[@]}" eval "async () => { const link = [...document.querySelectorAll('a[href]')].find((el) => /^\\/courses\\/[^\\/]+$/.test(el.getAttribute('href') || '')); if (!link) return 'missing'; link.click(); for (let i = 0; i < 60; i++) { await new Promise((resolve) => setTimeout(resolve, 100)); if (/^\\/courses\\/[^\\/]+$/.test(window.location.pathname)) return window.location.pathname; } return window.location.pathname; }")
+open_first_course=$("${PW[@]}" eval "async () => { for (let i = 0; i < 60; i++) { const link = [...document.querySelectorAll('a[href]')].find((el) => /^\\/courses\\/[^\\/]+$/.test(el.getAttribute('href') || '')); if (link) { link.click(); for (let j = 0; j < 60; j++) { await new Promise((resolve) => setTimeout(resolve, 100)); if (/^\\/courses\\/[^\\/]+$/.test(window.location.pathname)) return window.location.pathname; } return window.location.pathname; } await new Promise((resolve) => setTimeout(resolve, 100)); } return 'missing'; }")
 assert_contains "$open_first_course" "/courses/" "clicking a course should open the course page"
 
 has_lesson_links=$("${PW[@]}" eval "() => [...document.querySelectorAll('a[href]')].some((el) => /^\\/courses\\/[^\\/]+\\/[^\\/]+$/.test(el.getAttribute('href') || ''))")
 assert_contains "$has_lesson_links" "true" "course page should list at least one lesson"
 
-open_first_lesson=$("${PW[@]}" eval "async () => { const link = [...document.querySelectorAll('a[href]')].find((el) => /^\\/courses\\/[^\\/]+\\/[^\\/]+$/.test(el.getAttribute('href') || '')); if (!link) return 'missing'; link.click(); for (let i = 0; i < 60; i++) { await new Promise((resolve) => setTimeout(resolve, 100)); if (/^\\/courses\\/[^\\/]+\\/[^\\/]+$/.test(window.location.pathname)) return window.location.pathname; } return window.location.pathname; }")
+open_first_lesson=$("${PW[@]}" eval "async () => { for (let i = 0; i < 60; i++) { const link = [...document.querySelectorAll('a[href]')].find((el) => /^\\/courses\\/[^\\/]+\\/[^\\/]+$/.test(el.getAttribute('href') || '')); if (link) { link.click(); for (let j = 0; j < 60; j++) { await new Promise((resolve) => setTimeout(resolve, 100)); if (/^\\/courses\\/[^\\/]+\\/[^\\/]+$/.test(window.location.pathname)) return window.location.pathname; } return window.location.pathname; } await new Promise((resolve) => setTimeout(resolve, 100)); } return 'missing'; }")
 assert_contains "$open_first_lesson" "/courses/" "clicking a lesson should open the lesson page"
 
 lesson_heading=$("${PW[@]}" eval "() => Boolean(document.querySelector('h1')?.textContent?.trim())")
@@ -156,5 +198,17 @@ assert_contains "$try_again" "\"clicked\"" "Try Again button should be clickable
 
 path_after_reload=$("${PW[@]}" eval "() => window.location.pathname")
 assert_contains "$path_after_reload" "\"/offline\"" "offline reload should stay on offline route"
+
+if [[ "${TOTAL_ASSERTIONS}" -eq 0 ]]; then
+  echo "E2E assertion coverage check failed: no assertions executed."
+  exit 1
+fi
+
+assertion_coverage=$((PASSED_ASSERTIONS * 100 / TOTAL_ASSERTIONS))
+echo "E2E assertion coverage: ${assertion_coverage}% (${PASSED_ASSERTIONS}/${TOTAL_ASSERTIONS})"
+if (( assertion_coverage < MIN_E2E_ASSERTION_COVERAGE )); then
+  echo "E2E assertion coverage below threshold: ${assertion_coverage}% < ${MIN_E2E_ASSERTION_COVERAGE}%"
+  exit 1
+fi
 
 echo "E2E checks passed."

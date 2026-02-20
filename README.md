@@ -37,7 +37,7 @@ The VivanceData Learning Platform is designed to help professionals and organiza
 - **Framework**: Next.js 15+ (App Router with Turbopack)
 - **Frontend**: React, TypeScript, Tailwind CSS
 - **UI Components**: Shadcn/UI components
-- **Database**: Prisma ORM with SQLite/LibSQL
+- **Database**: Prisma ORM with PostgreSQL (Neon-ready)
 - **Authentication**: Custom JWT-based authentication with jose and bcryptjs
 - **Content Management**: Markdown-based course content with MDX for interactive elements
 - **Testing**: Jest and React Testing Library
@@ -70,7 +70,8 @@ bun install
 3. Create a `.env` file in the root directory:
 ```bash
 # Database
-DATABASE_URL="file:./prisma/dev.db"
+DATABASE_URL="postgresql://USER:PASSWORD@HOST/DB?sslmode=require"
+# If using Vercel Postgres/Neon integration, you can also use POSTGRES_PRISMA_URL
 
 # JWT Secret (generate a secure random string)
 JWT_SECRET="your-secret-key-here"
@@ -209,6 +210,8 @@ learn/
 - `npm test` - Run tests
 - `npm run smoke` - Run lint + tests + production build gate
 - `npm run test:e2e` - Production-like browser flow checks (pricing, auth, courses, lessons, assessments, offline)
+- `npm run ops:check` - Verify health/readiness and optional Sentry issue-read access
+- `npm run ops:sentry:bootstrap` - Publish `SENTRY_READ_TOKEN` to GitHub Actions and validate ops checks
 - `npm run db:seed` - Seed paths/courses/lessons + assessments
 - `npm run db:migrate:deploy` - Apply pending migrations (production-safe command)
 - `npm run prisma:studio` - Open Prisma Studio to manage the database
@@ -395,11 +398,9 @@ All API endpoints (except `/api/auth/*`) require authentication. Include the JWT
 ### Environment Variables (Required)
 
 ```bash
-# Database (use hosted LibSQL in production)
-DATABASE_URL="libsql://your-db-name.turso.io?authToken=your-token"
-
-# Optional escape hatch for single-node file DB deployments (not recommended)
-# ALLOW_FILE_DATABASE_IN_PRODUCTION="true"
+# Database (Neon/PostgreSQL)
+DATABASE_URL="postgresql://USER:PASSWORD@HOST/DB?sslmode=require"
+# Or use Vercel-provided POSTGRES_PRISMA_URL / POSTGRES_URL
 
 # Authentication (generate with: openssl rand -base64 32)
 JWT_SECRET="your-secure-random-secret"
@@ -449,11 +450,25 @@ The platform includes these security features out of the box:
 # Test API health endpoint
 curl https://yourdomain.com/api/health
 
+# Run operational checks (health/readiness + optional Sentry)
+BASE_URL=https://yourdomain.com npm run ops:check
+
 # Verify security headers
 curl -I https://yourdomain.com
 
 # Check SSL certificate at ssllabs.com
 # Check security headers at securityheaders.com
+```
+
+Set these env vars if you want `npm run ops:check` to also validate Sentry issue-read access:
+- `SENTRY_READ_TOKEN` (scopes: `org:read`, `project:read`, `event:read`)
+- `SENTRY_ORG`
+- `SENTRY_PROJECT`
+
+Then run:
+
+```bash
+npm run ops:sentry:bootstrap
 ```
 
 ## Contributing

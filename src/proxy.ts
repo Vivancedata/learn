@@ -6,6 +6,12 @@ import rateLimiter, { RATE_LIMITS, getRateLimitHeaders } from '@/lib/rate-limit'
 const PUBLIC_READONLY_API_PATTERNS = [
   /^\/api\/courses\/?$/,
   /^\/api\/paths\/?$/,
+  /^\/api\/lessons\/[^/]+\/?$/,
+  /^\/api\/discussions\/?$/,
+  /^\/api\/solutions\/?$/,
+  /^\/api\/assessments\/?$/,
+  /^\/api\/assessments\/[^/]+\/?$/,
+  /^\/api\/leaderboards\/?$/,
 ]
 
 function isPublicReadonlyApi(request: NextRequest, pathname: string): boolean {
@@ -79,9 +85,15 @@ function addRateLimitHeaders(
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const clientIp = getClientIp(request)
+  const bypassAuthRateLimit = process.env.E2E_AUTH_RATE_LIMIT_BYPASS === '1'
 
   // Apply rate limiting to auth endpoints (stricter)
   if (pathname.startsWith('/api/auth/')) {
+    if (bypassAuthRateLimit) {
+      const response = NextResponse.next()
+      return addSecurityHeaders(response)
+    }
+
     const rateLimitResult = await rateLimiter.check(
       `auth:${clientIp}`,
       RATE_LIMITS.AUTH.limit,
@@ -110,8 +122,8 @@ export async function proxy(request: NextRequest) {
     return addSecurityHeaders(response)
   }
 
-  // Skip rate limiting and auth for health endpoint
-  if (pathname === '/api/health') {
+  // Skip rate limiting and auth for health/readiness endpoints
+  if (pathname === '/api/health' || pathname === '/api/readiness') {
     const response = NextResponse.next()
     return addSecurityHeaders(response)
   }
@@ -150,12 +162,12 @@ export async function proxy(request: NextRequest) {
 
     const isPublicReadonly = isPublicReadonlyApi(request, pathname)
 
-    let response: NextResponse
+    // For public read-only routes, auth is optional. If a valid user exists,
+    // we still inject identity headers so handlers can personalize responses.
+    const user = await getAuthUser(request)
 
     if (!isPublicReadonly) {
       // Check authentication for protected API routes
-      const user = await getAuthUser(request)
-
       if (!user) {
         return NextResponse.json(
           {
@@ -177,8 +189,10 @@ export async function proxy(request: NextRequest) {
           { status: 403 }
         )
       }
+    }
 
-      // Add user info and rate limit headers to request
+    let response: NextResponse
+    if (user) {
       const requestHeaders = new Headers(request.headers)
       requestHeaders.set('x-user-id', user.userId)
       requestHeaders.set('x-user-email', user.email)

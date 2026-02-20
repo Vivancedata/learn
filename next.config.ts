@@ -73,12 +73,6 @@ const sentryWebpackPluginOptions = {
   // Upload a larger set of source maps for prettier stack traces
   widenClientFileUpload: true,
 
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
-
-  // Enables automatic instrumentation of Vercel Cron Monitors
-  automaticVercelMonitors: true,
-
   // Hide source maps from being available in production
   hideSourceMaps: true,
 
@@ -88,6 +82,16 @@ const sentryWebpackPluginOptions = {
 
   // Opt out of sending telemetry data to Sentry
   telemetry: false,
+
+  // Bundler-related Sentry options
+  webpack: {
+    // Automatically tree-shake Sentry logger statements to reduce bundle size
+    treeshake: {
+      removeDebugLogging: true,
+    },
+    // Enables automatic instrumentation of Vercel Cron Monitors
+    automaticVercelMonitors: true,
+  },
 }
 
 // Wrap the Next.js config with Sentry

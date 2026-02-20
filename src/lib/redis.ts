@@ -4,23 +4,37 @@
  * Uses Upstash Redis for serverless-compatible distributed caching.
  * Upstash provides a REST-based Redis client that works in edge environments.
  *
- * Configuration:
- * - UPSTASH_REDIS_REST_URL: REST API URL for Upstash Redis
- * - UPSTASH_REDIS_REST_TOKEN: Authentication token
+ * Configuration (either naming scheme is supported):
+ * - UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN
+ * - KV_REST_API_URL / KV_REST_API_TOKEN
  *
  * @see https://upstash.com/docs/redis/overall/getstarted
  */
 
 import { Redis } from '@upstash/redis'
 
+function getRedisConfig():
+  | { url: string; token: string }
+  | null {
+  const url =
+    process.env.UPSTASH_REDIS_REST_URL ??
+    process.env.KV_REST_API_URL
+  const token =
+    process.env.UPSTASH_REDIS_REST_TOKEN ??
+    process.env.KV_REST_API_TOKEN
+
+  if (!url || !token) {
+    return null
+  }
+
+  return { url, token }
+}
+
 /**
  * Check if Redis is configured via environment variables
  */
 export function isRedisConfigured(): boolean {
-  return !!(
-    process.env.UPSTASH_REDIS_REST_URL &&
-    process.env.UPSTASH_REDIS_REST_TOKEN
-  )
+  return getRedisConfig() !== null
 }
 
 /**
@@ -33,13 +47,14 @@ export function isRedisConfigured(): boolean {
  * @returns Redis client instance or null if not configured
  */
 export function getRedisClient(): Redis | null {
-  if (!isRedisConfigured()) {
+  const redisConfig = getRedisConfig()
+  if (!redisConfig) {
     return null
   }
 
   return new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL!,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    url: redisConfig.url,
+    token: redisConfig.token,
   })
 }
 

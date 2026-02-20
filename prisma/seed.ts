@@ -1,17 +1,37 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaLibSql } from '@prisma/adapter-libsql'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 import { hash } from 'bcryptjs'
 import { importContent } from './content-importer'
 import { seedAssessments } from './seed-assessments'
 
 function resolveDatabaseUrl(): string {
-  return process.env.DATABASE_URL?.trim() || 'file:./prisma/dev.db'
+  const databaseUrl =
+    process.env.DATABASE_URL?.trim() ||
+    process.env.POSTGRES_PRISMA_URL?.trim() ||
+    process.env.POSTGRES_URL?.trim()
+  if (!databaseUrl) {
+    throw new Error(
+      'Postgres connection string is required for seeding. ' +
+      'Set DATABASE_URL (or POSTGRES_PRISMA_URL/POSTGRES_URL on Vercel).'
+    )
+  }
+
+  if (!/^(postgres|postgresql|prisma\+postgres):\/\//.test(databaseUrl)) {
+    throw new Error('DATABASE_URL for seeding must be a PostgreSQL URL.')
+  }
+
+  return databaseUrl
 }
 
+const pool = new Pool({
+  connectionString: resolveDatabaseUrl(),
+  allowExitOnIdle: true,
+})
+const adapter = new PrismaPg(pool)
+
 const prisma = new PrismaClient({
-  adapter: new PrismaLibSql({
-    url: resolveDatabaseUrl(),
-  }),
+  adapter,
 })
 
 async function main() {
@@ -32,23 +52,35 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: adminEmail },
-    update: {},
+    update: {
+      name: 'Admin User',
+      password: adminPassword,
+      githubUsername: 'admin-github',
+      emailVerified: true,
+    },
     create: {
       email: adminEmail,
       name: 'Admin User',
       password: adminPassword,
       githubUsername: 'admin-github',
+      emailVerified: true,
     },
   })
 
   const user = await prisma.user.upsert({
     where: { email: userEmail },
-    update: {},
+    update: {
+      name: 'Regular User',
+      password: userPassword,
+      githubUsername: 'user-github',
+      emailVerified: true,
+    },
     create: {
       email: userEmail,
       name: 'Regular User',
       password: userPassword,
       githubUsername: 'user-github',
+      emailVerified: true,
     },
   })
 
@@ -122,9 +154,11 @@ async function main() {
 main()
   .then(async () => {
     await prisma.$disconnect()
+    await pool.end()
   })
   .catch(async (e) => {
     console.error(e)
     await prisma.$disconnect()
+    await pool.end()
     process.exit(1)
   })

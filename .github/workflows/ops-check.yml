@@ -1,0 +1,26 @@
+name: Ops Check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  production-health:
+    name: Production Health and Observability
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BASE_URL: ${{ vars.PROD_BASE_URL || 'https://learn.vivancedata.com' }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG || 'vivance-yx' }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'learn-sentry' }}
+      SENTRY_READ_TOKEN: ${{ secrets.SENTRY_READ_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run production ops check
+        run: bash scripts/ops-check.sh

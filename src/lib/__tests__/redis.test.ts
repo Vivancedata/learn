@@ -17,6 +17,8 @@ describe('Redis Client', () => {
     process.env = { ...originalEnv }
     delete process.env.UPSTASH_REDIS_REST_URL
     delete process.env.UPSTASH_REDIS_REST_TOKEN
+    delete process.env.KV_REST_API_URL
+    delete process.env.KV_REST_API_TOKEN
   })
 
   afterAll(() => {
@@ -54,6 +56,15 @@ describe('Redis Client', () => {
       const { isRedisConfigured } = require('../redis')
       expect(isRedisConfigured()).toBe(true)
     })
+
+    it('should return true when KV env vars are set', () => {
+      process.env.KV_REST_API_URL = 'https://test.upstash.io'
+      process.env.KV_REST_API_TOKEN = 'test-token'
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { isRedisConfigured } = require('../redis')
+      expect(isRedisConfigured()).toBe(true)
+    })
   })
 
   describe('getRedisClient()', () => {
@@ -74,6 +85,22 @@ describe('Redis Client', () => {
 
       expect(client).not.toBeNull()
       expect(client).toBeDefined()
+    })
+
+    it('should use KV env vars when Upstash vars are absent', () => {
+      process.env.KV_REST_API_URL = 'https://kv.upstash.io'
+      process.env.KV_REST_API_TOKEN = 'kv-token'
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getRedisClient } = require('../redis')
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { Redis } = require('@upstash/redis')
+      getRedisClient()
+
+      expect(Redis).toHaveBeenCalledWith({
+        url: 'https://kv.upstash.io',
+        token: 'kv-token',
+      })
     })
   })
 
@@ -118,6 +145,42 @@ describe('Redis Client', () => {
 
       expect(result.connected).toBe(true)
       expect(result.latencyMs).toBeDefined()
+    })
+
+    it('should return unexpected response when ping is not PONG', async () => {
+      process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io'
+      process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token'
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { Redis } = require('@upstash/redis')
+      Redis.mockImplementationOnce(() => ({
+        ping: jest.fn().mockResolvedValue('NOPE'),
+      }))
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { checkRedisHealth } = require('../redis')
+      const result = await checkRedisHealth()
+
+      expect(result.connected).toBe(false)
+      expect(result.error).toBe('Unexpected PING response: NOPE')
+    })
+
+    it('should handle non-Error ping failures', async () => {
+      process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io'
+      process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token'
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { Redis } = require('@upstash/redis')
+      Redis.mockImplementationOnce(() => ({
+        ping: jest.fn().mockRejectedValue('boom'),
+      }))
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { checkRedisHealth } = require('../redis')
+      const result = await checkRedisHealth()
+
+      expect(result.connected).toBe(false)
+      expect(result.error).toBe('Unknown error')
     })
   })
 })
