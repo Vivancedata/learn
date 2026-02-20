@@ -3,15 +3,27 @@
  * This bypasses Prisma client generation issues by directly using SQLite
  */
 
-import Database from 'better-sqlite3'
 import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 import { hash } from 'bcryptjs'
 import { randomUUID, createHash } from 'crypto'
 
+declare const require: (id: string) => any
+
 const DB_PATH = path.join(process.cwd(), 'prisma', 'dev.db')
 const CONTENT_DIR = path.join(process.cwd(), 'content')
+
+function loadSqliteDriver() {
+  try {
+    return require('better-sqlite3')
+  } catch (error) {
+    throw new Error(
+      'better-sqlite3 is required to run prisma/seed-sqlite.ts. ' +
+      'Install it before running this script.'
+    )
+  }
+}
 
 interface PathFrontmatter {
   id: string
@@ -293,6 +305,7 @@ async function seed() {
   console.log('🌱 Seeding database...\n')
 
   // Open database
+  const Database = loadSqliteDriver()
   const db = new Database(DB_PATH)
   db.pragma('journal_mode = WAL')
   db.pragma('foreign_keys = ON')
