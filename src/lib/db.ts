@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaLibSql } from '@prisma/adapter-libsql'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 
 // PrismaClient is attached to the `global` object in development to prevent
 // exhausting your database connection limit.
@@ -8,27 +9,21 @@ import { PrismaLibSql } from '@prisma/adapter-libsql'
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
 function resolveDatabaseUrl(): string {
-  const databaseUrl = process.env.DATABASE_URL?.trim()
+  const databaseUrl =
+    process.env.DATABASE_URL?.trim() ||
+    process.env.POSTGRES_PRISMA_URL?.trim() ||
+    process.env.POSTGRES_URL?.trim()
 
   if (!databaseUrl) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(
-        'DATABASE_URL environment variable is required in production. ' +
-        'Refusing to silently fall back to a local SQLite file.'
-      )
-    }
-
-    return 'file:./prisma/dev.db'
+    throw new Error(
+      'Postgres connection string is required. ' +
+      'Set DATABASE_URL (or POSTGRES_PRISMA_URL/POSTGRES_URL on Vercel).'
+    )
   }
 
-  if (
-    process.env.NODE_ENV === 'production' &&
-    databaseUrl.startsWith('file:') &&
-    process.env.ALLOW_FILE_DATABASE_IN_PRODUCTION !== 'true'
-  ) {
+  if (!/^(postgres|postgresql|prisma\+postgres):\/\//.test(databaseUrl)) {
     throw new Error(
-      'File-based DATABASE_URL is disabled in production by default. ' +
-      'Use a hosted LibSQL/Turso URL, or explicitly set ALLOW_FILE_DATABASE_IN_PRODUCTION=true.'
+      'DATABASE_URL must be a PostgreSQL connection string (for example Neon).'
     )
   }
 
@@ -36,9 +31,11 @@ function resolveDatabaseUrl(): string {
 }
 
 function createPrismaClient() {
-  const adapter = new PrismaLibSql({
-    url: resolveDatabaseUrl(),
+  const databaseUrl = resolveDatabaseUrl()
+  const pool = new Pool({
+    connectionString: databaseUrl,
   })
+  const adapter = new PrismaPg(pool)
   return new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],

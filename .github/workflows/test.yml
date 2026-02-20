@@ -88,8 +88,8 @@ jobs:
         run: npx prisma generate
 
       - name: Build application
-        run: npm run build:ci
+        run: npm run build
         env:
-          DATABASE_URL: "file:./prisma/dev.db"
+          DATABASE_URL: "postgresql://ci:ci@127.0.0.1:5432/ci"
           JWT_SECRET: "ci-test-secret-not-for-production"
           ALLOWED_ORIGINS: "http://localhost:3000"
