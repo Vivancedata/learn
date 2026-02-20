@@ -1,14 +1,35 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaLibSql } from '@prisma/adapter-libsql'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 
 function resolveDatabaseUrl(): string {
-  return process.env.DATABASE_URL?.trim() || 'file:./prisma/dev.db'
+  const databaseUrl =
+    process.env.DATABASE_URL?.trim() ||
+    process.env.POSTGRES_PRISMA_URL?.trim() ||
+    process.env.POSTGRES_URL?.trim()
+
+  if (!databaseUrl) {
+    throw new Error(
+      'Postgres connection string is required for assessment seeding. ' +
+      'Set DATABASE_URL (or POSTGRES_PRISMA_URL/POSTGRES_URL on Vercel).'
+    )
+  }
+
+  if (!/^(postgres|postgresql|prisma\+postgres):\/\//.test(databaseUrl)) {
+    throw new Error('DATABASE_URL for assessment seeding must be a PostgreSQL URL.')
+  }
+
+  return databaseUrl
 }
 
+const pool = new Pool({
+  connectionString: resolveDatabaseUrl(),
+  allowExitOnIdle: true,
+})
+const adapter = new PrismaPg(pool)
+
 const prisma = new PrismaClient({
-  adapter: new PrismaLibSql({
-    url: resolveDatabaseUrl(),
-  }),
+  adapter,
 })
 
 // Use string literals to avoid dependency on generated Prisma client enums
@@ -900,11 +921,13 @@ if (require.main === module) {
   seedAssessments()
     .then(async () => {
       await prisma.$disconnect()
+      await pool.end()
       console.log('\n✅ Assessment seeding completed successfully!')
     })
     .catch(async (e) => {
       console.error('Error seeding assessments:', e)
       await prisma.$disconnect()
+      await pool.end()
       process.exit(1)
     })
 }
