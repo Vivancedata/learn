@@ -511,7 +511,9 @@ export const startAssessmentSchema = z.object({
 })
 
 export const submitAssessmentSchema = z.object({
+  attemptId: z.string().uuid('Invalid attempt ID'),
   userId: z.string().uuid('Invalid user ID'),
+  timeSpent: z.number().int().min(0, 'Time spent must be non-negative').optional(),
   answers: z.record(
     z.string(),
     z.union([

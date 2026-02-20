@@ -7,9 +7,37 @@ import { PrismaLibSql } from '@prisma/adapter-libsql'
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
+function resolveDatabaseUrl(): string {
+  const databaseUrl = process.env.DATABASE_URL?.trim()
+
+  if (!databaseUrl) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'DATABASE_URL environment variable is required in production. ' +
+        'Refusing to silently fall back to a local SQLite file.'
+      )
+    }
+
+    return 'file:./prisma/dev.db'
+  }
+
+  if (
+    process.env.NODE_ENV === 'production' &&
+    databaseUrl.startsWith('file:') &&
+    process.env.ALLOW_FILE_DATABASE_IN_PRODUCTION !== 'true'
+  ) {
+    throw new Error(
+      'File-based DATABASE_URL is disabled in production by default. ' +
+      'Use a hosted LibSQL/Turso URL, or explicitly set ALLOW_FILE_DATABASE_IN_PRODUCTION=true.'
+    )
+  }
+
+  return databaseUrl
+}
+
 function createPrismaClient() {
   const adapter = new PrismaLibSql({
-    url: process.env.DATABASE_URL || 'file:./prisma/dev.db',
+    url: resolveDatabaseUrl(),
   })
   return new PrismaClient({
     adapter,

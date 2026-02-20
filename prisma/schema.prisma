@@ -113,6 +113,7 @@ model User {
   dailyActivities         DailyActivity[]
   leaderboardEntries      LeaderboardCache[]
   assessmentAttempts      AssessmentAttempt[]
+  assessmentSessions      AssessmentSession[]
   subscription            Subscription?
   conversations           Conversation[]
   xpTransactions          XpTransaction[]
@@ -550,6 +551,7 @@ model SkillAssessment {
 
   questions AssessmentQuestion[]
   attempts  AssessmentAttempt[]
+  sessions  AssessmentSession[]
   course    Course?              @relation(fields: [courseId], references: [id])
 
   @@index([courseId])
@@ -592,6 +594,25 @@ model AssessmentAttempt {
   @@index([userId])
   @@index([assessmentId])
   @@index([userId, assessmentId])
+}
+
+model AssessmentSession {
+  id           String   @id
+  userId       String
+  assessmentId String
+  questionIds  String   // JSON array of question IDs selected for this attempt
+  startedAt    DateTime @default(now())
+  expiresAt    DateTime
+  used         Boolean  @default(false)
+  usedAt       DateTime?
+
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessment SkillAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([assessmentId])
+  @@index([expiresAt])
+  @@index([userId, assessmentId, used])
 }
 
 // ============================================================================

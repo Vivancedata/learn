@@ -12,6 +12,7 @@ import { sendEmail } from '@/lib/email'
 import { passwordResetTemplate } from '@/lib/email-templates'
 import crypto from 'crypto'
 import { checkRateLimitAsync, getClientIdentifier, RATE_LIMITS } from '@/lib/rate-limit'
+import { getAppUrl } from '@/lib/app-url'
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`
+    const resetUrl = `${getAppUrl()}/reset-password?token=${resetToken}`
     const resetTemplate = passwordResetTemplate({ resetUrl })
 
     try {

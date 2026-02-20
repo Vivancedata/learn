@@ -3,6 +3,19 @@ import type { NextRequest } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import rateLimiter, { RATE_LIMITS, getRateLimitHeaders } from '@/lib/rate-limit'
 
+const PUBLIC_READONLY_API_PATTERNS = [
+  /^\/api\/courses\/?$/,
+  /^\/api\/paths\/?$/,
+]
+
+function isPublicReadonlyApi(request: NextRequest, pathname: string): boolean {
+  if (request.method !== 'GET') {
+    return false
+  }
+
+  return PUBLIC_READONLY_API_PATTERNS.some((pattern) => pattern.test(pathname))
+}
+
 /**
  * Get client IP address from request
  */
@@ -109,7 +122,8 @@ export async function proxy(request: NextRequest) {
     return addSecurityHeaders(response)
   }
 
-  // Apply rate limiting to other API routes (excluding auth)
+  // Apply rate limiting to all other API routes.
+  // Public read-only endpoints bypass auth, while sensitive routes require auth.
   if (pathname.startsWith('/api/') && !pathname.startsWith('/api/auth/')) {
     const rateLimitResult = await rateLimiter.check(
       `api:${clientIp}`,
@@ -134,44 +148,52 @@ export async function proxy(request: NextRequest) {
       )
     }
 
-    // Check authentication for protected API routes
-    const user = await getAuthUser(request)
+    const isPublicReadonly = isPublicReadonlyApi(request, pathname)
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          error: 'Unauthorized',
-          message: 'Authentication required. Please sign in.',
-          timestamp: new Date().toISOString(),
+    let response: NextResponse
+
+    if (!isPublicReadonly) {
+      // Check authentication for protected API routes
+      const user = await getAuthUser(request)
+
+      if (!user) {
+        return NextResponse.json(
+          {
+            error: 'Unauthorized',
+            message: 'Authentication required. Please sign in.',
+            timestamp: new Date().toISOString(),
+          },
+          { status: 401 }
+        )
+      }
+
+      if (!user.emailVerified) {
+        return NextResponse.json(
+          {
+            error: 'Forbidden',
+            message: 'Email verification required.',
+            timestamp: new Date().toISOString(),
+          },
+          { status: 403 }
+        )
+      }
+
+      // Add user info and rate limit headers to request
+      const requestHeaders = new Headers(request.headers)
+      requestHeaders.set('x-user-id', user.userId)
+      requestHeaders.set('x-user-email', user.email)
+      if (user.name) {
+        requestHeaders.set('x-user-name', user.name)
+      }
+
+      response = NextResponse.next({
+        request: {
+          headers: requestHeaders,
         },
-        { status: 401 }
-      )
+      })
+    } else {
+      response = NextResponse.next()
     }
-
-    if (!user.emailVerified) {
-      return NextResponse.json(
-        {
-          error: 'Forbidden',
-          message: 'Email verification required.',
-          timestamp: new Date().toISOString(),
-        },
-        { status: 403 }
-      )
-    }
-
-    // Add user info and rate limit headers to request
-    const requestHeaders = new Headers(request.headers)
-    requestHeaders.set('x-user-id', user.userId)
-    requestHeaders.set('x-user-email', user.email)
-    if (user.name) {
-      requestHeaders.set('x-user-name', user.name)
-    }
-
-    const response = NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    })
 
     addRateLimitHeaders(response, rateLimitHeaders)
     return addSecurityHeaders(response)

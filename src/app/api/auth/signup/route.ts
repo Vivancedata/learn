@@ -12,6 +12,7 @@ import { hashPassword, generateToken, setAuthCookie } from '@/lib/auth'
 import { createEmailVerificationToken } from '@/lib/email-verification'
 import { sendEmail, isEmailServiceConfigured } from '@/lib/email'
 import { verificationEmailTemplate } from '@/lib/email-templates'
+import { getAppUrl } from '@/lib/app-url'
 
 /**
  * POST /api/auth/signup
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
     await setAuthCookie(token)
 
     const { verificationCode, expiresAt } = await createEmailVerificationToken(user.id)
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const appUrl = getAppUrl()
     const verificationUrl = `${appUrl}/verify-email?userId=${user.id}&email=${encodeURIComponent(
       user.email
     )}`

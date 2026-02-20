@@ -148,6 +148,7 @@ function AssessmentTakeContent({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          attemptId: assessmentData.attemptId,
           userId: user.id,
           answers,
           timeSpent,

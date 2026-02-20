@@ -3,10 +3,12 @@ import {
   apiSuccess,
   handleApiError,
   HTTP_STATUS,
+  ApiError,
 } from '@/lib/api-errors'
 import { getAuthenticatedUserId } from '@/lib/authorization'
 import { createPortalSession } from '@/lib/stripe'
 import prisma from '@/lib/db'
+import { getAppUrl } from '@/lib/app-url'
 
 /**
  * POST /api/stripe/create-portal-session
@@ -24,11 +26,11 @@ export async function POST(request: NextRequest) {
     })
 
     if (!subscription?.stripeCustomerId) {
-      return handleApiError(new Error('No subscription found for user'))
+      throw new ApiError(HTTP_STATUS.NOT_FOUND, 'No subscription found for user')
     }
 
     // Create portal session
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const appUrl = getAppUrl()
     const returnUrl = `${appUrl}/settings`
 
     const session = await createPortalSession(subscription.stripeCustomerId, returnUrl)

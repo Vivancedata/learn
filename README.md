@@ -1,18 +1,16 @@
 # VivanceData Learning Platform
 
-[![Production Ready](https://img.shields.io/badge/Production-Ready-brightgreen)]() [![Security](https://img.shields.io/badge/Security-100%25-success)]() [![Vulnerabilities](https://img.shields.io/badge/Vulnerabilities-0-brightgreen)]()
+[![Security](https://img.shields.io/badge/Runtime_Audit-0_Vulnerabilities-success)]() [![Tests](https://img.shields.io/badge/Test_Suites-19_Passing-success)]()
 
 VivanceData Learning is a comprehensive educational platform focused on AI and data science skills, providing structured courses, interactive content, and community-driven learning experiences.
 
-## 🎯 Production Status: 100% Ready
+## 🎯 Production Status
 
-This platform is **production-ready** with:
-- ✅ Zero security vulnerabilities
-- ✅ Complete authentication & authorization system
-- ✅ Comprehensive security headers (CSP, HSTS, etc.)
-- ✅ Rate limiting and abuse prevention
-- ✅ Full authorization and access control
-- ✅ Production deployment documentation
+This platform is deployable with hardened runtime checks, but production readiness still depends on correct infrastructure setup:
+- ✅ Runtime dependency audit clean (`npm audit --omit=dev`)
+- ✅ Authentication, authorization, rate limiting, and security headers in place
+- ✅ Migration-aware production build (`prisma migrate deploy` in `build:ci`)
+- ⚠️ Dev-tooling audit warnings can still appear in full `npm audit`
 
 See the [Production Deployment](#production-deployment) section below for deployment guide.
 
@@ -39,7 +37,7 @@ The VivanceData Learning Platform is designed to help professionals and organiza
 - **Framework**: Next.js 15+ (App Router with Turbopack)
 - **Frontend**: React, TypeScript, Tailwind CSS
 - **UI Components**: Shadcn/UI components
-- **Database**: Prisma ORM with SQLite (expandable to PostgreSQL)
+- **Database**: Prisma ORM with SQLite/LibSQL
 - **Authentication**: Custom JWT-based authentication with jose and bcryptjs
 - **Content Management**: Markdown-based course content with MDX for interactive elements
 - **Testing**: Jest and React Testing Library
@@ -72,7 +70,7 @@ bun install
 3. Create a `.env` file in the root directory:
 ```bash
 # Database
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="file:./prisma/dev.db"
 
 # JWT Secret (generate a secure random string)
 JWT_SECRET="your-secret-key-here"
@@ -204,10 +202,14 @@ learn/
 
 - `npm run dev` - Start the development server
 - `npm run build` - Build the application for production
+- `npm run build:ci` - Production CI/deploy build (runs migrations + build)
 - `npm start` - Start the production server
 - `npm run lint` - Run ESLint
 - `npm test` - Run tests
+- `npm run smoke` - Run lint + tests + production build gate
+- `npm run test:e2e` - Alias for smoke gate in this repository
 - `npm run db:seed` - Import markdown content and seed database
+- `npm run db:migrate:deploy` - Apply pending migrations (production-safe command)
 - `npm run prisma:studio` - Open Prisma Studio to manage the database
 - `npx prisma migrate dev` - Create and apply database migrations
 - `npx prisma generate` - Generate Prisma Client
@@ -383,20 +385,26 @@ All API endpoints (except `/api/auth/*`) require authentication. Include the JWT
 
 ### Platform Status
 - **Build Status**: Zero TypeScript errors
-- **Security**: Zero vulnerabilities
+- **Runtime Security**: 0 vulnerabilities in production dependencies (`npm audit --omit=dev`)
 - **Styling Consistency**: 9/10 (up from 7.5/10)
-- **Infrastructure**: 100% production-ready
+- **Infrastructure**: Deployable when required production env vars are configured
 
 ## Production Deployment
 
 ### Environment Variables (Required)
 
 ```bash
-# Database (use PostgreSQL in production)
-DATABASE_URL="postgresql://user:password@host:5432/database"
+# Database (use hosted LibSQL in production)
+DATABASE_URL="libsql://your-db-name.turso.io?authToken=your-token"
+
+# Optional escape hatch for single-node file DB deployments (not recommended)
+# ALLOW_FILE_DATABASE_IN_PRODUCTION="true"
 
 # Authentication (generate with: openssl rand -base64 32)
 JWT_SECRET="your-secure-random-secret"
+
+# Public app URL (required in production for email/Stripe links)
+NEXT_PUBLIC_APP_URL="https://learn.yourdomain.com"
 
 # CORS - comma-separated list of allowed origins
 ALLOWED_ORIGINS="https://yourdomain.com,https://www.yourdomain.com"
@@ -415,16 +423,10 @@ NODE_ENV="production"
 # 1. Install dependencies
 npm ci
 
-# 2. Generate Prisma client
-npx prisma generate
+# 2. Run production build (includes `prisma migrate deploy`)
+npm run build:ci
 
-# 3. Run database migrations
-npx prisma migrate deploy
-
-# 4. Build the application
-npm run build
-
-# 5. Start production server
+# 3. Start production server
 npm start
 ```
 

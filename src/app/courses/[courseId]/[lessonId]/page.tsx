@@ -370,6 +370,11 @@ function LessonContent() {
     }
   }
 
+  const repositoryUrl =
+    process.env.NEXT_PUBLIC_GITHUB_REPO_URL || 'https://github.com/vivancedata/learn'
+  const issueTitle = encodeURIComponent(`Issue with ${lesson.title}`)
+  const lessonContentPath = `content/courses/${courseId}/lessons/${lessonId}.md`
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container py-8">
@@ -448,7 +453,7 @@ function LessonContent() {
                 <div className="space-x-4">
                   <Button variant="outline" asChild>
                     <Link 
-                      href={`https://github.com/yourusername/eureka/tree/main/content/courses/${courseId}/lessons/${lessonId}.md`}
+                      href={`${repositoryUrl}/tree/main/${lessonContentPath}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center"
@@ -459,7 +464,7 @@ function LessonContent() {
                   </Button>
                   <Button variant="outline" asChild>
                     <Link 
-                      href={`https://github.com/yourusername/eureka/issues/new?title=Issue with ${lesson.title}`}
+                      href={`${repositoryUrl}/issues/new?title=${issueTitle}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center"

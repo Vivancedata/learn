@@ -4,6 +4,7 @@ import {
   handleApiError,
   parseRequestBody,
   HTTP_STATUS,
+  ApiError,
 } from '@/lib/api-errors'
 import { createCheckoutSessionSchema } from '@/lib/validations'
 import { getAuthenticatedUserId } from '@/lib/authorization'
@@ -13,6 +14,7 @@ import {
   STRIPE_PRICES,
 } from '@/lib/stripe'
 import prisma from '@/lib/db'
+import { getAppUrl } from '@/lib/app-url'
 
 /**
  * POST /api/stripe/create-checkout-session
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
     // Validate price ID
     const validPriceIds = [STRIPE_PRICES.MONTHLY, STRIPE_PRICES.YEARLY]
     if (!validPriceIds.includes(priceId)) {
-      return handleApiError(new Error('Invalid price ID'))
+      throw new ApiError(HTTP_STATUS.BAD_REQUEST, 'Invalid price ID')
     }
 
     // Get user from database
@@ -42,12 +44,12 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user) {
-      return handleApiError(new Error('User not found'))
+      throw new ApiError(HTTP_STATUS.NOT_FOUND, 'User not found')
     }
 
     // Check if user already has an active subscription
     if (user.subscription?.status === 'active') {
-      return handleApiError(new Error('User already has an active subscription'))
+      throw new ApiError(HTTP_STATUS.CONFLICT, 'User already has an active subscription')
     }
 
     // Get or create Stripe customer
@@ -72,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create checkout session
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const appUrl = getAppUrl()
     const session = await createCheckoutSession(
       stripeCustomerId,
       priceId,

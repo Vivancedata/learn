@@ -76,15 +76,21 @@ export async function POST(
       })
     })
 
-    // Create a session token to track this attempt
-    // We'll store the correct answers server-side using the question IDs
+    // Create and persist a one-time attempt session so submit can be verified server-side.
     const attemptId = crypto.randomUUID()
-    const startedAt = new Date().toISOString()
+    const startedAt = new Date()
+    const expiresAt = new Date(startedAt.getTime() + assessment.timeLimit * 60 * 1000 + 30_000)
 
-    // Store attempt metadata in a temporary structure
-    // In production, this would be stored in Redis or a session store
-    // For now, we'll include the attempt metadata in the response
-    // and verify on submission
+    await prisma.assessmentSession.create({
+      data: {
+        id: attemptId,
+        userId: body.userId,
+        assessmentId: assessment.id,
+        questionIds: JSON.stringify(selectedQuestions.map((question) => question.id)),
+        startedAt,
+        expiresAt,
+      },
+    })
 
     return apiSuccess({
       attemptId,
@@ -94,7 +100,7 @@ export async function POST(
       timeLimit: assessment.timeLimit,
       passingScore: assessment.passingScore,
       totalQuestions: assessment.totalQuestions,
-      startedAt,
+      startedAt: startedAt.toISOString(),
       questions: questionsForClient,
     })
   } catch (error) {

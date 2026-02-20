@@ -12,6 +12,7 @@ import { createEmailVerificationToken } from '@/lib/email-verification'
 import { sendEmail, isEmailServiceConfigured } from '@/lib/email'
 import { verificationEmailTemplate } from '@/lib/email-templates'
 import { checkRateLimitAsync, getClientIdentifier, RATE_LIMITS } from '@/lib/rate-limit'
+import { getAppUrl } from '@/lib/app-url'
 
 const resendVerificationSchema = z.union([
   z.object({
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     const { verificationCode, expiresAt } = await createEmailVerificationToken(user.id)
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const appUrl = getAppUrl()
     const verificationUrl = `${appUrl}/verify-email?userId=${user.id}&email=${encodeURIComponent(
       user.email
     )}`
