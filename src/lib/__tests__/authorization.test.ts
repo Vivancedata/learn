@@ -58,6 +58,19 @@ describe('Authorization Utilities', () => {
         expect((error as ApiError).statusCode).toBe(HTTP_STATUS.FORBIDDEN)
       }
     })
+
+    it('should use default resource name when not provided', () => {
+      const authenticatedUserId = '123e4567-e89b-12d3-a456-426614174000'
+      const resourceOwnerId = '123e4567-e89b-12d3-a456-426614174001'
+
+      try {
+        ensureOwnership(authenticatedUserId, resourceOwnerId)
+        fail('Expected error to be thrown')
+      } catch (error) {
+        expect(error).toBeInstanceOf(ApiError)
+        expect((error as ApiError).message).toContain('resource')
+      }
+    })
   })
 
   describe('canAccessResource', () => {
@@ -109,6 +122,18 @@ describe('Authorization Utilities', () => {
       expect(() => requireOwnership(request, resourceOwnerId, 'resource')).toThrow(
         'do not have permission'
       )
+    })
+
+    it('should use default resource name when no custom resource is provided', () => {
+      const authenticatedUserId = '123e4567-e89b-12d3-a456-426614174000'
+      const resourceOwnerId = '123e4567-e89b-12d3-a456-426614174001'
+      const request = new NextRequest('http://localhost:3000/api/test', {
+        headers: {
+          'x-user-id': authenticatedUserId,
+        },
+      })
+
+      expect(() => requireOwnership(request, resourceOwnerId)).toThrow('access this resource')
     })
   })
 })

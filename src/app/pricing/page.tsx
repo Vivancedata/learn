@@ -45,6 +45,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
     <div className="border-b border-border last:border-0">
       <button
         className="flex w-full items-center justify-between py-4 text-left"
+        aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="font-medium">{question}</span>
@@ -112,6 +113,7 @@ export default function PricingPage() {
           Monthly
         </span>
         <button
+          data-testid="billing-toggle"
           onClick={() => setBillingInterval(billingInterval === 'month' ? 'year' : 'month')}
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
             billingInterval === 'year' ? 'bg-primary' : 'bg-muted'
@@ -127,7 +129,11 @@ export default function PricingPage() {
           Yearly
         </span>
         {billingInterval === 'year' && (
-          <Badge variant="default" className="bg-success text-success-foreground">
+          <Badge
+            variant="default"
+            className="bg-success text-success-foreground"
+            data-testid="yearly-savings"
+          >
             Save ${SUBSCRIPTION_PLANS.PRO_YEARLY.savings}
           </Badge>
         )}
@@ -190,8 +196,8 @@ export default function PricingPage() {
           </CardHeader>
           <CardContent>
             <div className="mb-6">
-              <span className="text-4xl font-bold">${currentPlan.price}</span>
-              <span className="text-muted-foreground">/{currentPlan.interval}</span>
+              <span className="text-4xl font-bold" data-testid="pro-price">${currentPlan.price}</span>
+              <span className="text-muted-foreground" data-testid="pro-interval">/{currentPlan.interval}</span>
               {billingInterval === 'year' && (
                 <div className="text-sm text-muted-foreground mt-1">
                   ${Math.round(SUBSCRIPTION_PLANS.PRO_YEARLY.price / 12)}/month billed annually

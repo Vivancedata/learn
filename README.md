@@ -1,6 +1,6 @@
 # VivanceData Learning Platform
 
-[![Security](https://img.shields.io/badge/Runtime_Audit-0_Vulnerabilities-success)]() [![Tests](https://img.shields.io/badge/Test_Suites-19_Passing-success)]()
+[![Security](https://img.shields.io/badge/Runtime_Audit-0_Vulnerabilities-success)]() [![Tests](https://img.shields.io/badge/Test_Suites-23_Passing-success)]()
 
 VivanceData Learning is a comprehensive educational platform focused on AI and data science skills, providing structured courses, interactive content, and community-driven learning experiences.
 
@@ -85,7 +85,7 @@ TEST_USER_PASSWORD="User123456"
 4. Set up the database:
 ```bash
 npx prisma migrate dev
-npm run db:seed  # This will import content from markdown files
+npm run db:seed  # Imports content, generates starter lessons when needed, and seeds assessments
 ```
 
 5. Start the development server:
@@ -174,6 +174,7 @@ The content importer will:
 - Parse all markdown files with frontmatter
 - Extract learning outcomes and prerequisites
 - Auto-generate quiz questions from "Knowledge Check" sections
+- Auto-generate a starter 3-lesson sequence for courses that do not yet have lesson markdown files
 - Create proper database relationships (paths → courses → sections → lessons)
 
 ## Project Structure
@@ -207,8 +208,8 @@ learn/
 - `npm run lint` - Run ESLint
 - `npm test` - Run tests
 - `npm run smoke` - Run lint + tests + production build gate
-- `npm run test:e2e` - Alias for smoke gate in this repository
-- `npm run db:seed` - Import markdown content and seed database
+- `npm run test:e2e` - Production-like browser flow checks (pricing, auth, courses, lessons, assessments, offline)
+- `npm run db:seed` - Seed paths/courses/lessons + assessments
 - `npm run db:migrate:deploy` - Apply pending migrations (production-safe command)
 - `npm run prisma:studio` - Open Prisma Studio to manage the database
 - `npx prisma migrate dev` - Create and apply database migrations

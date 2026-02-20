@@ -161,6 +161,239 @@ describe('Progress API', () => {
       expect(data.data.completedLessonsCount).toBe(1)
     })
 
+    it('should maintain streak when user already has activity today', async () => {
+      const existingProgress = {
+        id: 'progress-1',
+        userId: TEST_USER_ID,
+        courseId: TEST_COURSE_ID,
+        lastAccessed: new Date(),
+        completedLessons: [],
+      }
+      const updatedProgress = {
+        ...existingProgress,
+        completedLessons: [{ id: TEST_LESSON_ID, title: 'Introduction to Python' }],
+      }
+
+      ;(prisma.lesson.findUnique as jest.Mock).mockResolvedValue(mockLesson)
+      ;(prisma.courseProgress.findFirst as jest.Mock).mockResolvedValue(existingProgress)
+      ;(prisma.courseProgress.update as jest.Mock).mockResolvedValue(updatedProgress)
+      ;(prisma.user.findUnique as jest.Mock).mockResolvedValue({
+        id: TEST_USER_ID,
+        currentStreak: 5,
+        longestStreak: 10,
+        lastActivityDate: new Date(),
+        streakFreezes: 2,
+      })
+      ;(prisma.dailyActivity.upsert as jest.Mock).mockResolvedValue({ id: 'act-1' })
+      ;(prisma.user.update as jest.Mock).mockResolvedValue({
+        id: TEST_USER_ID,
+        currentStreak: 5,
+        longestStreak: 10,
+      })
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/progress/lessons', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: TEST_USER_ID,
+          courseId: TEST_COURSE_ID,
+          lessonId: TEST_LESSON_ID,
+        }),
+      })
+      const response = await markLessonComplete(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(201)
+      expect(data.data.streak?.streakAction).toBe('maintained')
+      expect(data.data.streak?.currentStreak).toBe(5)
+    })
+
+    it('should extend streak and apply streak milestone bonus', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { awardStreakBonusXp } = require('@/lib/xp-service')
+      ;(awardStreakBonusXp as jest.Mock).mockResolvedValueOnce({ xpAwarded: 25, leveledUp: true })
+
+      const existingProgress = {
+        id: 'progress-1',
+        userId: TEST_USER_ID,
+        courseId: TEST_COURSE_ID,
+        lastAccessed: new Date(),
+        completedLessons: [],
+      }
+      const updatedProgress = {
+        ...existingProgress,
+        completedLessons: [{ id: TEST_LESSON_ID, title: 'Introduction to Python' }],
+      }
+
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+
+      ;(prisma.lesson.findUnique as jest.Mock).mockResolvedValue(mockLesson)
+      ;(prisma.courseProgress.findFirst as jest.Mock).mockResolvedValue(existingProgress)
+      ;(prisma.courseProgress.update as jest.Mock).mockResolvedValue(updatedProgress)
+      ;(prisma.user.findUnique as jest.Mock).mockResolvedValue({
+        id: TEST_USER_ID,
+        currentStreak: 6,
+        longestStreak: 6,
+        lastActivityDate: yesterday,
+        streakFreezes: 0,
+      })
+      ;(prisma.dailyActivity.upsert as jest.Mock).mockResolvedValue({ id: 'act-1' })
+      ;(prisma.user.update as jest.Mock).mockResolvedValue({
+        id: TEST_USER_ID,
+        currentStreak: 7,
+        longestStreak: 7,
+      })
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/progress/lessons', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: TEST_USER_ID,
+          courseId: TEST_COURSE_ID,
+          lessonId: TEST_LESSON_ID,
+        }),
+      })
+      const response = await markLessonComplete(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(201)
+      expect(data.data.streak?.streakAction).toBe('extended')
+      expect(data.data.xpAwarded).toBe(75)
+      expect(data.data.leveledUp).toBe(true)
+    })
+
+    it('should continue streak with freeze after one missed day', async () => {
+      const existingProgress = {
+        id: 'progress-1',
+        userId: TEST_USER_ID,
+        courseId: TEST_COURSE_ID,
+        lastAccessed: new Date(),
+        completedLessons: [],
+      }
+      const updatedProgress = {
+        ...existingProgress,
+        completedLessons: [{ id: TEST_LESSON_ID, title: 'Introduction to Python' }],
+      }
+
+      const twoDaysAgo = new Date()
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2)
+
+      ;(prisma.lesson.findUnique as jest.Mock).mockResolvedValue(mockLesson)
+      ;(prisma.courseProgress.findFirst as jest.Mock).mockResolvedValue(existingProgress)
+      ;(prisma.courseProgress.update as jest.Mock).mockResolvedValue(updatedProgress)
+      ;(prisma.user.findUnique as jest.Mock).mockResolvedValue({
+        id: TEST_USER_ID,
+        currentStreak: 3,
+        longestStreak: 5,
+        lastActivityDate: twoDaysAgo,
+        streakFreezes: 1,
+      })
+      ;(prisma.dailyActivity.upsert as jest.Mock).mockResolvedValue({ id: 'act-1' })
+      ;(prisma.user.update as jest.Mock)
+        .mockResolvedValueOnce({ id: TEST_USER_ID, streakFreezes: 0 })
+        .mockResolvedValueOnce({ id: TEST_USER_ID, currentStreak: 4, longestStreak: 5 })
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/progress/lessons', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: TEST_USER_ID,
+          courseId: TEST_COURSE_ID,
+          lessonId: TEST_LESSON_ID,
+        }),
+      })
+      const response = await markLessonComplete(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(201)
+      expect(data.data.streak?.streakAction).toBe('continued')
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: TEST_USER_ID },
+        data: { streakFreezes: { decrement: 1 } },
+      })
+    })
+
+    it('should restart streak when activity gap is too large', async () => {
+      const existingProgress = {
+        id: 'progress-1',
+        userId: TEST_USER_ID,
+        courseId: TEST_COURSE_ID,
+        lastAccessed: new Date(),
+        completedLessons: [],
+      }
+      const updatedProgress = {
+        ...existingProgress,
+        completedLessons: [{ id: TEST_LESSON_ID, title: 'Introduction to Python' }],
+      }
+
+      const fiveDaysAgo = new Date()
+      fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5)
+
+      ;(prisma.lesson.findUnique as jest.Mock).mockResolvedValue(mockLesson)
+      ;(prisma.courseProgress.findFirst as jest.Mock).mockResolvedValue(existingProgress)
+      ;(prisma.courseProgress.update as jest.Mock).mockResolvedValue(updatedProgress)
+      ;(prisma.user.findUnique as jest.Mock).mockResolvedValue({
+        id: TEST_USER_ID,
+        currentStreak: 10,
+        longestStreak: 12,
+        lastActivityDate: fiveDaysAgo,
+        streakFreezes: 0,
+      })
+      ;(prisma.dailyActivity.upsert as jest.Mock).mockResolvedValue({ id: 'act-1' })
+      ;(prisma.user.update as jest.Mock).mockResolvedValue({
+        id: TEST_USER_ID,
+        currentStreak: 1,
+        longestStreak: 12,
+      })
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/progress/lessons', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: TEST_USER_ID,
+          courseId: TEST_COURSE_ID,
+          lessonId: TEST_LESSON_ID,
+        }),
+      })
+      const response = await markLessonComplete(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(201)
+      expect(data.data.streak?.streakAction).toBe('started')
+      expect(data.data.streak?.currentStreak).toBe(1)
+    })
+
+    it('should not fail lesson completion when streak update throws', async () => {
+      const existingProgress = {
+        id: 'progress-1',
+        userId: TEST_USER_ID,
+        courseId: TEST_COURSE_ID,
+        lastAccessed: new Date(),
+        completedLessons: [],
+      }
+      const updatedProgress = {
+        ...existingProgress,
+        completedLessons: [{ id: TEST_LESSON_ID, title: 'Introduction to Python' }],
+      }
+
+      ;(prisma.lesson.findUnique as jest.Mock).mockResolvedValue(mockLesson)
+      ;(prisma.courseProgress.findFirst as jest.Mock).mockResolvedValue(existingProgress)
+      ;(prisma.courseProgress.update as jest.Mock).mockResolvedValue(updatedProgress)
+      ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(null)
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/progress/lessons', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: TEST_USER_ID,
+          courseId: TEST_COURSE_ID,
+          lessonId: TEST_LESSON_ID,
+        }),
+      })
+      const response = await markLessonComplete(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(201)
+      expect(data.data.streak).toBeNull()
+      expect(data.data.xpAwarded).toBe(50)
+    })
+
     it('should not award XP for already-completed lesson (idempotent)', async () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { hasReceivedXpFor } = require('@/lib/xp-service')

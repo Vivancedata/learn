@@ -7,6 +7,13 @@ import {
   adaptLessonWithQuiz,
   adaptPath,
   adaptPaths,
+  adaptVideoProgress,
+  adaptAssessmentQuestion,
+  adaptSkillAssessment,
+  adaptAssessmentAttempt,
+  adaptSkillAssessments,
+  adaptAssessmentAttempts,
+  safeJsonParse,
 } from '../type-adapters'
 
 // Helper to create mock Prisma data with required fields
@@ -541,6 +548,153 @@ describe('Type Adapters', () => {
       const result = adaptPaths([])
 
       expect(result).toEqual([])
+    })
+  })
+
+  describe('assessment adapters', () => {
+    it('should adapt a single assessment question', () => {
+      const prismaQuestion = {
+        id: 'question-1',
+        question: 'What is React?',
+        questionType: 'SINGLE_CHOICE',
+        options: '["Library", "Database"]',
+        correctAnswer: '"Library"',
+        explanation: 'React is a UI library.',
+        difficulty: 'Beginner',
+        points: 5,
+        codeSnippet: null,
+      }
+
+      const result = adaptAssessmentQuestion(prismaQuestion as any)
+
+      expect(result.id).toBe('question-1')
+      expect(result.questionType).toBe('SINGLE_CHOICE')
+      expect(result.options).toEqual(['Library', 'Database'])
+      expect(result.correctAnswer).toBe('Library')
+      expect(result.codeSnippet).toBeUndefined()
+    })
+
+    it('should adapt an assessment with and without questions', () => {
+      const prismaAssessment = {
+        id: 'assessment-1',
+        name: 'Frontend Basics',
+        slug: 'frontend-basics',
+        description: 'Assessment description',
+        courseId: null,
+        difficulty: 'Beginner',
+        timeLimit: 30,
+        passingScore: 70,
+        totalQuestions: 10,
+        skillArea: 'frontend',
+        questions: undefined,
+      }
+
+      const result = adaptSkillAssessment(prismaAssessment as any)
+
+      expect(result.id).toBe('assessment-1')
+      expect(result.courseId).toBeUndefined()
+      expect(result.questions).toBeUndefined()
+    })
+
+    it('should adapt an assessment attempt and nested assessment', () => {
+      const prismaAttempt = {
+        id: 'attempt-1',
+        userId: 'user-1',
+        assessmentId: 'assessment-1',
+        score: 90,
+        correctCount: 9,
+        totalCount: 10,
+        timeSpent: 1200,
+        answers: '{"q1":"A"}',
+        passed: true,
+        completedAt: mockDate,
+        assessment: {
+          id: 'assessment-1',
+          name: 'Frontend Basics',
+          slug: 'frontend-basics',
+          description: 'Assessment description',
+          courseId: 'course-1',
+          difficulty: 'Intermediate',
+          timeLimit: 30,
+          passingScore: 70,
+          totalQuestions: 10,
+          skillArea: 'frontend',
+          questions: [],
+        },
+      }
+
+      const result = adaptAssessmentAttempt(prismaAttempt as any)
+
+      expect(result.id).toBe('attempt-1')
+      expect(result.answers).toEqual({ q1: 'A' })
+      expect(result.completedAt).toBe(mockDate.toISOString())
+      expect(result.assessment?.slug).toBe('frontend-basics')
+    })
+
+    it('should adapt arrays of assessments and attempts', () => {
+      const assessments = [
+        {
+          id: 'assessment-1',
+          name: 'A1',
+          slug: 'a1',
+          description: 'A1 desc',
+          courseId: null,
+          difficulty: 'Beginner',
+          timeLimit: 15,
+          passingScore: 60,
+          totalQuestions: 5,
+          skillArea: 'general',
+          questions: [],
+        },
+      ]
+      const attempts = [
+        {
+          id: 'attempt-1',
+          userId: 'user-1',
+          assessmentId: 'assessment-1',
+          score: 80,
+          correctCount: 4,
+          totalCount: 5,
+          timeSpent: 300,
+          answers: '{}',
+          passed: true,
+          completedAt: mockDate,
+          assessment: undefined,
+        },
+      ]
+
+      expect(adaptSkillAssessments(assessments as any)).toHaveLength(1)
+      expect(adaptAssessmentAttempts(attempts as any)).toHaveLength(1)
+    })
+  })
+
+  describe('adaptVideoProgress', () => {
+    it('should adapt video progress timestamps to ISO strings', () => {
+      const prismaProgress = {
+        lessonId: 'lesson-1',
+        userId: 'user-1',
+        watchedSeconds: 120,
+        totalSeconds: 300,
+        completed: false,
+        lastWatched: mockDate,
+      }
+
+      const result = adaptVideoProgress(prismaProgress as any)
+
+      expect(result.lessonId).toBe('lesson-1')
+      expect(result.lastWatched).toBe(mockDate.toISOString())
+    })
+  })
+
+  describe('safeJsonParse', () => {
+    it('should return default when value is null/undefined/empty', () => {
+      expect(safeJsonParse(null, { fallback: true })).toEqual({ fallback: true })
+      expect(safeJsonParse(undefined, ['x'])).toEqual(['x'])
+      expect(safeJsonParse('', 42)).toBe(42)
+    })
+
+    it('should return default on invalid JSON', () => {
+      expect(safeJsonParse('not-json', [1, 2])).toEqual([1, 2])
     })
   })
 })

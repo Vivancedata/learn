@@ -1,9 +1,18 @@
 import { PrismaClient } from '@prisma/client'
+import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { hash } from 'bcryptjs'
 import { importContent } from './content-importer'
 import { seedAssessments } from './seed-assessments'
 
-const prisma = new PrismaClient()
+function resolveDatabaseUrl(): string {
+  return process.env.DATABASE_URL?.trim() || 'file:./prisma/dev.db'
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaLibSql({
+    url: resolveDatabaseUrl(),
+  }),
+})
 
 async function main() {
   console.log('🌱 Seeding database...\n')

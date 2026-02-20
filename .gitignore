@@ -29,6 +29,7 @@ venv/
 
 # testing
 /coverage
+/.playwright-cli/
 
 # next.js
 /.next/
@@ -65,4 +66,8 @@ next-env.d.ts
 
 # prisma
 /prisma/dev.db
+/prisma/dev.db-shm
+/prisma/dev.db-wal
 /prisma/prisma/dev.db
+/prisma/prisma/dev.db-shm
+/prisma/prisma/dev.db-wal

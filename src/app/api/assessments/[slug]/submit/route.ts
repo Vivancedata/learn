@@ -4,7 +4,7 @@
  */
 
 import { NextRequest } from 'next/server'
-import { ApiError, apiSuccess, handleApiError, NotFoundError, HTTP_STATUS } from '@/lib/api-errors'
+import { ApiError, apiSuccess, handleApiError, NotFoundError, ForbiddenError, HTTP_STATUS } from '@/lib/api-errors'
 import { parseRequestBody } from '@/lib/api-errors'
 import { submitAssessmentSchema } from '@/lib/validations'
 import { requireOwnership } from '@/lib/authorization'
@@ -95,6 +95,14 @@ function parseQuestionIds(rawQuestionIds: string): string[] {
   }
 }
 
+function hasProAccess(subscriptionStatus: string | null | undefined): boolean {
+  return (
+    subscriptionStatus === 'active' ||
+    subscriptionStatus === 'trialing' ||
+    subscriptionStatus === 'past_due'
+  )
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -107,6 +115,15 @@ export async function POST(
     requireOwnership(request, body.userId, 'assessment submission')
 
     const result = await prisma.$transaction(async (tx) => {
+      const subscription = await tx.subscription.findUnique({
+        where: { userId: body.userId },
+        select: { status: true },
+      })
+
+      if (!hasProAccess(subscription?.status)) {
+        throw new ForbiddenError('Skill assessments require a Pro subscription')
+      }
+
       // Fetch assessment with questions
       const assessment = await tx.skillAssessment.findUnique({
         where: { slug },

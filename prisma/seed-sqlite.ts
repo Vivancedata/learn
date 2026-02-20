@@ -8,7 +8,7 @@ import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 import { hash } from 'bcryptjs'
-import { randomUUID } from 'crypto'
+import { randomUUID, createHash } from 'crypto'
 
 const DB_PATH = path.join(process.cwd(), 'prisma', 'dev.db')
 const CONTENT_DIR = path.join(process.cwd(), 'content')
@@ -47,6 +47,175 @@ interface QuizQuestion {
   options: string[]
   correctAnswer: number
   explanation?: string
+}
+
+interface ImportedCourseMeta {
+  id: string
+  title: string
+  description: string
+  learningOutcomes: string[]
+  prerequisites: string[]
+}
+
+interface FallbackLesson {
+  id: string
+  title: string
+  type: 'lesson' | 'project' | 'quiz'
+  duration: string
+  order: number
+  sectionSlug: string
+  content: string
+  prevLessonId?: string
+  nextLessonId?: string
+}
+
+function deterministicUuid(input: string): string {
+  const hash = createHash('sha1').update(input).digest('hex')
+
+  const part1 = hash.slice(0, 8)
+  const part2 = hash.slice(8, 12)
+  const part3 = `5${hash.slice(13, 16)}`
+  const variantSeed = parseInt(hash.slice(16, 18), 16)
+  const part4 = `${((variantSeed & 0x3f) | 0x80).toString(16).padStart(2, '0')}${hash.slice(18, 20)}`
+  const part5 = hash.slice(20, 32)
+
+  return `${part1}-${part2}-${part3}-${part4}-${part5}`
+}
+
+function sectionTitleFromSlug(sectionSlug: string): string {
+  return sectionSlug
+    .split('-')
+    .filter(Boolean)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+function buildFallbackLessons(course: ImportedCourseMeta): FallbackLesson[] {
+  const firstId = deterministicUuid(`${course.id}:lesson:foundation`)
+  const secondId = deterministicUuid(`${course.id}:lesson:concepts`)
+  const thirdId = deterministicUuid(`${course.id}:lesson:practice`)
+
+  const outcomes = course.learningOutcomes.length > 0
+    ? course.learningOutcomes
+    : [
+        'Understand the core concepts covered in this course',
+        'Apply your learning in practical scenarios',
+        'Build momentum through repeatable practice',
+      ]
+
+  const prerequisites = course.prerequisites.length > 0
+    ? course.prerequisites
+    : ['No strict prerequisites - consistency matters most.']
+
+  const lessonOneContent = `
+# ${course.title}: Orientation
+
+## Why This Course Matters
+${course.description}
+
+## Learning Outcomes
+${outcomes.map(item => `- ${item}`).join('\n')}
+
+## Prerequisites
+${prerequisites.map(item => `- ${item}`).join('\n')}
+
+## Weekly Study Plan
+1. Review this orientation and set a schedule.
+2. Complete the core concepts workshop.
+3. Finish the practice sprint project and reflect.
+
+## Knowledge Check
+1. What is the best way to start this course?
+   - Commit to a consistent schedule and complete lessons in sequence.
+   - Skip to advanced topics and fill gaps later.
+   - Wait for large free blocks before doing anything.
+   - Read summaries only and avoid hands-on work.
+`
+
+  const lessonTwoContent = `
+# Core Concepts Workshop
+
+## Concept Flow
+This lesson links foundational ideas from ${course.title} to practical execution.
+
+## Execution Principles
+- Learn one idea, then apply it immediately.
+- Document assumptions, results, and improvements.
+- Use feedback loops to close learning gaps quickly.
+
+## Practice Activity
+Draft a mini implementation plan with:
+- Objective
+- Tools
+- Success criteria
+- Timebox
+
+## Knowledge Check
+1. Which approach usually improves retention most?
+   - Immediate practice after learning a concept.
+   - Passive consumption of many lessons first.
+   - Memorizing terms without application.
+   - Delaying all implementation to the end.
+`
+
+  const lessonThreeContent = `
+# Practice Sprint Project
+
+## Sprint Goal
+Build and ship a small artifact using what you learned in ${course.title}.
+
+## Deliverables
+- One working project artifact
+- A concise reflection on wins and gaps
+- A list of next improvements
+
+## Suggested Workflow
+1. Define a narrow scope.
+2. Build a first version quickly.
+3. Collect feedback.
+4. Iterate once with clear improvements.
+
+## Knowledge Check
+1. What indicates this sprint succeeded?
+   - You shipped a usable artifact and captured what you learned.
+   - You consumed material but built nothing.
+   - You postponed shipping until the work is perfect.
+   - You skipped feedback to avoid rework.
+`
+
+  return [
+    {
+      id: firstId,
+      title: `${course.title}: Orientation`,
+      type: 'lesson',
+      duration: '25 min',
+      order: 1,
+      sectionSlug: 'foundations',
+      content: lessonOneContent.trim(),
+      nextLessonId: secondId,
+    },
+    {
+      id: secondId,
+      title: 'Core Concepts Workshop',
+      type: 'lesson',
+      duration: '35 min',
+      order: 2,
+      sectionSlug: 'foundations',
+      content: lessonTwoContent.trim(),
+      prevLessonId: firstId,
+      nextLessonId: thirdId,
+    },
+    {
+      id: thirdId,
+      title: 'Practice Sprint Project',
+      type: 'project',
+      duration: '45 min',
+      order: 3,
+      sectionSlug: 'applied-practice',
+      content: lessonThreeContent.trim(),
+      prevLessonId: secondId,
+    },
+  ]
 }
 
 /**
@@ -204,6 +373,7 @@ async function seed() {
   // Import Courses
   console.log('\n📖 Importing courses...')
   const coursesDir = path.join(CONTENT_DIR, 'courses')
+  const importedCourses: ImportedCourseMeta[] = []
   if (fs.existsSync(coursesDir)) {
     const courseFiles = fs.readdirSync(coursesDir).filter(f => f.endsWith('.md') && !fs.statSync(path.join(coursesDir, f)).isDirectory())
 
@@ -241,6 +411,14 @@ async function seed() {
       )
 
       console.log(`  ✅ Imported course: ${data.title}`)
+
+      importedCourses.push({
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        learningOutcomes,
+        prerequisites,
+      })
     }
   }
 
@@ -294,6 +472,12 @@ async function seed() {
 
       for (const lesson of lessons) {
         const { data, content } = lesson
+        const lessonId = (() => {
+          const maybeId = (data.id || '').trim()
+          if (!maybeId) return deterministicUuid(`${courseDir}:${lesson.file}`)
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(maybeId)
+          return isUuid ? maybeId : deterministicUuid(`${courseDir}:${maybeId}`)
+        })()
 
         // Validate lesson type
         const validTypes = ['lesson', 'project', 'quiz']
@@ -302,11 +486,7 @@ async function seed() {
         // Create section if it doesn't exist
         const sectionId = `${courseDir}-${data.section}`
         if (!sectionTracker.has(sectionId)) {
-          // Format section title from slug
-          const sectionTitle = data.section
-            .split('-')
-            .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-            .join(' ')
+          const sectionTitle = sectionTitleFromSlug(data.section)
 
           insertSection.run(
             sectionId,
@@ -323,7 +503,7 @@ async function seed() {
         // Create lesson
         const hasProject = lessonType === 'project'
         insertLesson.run(
-          data.id,
+          lessonId,
           data.title,
           content,
           lessonType,
@@ -345,7 +525,7 @@ async function seed() {
 
           for (let i = 0; i < quizQuestions.length; i++) {
             const quiz = quizQuestions[i]
-            const quizId = `${data.id}-quiz-${i + 1}`
+            const quizId = deterministicUuid(`${lessonId}:quiz:${i + 1}`)
 
             insertQuizQuestion.run(
               quizId,
@@ -353,7 +533,7 @@ async function seed() {
               JSON.stringify(quiz.options),
               quiz.correctAnswer,
               quiz.explanation || '',
-              data.id,
+              lessonId,
               now,
               now
             )
@@ -361,6 +541,72 @@ async function seed() {
         }
       }
     }
+  }
+
+  const countLessonsForCourse = db.prepare(`
+    SELECT COUNT(*) as count
+    FROM Lesson l
+    JOIN CourseSection cs ON l.sectionId = cs.id
+    WHERE cs.courseId = ?
+  `)
+
+  // Generate starter lessons for courses without authored lesson markdown.
+  for (const course of importedCourses) {
+    const existingLessons = countLessonsForCourse.get(course.id) as { count: number }
+    if (existingLessons.count > 0) {
+      continue
+    }
+
+    const fallbackLessons = buildFallbackLessons(course)
+
+    for (const fallback of fallbackLessons) {
+      const sectionId = `${course.id}-${fallback.sectionSlug}`
+      if (!sectionTracker.has(sectionId)) {
+        const sectionOrder = fallback.sectionSlug === 'foundations' ? 1 : 2
+        insertSection.run(
+          sectionId,
+          sectionTitleFromSlug(fallback.sectionSlug),
+          `Auto-generated starter section for ${course.title}`,
+          sectionOrder,
+          course.id,
+          now,
+          now
+        )
+        sectionTracker.set(sectionId, true)
+      }
+
+      insertLesson.run(
+        fallback.id,
+        fallback.title,
+        fallback.content,
+        fallback.type,
+        fallback.duration,
+        fallback.type === 'project' ? 1 : 0,
+        sectionId,
+        fallback.nextLessonId || null,
+        fallback.prevLessonId || null,
+        now,
+        now
+      )
+
+      const quizQuestions = parseQuizQuestions(fallback.content)
+      for (let i = 0; i < quizQuestions.length; i++) {
+        const quiz = quizQuestions[i]
+        const quizId = deterministicUuid(`${fallback.id}:quiz:${i + 1}`)
+        insertQuizQuestion.run(
+          quizId,
+          quiz.question,
+          JSON.stringify(quiz.options),
+          quiz.correctAnswer,
+          quiz.explanation || '',
+          fallback.id,
+          now,
+          now
+        )
+      }
+    }
+
+    console.log(`  ✅ Generated starter lessons for course: ${course.title}`)
   }
 
   // Create sample users

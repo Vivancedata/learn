@@ -171,6 +171,7 @@ async function calculateLeaderboard(
       return calculateLessonsLeaderboard(dateFilter, limit, currentUserId)
     case 'helping':
       return calculateHelpingLeaderboard(dateFilter, limit, currentUserId)
+    /* istanbul ignore next - safeguarded by Zod enum validation */
     default:
       return []
   }

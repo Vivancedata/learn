@@ -23,7 +23,11 @@ export async function getAllCourses(): Promise<Course[]> {
             order: 'asc',
           },
           include: {
-            lessons: true,
+            lessons: {
+              orderBy: {
+                createdAt: 'asc',
+              },
+            },
           },
         },
         path: true,
@@ -53,7 +57,11 @@ export async function getCourseById(courseId: string): Promise<Course | null> {
             order: 'asc',
           },
           include: {
-            lessons: true,
+            lessons: {
+              orderBy: {
+                createdAt: 'asc',
+              },
+            },
           },
         },
         path: true,

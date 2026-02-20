@@ -1,6 +1,15 @@
 import { PrismaClient } from '@prisma/client'
+import { PrismaLibSql } from '@prisma/adapter-libsql'
 
-const prisma = new PrismaClient()
+function resolveDatabaseUrl(): string {
+  return process.env.DATABASE_URL?.trim() || 'file:./prisma/dev.db'
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaLibSql({
+    url: resolveDatabaseUrl(),
+  }),
+})
 
 // Use string literals to avoid dependency on generated Prisma client enums
 type CourseDifficultyType = 'Beginner' | 'Intermediate' | 'Advanced'

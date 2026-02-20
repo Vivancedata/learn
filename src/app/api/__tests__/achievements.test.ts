@@ -279,6 +279,186 @@ describe('Achievements API', () => {
       expect(data.data.stats.completedLessons).toBe(1)
     })
 
+    it('should compute completedPaths based on started paths only', async () => {
+      const mockUserWithPaths = {
+        id: TEST_USER_ID,
+        name: 'Path Learner',
+        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+        achievements: [
+          {
+            id: 'ua-early',
+            achievementId: 'early-adopter',
+            earnedAt: new Date(),
+            achievement: { id: 'early-adopter', name: 'Early Adopter' },
+          },
+        ],
+        courses: [
+          {
+            courseId: 'course-1',
+            completedLessons: [{ id: 'l1' }, { id: 'l2' }],
+            quizScores: [],
+            course: {
+              pathId: 'path-1',
+              durationHours: 6,
+              sections: [{ lessons: [{ id: 'l1' }, { id: 'l2' }] }],
+            },
+          },
+          {
+            courseId: 'course-2',
+            completedLessons: [],
+            quizScores: [],
+            course: {
+              pathId: 'path-2',
+              durationHours: 2,
+              sections: [{ lessons: [{ id: 'x1' }] }],
+            },
+          },
+        ],
+        projectSubmissions: [],
+        certificates: [],
+        discussions: [],
+        discussionReplies: [],
+      }
+
+      ;(prisma.user.findUnique as jest.Mock)
+        .mockResolvedValueOnce(mockUserWithPaths)
+        .mockResolvedValueOnce({ id: TEST_USER_ID, achievements: [] })
+      ;(prisma.path.findMany as jest.Mock).mockResolvedValue([
+        {
+          id: 'path-1',
+          courses: [
+            {
+              id: 'course-1',
+              sections: [{ lessons: [{ id: 'l1' }, { id: 'l2' }] }],
+            },
+          ],
+        },
+        {
+          id: 'path-2',
+          courses: [
+            {
+              id: 'course-2',
+              sections: [{ lessons: [] }],
+            },
+          ],
+        },
+      ])
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/achievements/check', {
+        method: 'POST',
+        body: JSON.stringify({ userId: TEST_USER_ID }),
+      })
+      const response = await checkAchievements(request)
+      const data = await response.json()
+
+      expect([200, 201]).toContain(response.status)
+      expect(data.data.stats.completedPaths).toBe(1)
+      expect(prisma.path.findMany).toHaveBeenCalled()
+    })
+
+    it('should create missing achievement definition and ignore duplicate award insert', async () => {
+      ;(prisma.user.findUnique as jest.Mock)
+        .mockResolvedValueOnce(mockUserWithOneLesson)
+        .mockResolvedValueOnce({ id: TEST_USER_ID, achievements: [] })
+      ;(prisma.achievement.findUnique as jest.Mock).mockResolvedValue(null)
+      ;(prisma.achievement.create as jest.Mock).mockResolvedValue({
+        id: 'first-lesson',
+        name: 'First Steps',
+      })
+      ;(prisma.userAchievement.create as jest.Mock).mockRejectedValue(new Error('Unique constraint failed'))
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/achievements/check', {
+        method: 'POST',
+        body: JSON.stringify({ userId: TEST_USER_ID }),
+      })
+      const response = await checkAchievements(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(201)
+      expect(data.data.newAchievements).toContain('first-lesson')
+      expect(prisma.achievement.create).toHaveBeenCalled()
+    })
+
+    it('should handle candidate paths with empty courses or missing user progress', async () => {
+      const mockUserWithStartedPaths = {
+        id: TEST_USER_ID,
+        name: 'Path Learner',
+        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+        achievements: [],
+        courses: [
+          {
+            courseId: 'course-1',
+            completedLessons: [{ id: 'l1' }],
+            quizScores: [],
+            course: {
+              pathId: 'path-empty',
+              durationHours: null,
+              sections: [{ lessons: [{ id: 'l1' }] }],
+            },
+          },
+          {
+            courseId: 'course-2',
+            completedLessons: [{ id: 'l2' }],
+            quizScores: [],
+            course: {
+              pathId: 'path-missing-progress',
+              durationHours: null,
+              sections: [{ lessons: [{ id: 'l2' }] }],
+            },
+          },
+        ],
+        projectSubmissions: [],
+        certificates: [],
+        discussions: [],
+        discussionReplies: [],
+      }
+
+      ;(prisma.user.findUnique as jest.Mock)
+        .mockResolvedValueOnce(mockUserWithStartedPaths)
+        .mockResolvedValueOnce({ id: TEST_USER_ID, achievements: [] })
+      ;(prisma.path.findMany as jest.Mock).mockResolvedValue([
+        {
+          id: 'path-empty',
+          courses: [],
+        },
+        {
+          id: 'path-missing-progress',
+          courses: [
+            {
+              id: 'course-3',
+              sections: [{ lessons: [{ id: 'x1' }] }],
+            },
+          ],
+        },
+      ])
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/achievements/check', {
+        method: 'POST',
+        body: JSON.stringify({ userId: TEST_USER_ID }),
+      })
+      const response = await checkAchievements(request)
+      const data = await response.json()
+
+      expect([200, 201]).toContain(response.status)
+      expect(data.data.stats.completedPaths).toBe(0)
+    })
+
+    it('should return empty achievements array when updated user lookup returns null', async () => {
+      ;(prisma.user.findUnique as jest.Mock)
+        .mockResolvedValueOnce(mockUserNoProgress)
+        .mockResolvedValueOnce(null)
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/achievements/check', {
+        method: 'POST',
+        body: JSON.stringify({ userId: TEST_USER_ID }),
+      })
+      const response = await checkAchievements(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.achievements).toEqual([])
+    })
+
     it('should return 400 for invalid userId format', async () => {
       const request = new NextRequest('http://localhost:3000/api/achievements/check', {
         method: 'POST',

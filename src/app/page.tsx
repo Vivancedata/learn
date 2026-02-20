@@ -6,28 +6,50 @@ import {
   Sparkles,
   Rocket,
   Trophy,
-  Users,
   ArrowRight,
   Zap,
   Brain,
   Code2,
-  Bot
+  Bot,
+  CheckCircle2,
+  Clock3,
+  MessageSquareText,
+  TrendingUp
 } from "lucide-react"
 import { getAllCourses, getAllPaths } from "@/lib/content"
 
 export const dynamic = 'force-dynamic'
 
 export default async function Home() {
-  const [courses, paths] = await Promise.all([
-    getAllCourses(),
-    getAllPaths()
-  ])
+  let courses: Awaited<ReturnType<typeof getAllCourses>> = []
+  let paths: Awaited<ReturnType<typeof getAllPaths>> = []
+
+  try {
+    ;[courses, paths] = await Promise.all([
+      getAllCourses(),
+      getAllPaths(),
+    ])
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[Home] Failed to load catalog data:', error)
+    }
+  }
+
+  const totalLessons = courses.reduce(
+    (acc, course) => acc + course.sections.reduce((sum, section) => sum + section.lessons.length, 0),
+    0
+  )
+  const totalHours = courses.reduce((acc, course) => acc + course.durationHours, 0)
+  const coursesWithLessons = courses.filter(course =>
+    course.sections.some(section => section.lessons.length > 0)
+  ).length
+  const averageLessonsPerCourse = courses.length > 0 ? (totalLessons / courses.length).toFixed(1) : '0'
 
   const stats = [
     { label: "Courses", value: courses.length.toString(), icon: BookOpen },
     { label: "Learning Paths", value: paths.length.toString(), icon: Rocket },
-    { label: "Lessons", value: courses.reduce((acc, c) => acc + c.sections.reduce((s, sec) => s + sec.lessons.length, 0), 0).toString(), icon: Trophy },
-    { label: "Active Learners", value: "1.2k+", icon: Users },
+    { label: "Lessons", value: totalLessons.toString(), icon: Trophy },
+    { label: "Curriculum Hours", value: `${totalHours}h`, icon: Clock3 },
   ]
 
   const featuredCourses = courses.slice(0, 3)
@@ -53,6 +75,35 @@ export default async function Home() {
       title: "Interactive Learning",
       description: "Quizzes, discussions, and community support to reinforce your knowledge."
     }
+  ]
+
+  const momentumSteps = [
+    {
+      icon: Rocket,
+      title: 'Pick Your Mission',
+      description: 'Start from a curated path, not a random playlist.',
+    },
+    {
+      icon: Clock3,
+      title: 'Build Daily Cadence',
+      description: 'Short focused lessons keep consistency realistic.',
+    },
+    {
+      icon: MessageSquareText,
+      title: 'Get Feedback Fast',
+      description: 'Assessments and discussions expose gaps quickly.',
+    },
+    {
+      icon: CheckCircle2,
+      title: 'Ship Real Skills',
+      description: 'Track progress, complete projects, and level up.',
+    },
+  ]
+
+  const momentumSignals = [
+    { label: 'Courses with lesson plans', value: `${coursesWithLessons}/${courses.length}` },
+    { label: 'Average lessons per course', value: averageLessonsPerCourse },
+    { label: 'Total guided hours', value: `${totalHours}h` },
   ]
 
   return (
@@ -164,6 +215,74 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* Learning Momentum Section */}
+      <section className="py-20 md:py-28 bg-muted/20">
+        <div className="container px-4">
+          <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-8 items-stretch">
+            <Card className="overflow-hidden border-border/60 bg-card/70 backdrop-blur-sm">
+              <CardHeader className="pb-4">
+                <div className="inline-flex items-center gap-2 w-fit rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  Learning Momentum Engine
+                </div>
+                <CardTitle className="text-2xl md:text-3xl mt-3">
+                  A Structured Loop That Keeps Learners Moving
+                </CardTitle>
+                <CardDescription className="text-base">
+                  Eureka blends guided direction, bite-sized execution, and immediate feedback to turn effort into measurable progress.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {momentumSteps.map((step, index) => (
+                  <div
+                    key={step.title}
+                    className="relative flex gap-4 rounded-2xl border border-border/50 bg-background/60 p-4 animate-fade-in-up"
+                    style={{ animationDelay: `${index * 80}ms` }}
+                  >
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-primary-foreground">
+                      <step.icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">{step.title}</h3>
+                      <p className="text-sm text-muted-foreground">{step.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <div className="grid gap-5">
+              {momentumSignals.map((signal, index) => (
+                <Card
+                  key={signal.label}
+                  className="border-border/60 bg-gradient-to-br from-background to-muted/60 animate-fade-in-up"
+                  style={{ animationDelay: `${index * 120}ms` }}
+                >
+                  <CardContent className="pt-6">
+                    <p className="text-sm text-muted-foreground">{signal.label}</p>
+                    <p className="text-3xl md:text-4xl font-bold mt-1">{signal.value}</p>
+                  </CardContent>
+                </Card>
+              ))}
+              <Card className="border-primary/25 bg-gradient-to-br from-primary/10 via-accent/20 to-background">
+                <CardContent className="pt-6">
+                  <p className="text-sm font-medium text-primary mb-2">Ready for your next milestone?</p>
+                  <p className="text-sm text-muted-foreground mb-5">
+                    Move from course completion to real-world confidence with project-driven progression.
+                  </p>
+                  <Button variant="gradient" asChild className="w-full">
+                    <Link href="/paths" className="gap-2">
+                      Start a Learning Path
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Featured Courses Section */}
       <section className="py-20 md:py-28 bg-muted/30">
         <div className="container px-4">
@@ -244,8 +363,8 @@ export default async function Home() {
                 Ready to Start Your Learning Journey?
               </h2>
               <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-10">
-                Join thousands of learners who are building the skills of tomorrow.
-                Start with any course and learn at your own pace.
+                Build practical AI and data skills with structured paths, hands-on lessons,
+                and assessments you can apply immediately.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="xl" variant="secondary" asChild className="bg-white text-primary hover:bg-white/90">

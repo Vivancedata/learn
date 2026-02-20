@@ -16,7 +16,11 @@ export async function GET() {
             order: 'asc',
           },
           include: {
-            lessons: true,
+            lessons: {
+              orderBy: {
+                createdAt: 'asc',
+              },
+            },
           },
         },
         path: true,

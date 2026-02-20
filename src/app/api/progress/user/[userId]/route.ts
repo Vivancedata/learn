@@ -45,7 +45,11 @@ export async function GET(
           include: {
             sections: {
               include: {
-                lessons: true,
+                lessons: {
+                  orderBy: {
+                    createdAt: 'asc',
+                  },
+                },
               },
             },
           },

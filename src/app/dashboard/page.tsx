@@ -181,6 +181,16 @@ function DashboardContent() {
     })
     .slice(0, 3)
 
+  const starterCourse = courses.find(course =>
+    course.sections.some(section => section.lessons.length > 0)
+  )
+  const starterSection = starterCourse?.sections.find(section => section.lessons.length > 0)
+  const starterLesson = starterSection?.lessons[0]
+  const starterLessonHref = starterCourse && starterLesson
+    ? `/courses/${starterCourse.id}/${starterLesson.id}`
+    : '/courses'
+  const showGettingStarted = (userProgress?.overallStats.coursesStarted || 0) === 0 && completedLessons === 0
+
   // Get achievements
   const achievements = [
     {
@@ -252,6 +262,41 @@ function DashboardContent() {
           variant="grid"
           emptyVariant="compact"
         />
+      )}
+
+      {showGettingStarted && (
+        <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-background to-secondary/20">
+          <CardHeader>
+            <CardTitle>Start Here: Your First 30 Minutes</CardTitle>
+            <CardDescription>
+              Follow this quick sequence to build momentum on day one.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 md:grid-cols-3">
+            <div className="rounded-lg border border-border/60 bg-background/70 p-3 text-sm">
+              1. Open your first guided lesson
+            </div>
+            <div className="rounded-lg border border-border/60 bg-background/70 p-3 text-sm">
+              2. Complete one knowledge check
+            </div>
+            <div className="rounded-lg border border-border/60 bg-background/70 p-3 text-sm">
+              3. Take a baseline skill assessment
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col sm:flex-row gap-3">
+            <Button asChild className="w-full sm:w-auto">
+              <Link href={starterLessonHref}>
+                Start First Lesson
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full sm:w-auto">
+              <Link href="/assessments">
+                Take Baseline Assessment
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
       )}
 
       {/* Test Your Skills Section */}

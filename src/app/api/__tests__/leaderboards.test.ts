@@ -155,6 +155,26 @@ describe('Leaderboards API', () => {
       expect(data.data.entries[0].score).toBe(500)
     })
 
+    it('should calculate period XP score from daily activities when date filter exists', async () => {
+      ;(prisma.leaderboardCache.findMany as jest.Mock).mockResolvedValue([])
+      ;(prisma.user.findMany as jest.Mock).mockResolvedValue([
+        {
+          id: TEST_USER_ID,
+          name: 'Period User',
+          email: 'period@example.com',
+          points: 999,
+          dailyActivities: [{ xpEarned: 20 }, { xpEarned: 30 }],
+        },
+      ])
+
+      const request = new NextRequest('http://localhost:3000/api/leaderboards?type=xp&period=daily')
+      const response = await getLeaderboards(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.entries[0].score).toBe(50)
+    })
+
     it('should calculate streaks leaderboard when cache is empty', async () => {
       ;(prisma.leaderboardCache.findMany as jest.Mock).mockResolvedValue([])
       ;(prisma.user.findMany as jest.Mock).mockResolvedValue([
@@ -173,6 +193,123 @@ describe('Leaderboards API', () => {
 
       expect(response.status).toBe(200)
       expect(data.data.entries[0].score).toBe(15)
+    })
+
+    it('should parse cached metadata safely and fall back on invalid JSON', async () => {
+      const mockCacheEntries = [
+        {
+          id: 'cache-1',
+          rank: 1,
+          previousRank: null,
+          userId: TEST_USER_ID,
+          score: 1500,
+          calculatedAt: new Date(),
+          metadata: '{invalid-json',
+          type: 'XP',
+          period: 'ALL_TIME',
+          user: {
+            id: TEST_USER_ID,
+            name: null,
+            email: 'fallbackname@example.com',
+            showOnLeaderboard: true,
+          },
+        },
+      ]
+
+      ;(prisma.leaderboardCache.findMany as jest.Mock).mockResolvedValue(mockCacheEntries)
+      ;(prisma.leaderboardCache.findUnique as jest.Mock).mockResolvedValue(null)
+
+      const request = new NextRequest('http://localhost:3000/api/leaderboards?type=xp&period=all_time')
+      const response = await getLeaderboards(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.entries[0].metadata).toEqual({})
+      expect(data.data.entries[0].userName).toBe('fallbackname')
+    })
+
+    it('should calculate courses leaderboard when cache is empty', async () => {
+      ;(prisma.leaderboardCache.findMany as jest.Mock).mockResolvedValue([])
+      ;(prisma.certificate.groupBy as jest.Mock).mockResolvedValue([
+        { userId: TEST_USER_ID, _count: { id: 4 } },
+      ])
+      ;(prisma.user.findMany as jest.Mock).mockResolvedValue([
+        {
+          id: TEST_USER_ID,
+          name: 'Course Finisher',
+          email: 'courses@example.com',
+        },
+      ])
+
+      const request = new NextRequest('http://localhost:3000/api/leaderboards?type=courses&period=monthly')
+      const response = await getLeaderboards(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.entries[0].score).toBe(4)
+      expect(prisma.certificate.groupBy).toHaveBeenCalled()
+    })
+
+    it('should calculate lessons leaderboard for period filters', async () => {
+      ;(prisma.leaderboardCache.findMany as jest.Mock).mockResolvedValue([])
+      ;(prisma.dailyActivity.groupBy as jest.Mock).mockResolvedValue([
+        { userId: TEST_USER_ID, _sum: { lessonsCompleted: 9 } },
+      ])
+      ;(prisma.user.findMany as jest.Mock).mockResolvedValue([
+        { id: TEST_USER_ID, name: 'Learner', email: 'learner@example.com' },
+      ])
+
+      const request = new NextRequest('http://localhost:3000/api/leaderboards?type=lessons&period=daily')
+      const response = await getLeaderboards(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.entries[0].score).toBe(9)
+      expect(prisma.dailyActivity.groupBy).toHaveBeenCalled()
+    })
+
+    it('should calculate all-time lessons leaderboard from course progress', async () => {
+      ;(prisma.leaderboardCache.findMany as jest.Mock).mockResolvedValue([])
+      ;(prisma.courseProgress.findMany as jest.Mock).mockResolvedValue([
+        { userId: TEST_USER_ID, completedLessons: [{ id: 'l1' }, { id: 'l2' }] },
+        { userId: '660e8400-e29b-41d4-a716-446655440001', completedLessons: [{ id: 'l3' }] },
+      ])
+      ;(prisma.user.findMany as jest.Mock).mockResolvedValue([
+        { id: TEST_USER_ID, name: null, email: 'lessons@example.com' },
+        {
+          id: '660e8400-e29b-41d4-a716-446655440001',
+          name: 'Second User',
+          email: 'second@example.com',
+        },
+      ])
+
+      const request = new NextRequest('http://localhost:3000/api/leaderboards?type=lessons&period=all_time')
+      const response = await getLeaderboards(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.entries).toHaveLength(2)
+      expect(data.data.entries[0].score).toBe(2)
+      expect(data.data.entries[1].score).toBe(1)
+      expect(data.data.entries[0].userName).toBe('lessons')
+    })
+
+    it('should calculate helping leaderboard when cache is empty', async () => {
+      ;(prisma.leaderboardCache.findMany as jest.Mock).mockResolvedValue([])
+      ;(prisma.communityPoint.groupBy as jest.Mock).mockResolvedValue([
+        { recipientId: TEST_USER_ID, _count: { id: 12 } },
+      ])
+      ;(prisma.user.findMany as jest.Mock).mockResolvedValue([
+        { id: TEST_USER_ID, name: 'Helper', email: 'helper@example.com' },
+      ])
+
+      const request = new NextRequest('http://localhost:3000/api/leaderboards?type=helping&period=weekly')
+      const response = await getLeaderboards(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.entries[0].score).toBe(12)
+      expect(prisma.communityPoint.groupBy).toHaveBeenCalled()
     })
 
     it('should include current user rank when authenticated user is not in top list', async () => {
@@ -227,6 +364,59 @@ describe('Leaderboards API', () => {
       expect(response.status).toBe(200)
       expect(data.data.currentUserRank).toBeDefined()
       expect(data.data.currentUserRank.rank).toBe(50)
+    })
+
+    it('should not include currentUserRank when the cached user entry is hidden', async () => {
+      const currentUserId = '660e8400-e29b-41d4-a716-446655440001'
+      const mockCacheEntry = {
+        id: 'cache-1',
+        rank: 1,
+        previousRank: null,
+        userId: TEST_USER_ID,
+        score: 1500,
+        calculatedAt: new Date(),
+        metadata: null,
+        type: 'XP',
+        period: 'ALL_TIME',
+        user: {
+          id: TEST_USER_ID,
+          name: 'Top User',
+          email: 'top@example.com',
+          showOnLeaderboard: true,
+        },
+      }
+      const hiddenCurrentUserEntry = {
+        id: 'cache-current',
+        rank: 50,
+        previousRank: 55,
+        userId: currentUserId,
+        score: 100,
+        calculatedAt: new Date(),
+        metadata: null,
+        type: 'XP',
+        period: 'ALL_TIME',
+        user: {
+          id: currentUserId,
+          name: 'Current User',
+          email: 'current@example.com',
+          showOnLeaderboard: false,
+        },
+      }
+
+      ;(prisma.leaderboardCache.findMany as jest.Mock).mockResolvedValue([mockCacheEntry])
+      ;(prisma.leaderboardCache.findUnique as jest.Mock).mockResolvedValue(hiddenCurrentUserEntry)
+
+      const request = new NextRequest('http://localhost:3000/api/leaderboards?type=xp&period=all_time', {
+        headers: {
+          'x-user-id': currentUserId,
+          'x-user-email': 'current@example.com',
+        },
+      })
+      const response = await getLeaderboards(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.currentUserRank).toBeUndefined()
     })
 
     it('should handle database errors gracefully', async () => {

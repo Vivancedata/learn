@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import prisma from '@/lib/db'
-import { apiSuccess, handleApiError, parseRequestBody, NotFoundError, ValidationError, HTTP_STATUS } from '@/lib/api-errors'
+import { apiSuccess, handleApiError, parseRequestBody, NotFoundError, ValidationError, ForbiddenError, HTTP_STATUS } from '@/lib/api-errors'
 import { requireOwnership } from '@/lib/authorization'
 import crypto from 'crypto'
 
@@ -9,6 +9,14 @@ const generateCertificateSchema = z.object({
   userId: z.string().uuid(),
   courseId: z.string().min(1),
 })
+
+function hasProAccess(subscriptionStatus: string | null | undefined): boolean {
+  return (
+    subscriptionStatus === 'active' ||
+    subscriptionStatus === 'trialing' ||
+    subscriptionStatus === 'past_due'
+  )
+}
 
 /**
  * POST /api/certificates/generate
@@ -20,6 +28,15 @@ export async function POST(request: NextRequest) {
 
     // Authorization check - user can only generate certificate for themselves
     requireOwnership(request, body.userId, 'certificate generation')
+
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId: body.userId },
+      select: { status: true },
+    })
+
+    if (!hasProAccess(subscription?.status)) {
+      throw new ForbiddenError('Verified certificates require a Pro subscription')
+    }
 
     // 1. Check if user exists
     const user = await prisma.user.findUnique({
