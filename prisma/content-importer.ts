@@ -1,18 +1,38 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaLibSql } from '@prisma/adapter-libsql'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 import fs from 'fs'
 import path from 'path'
 import { createHash } from 'crypto'
 import matter from 'gray-matter'
 
 function resolveDatabaseUrl(): string {
-  return process.env.DATABASE_URL?.trim() || 'file:./prisma/dev.db'
+  const databaseUrl =
+    process.env.DATABASE_URL?.trim() ||
+    process.env.POSTGRES_PRISMA_URL?.trim() ||
+    process.env.POSTGRES_URL?.trim()
+  if (!databaseUrl) {
+    throw new Error(
+      'Postgres connection string is required for content import. ' +
+      'Set DATABASE_URL (or POSTGRES_PRISMA_URL/POSTGRES_URL on Vercel).'
+    )
+  }
+
+  if (!/^(postgres|postgresql|prisma\+postgres):\/\//.test(databaseUrl)) {
+    throw new Error('DATABASE_URL for content import must be a PostgreSQL URL.')
+  }
+
+  return databaseUrl
 }
 
+const pool = new Pool({
+  connectionString: resolveDatabaseUrl(),
+  allowExitOnIdle: true,
+})
+const adapter = new PrismaPg(pool)
+
 const prisma = new PrismaClient({
-  adapter: new PrismaLibSql({
-    url: resolveDatabaseUrl(),
-  }),
+  adapter,
 })
 
 interface PathFrontmatter {
@@ -617,10 +637,12 @@ if (require.main === module) {
   importContent()
     .then(async () => {
       await prisma.$disconnect()
+      await pool.end()
     })
     .catch(async (e) => {
       console.error(e)
       await prisma.$disconnect()
+      await pool.end()
       process.exit(1)
     })
 }
