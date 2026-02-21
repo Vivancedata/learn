@@ -5,9 +5,9 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build",
-    "build:ci": "NODE_ENV=production prisma migrate deploy && NODE_ENV=production prisma generate && NEXT_DISABLE_TURBOPACK=1 NEXT_TELEMETRY_DISABLED=1 NODE_ENV=production next build",
+    "build:ci": "DATABASE_URL=${DATABASE_URL:-file:./prisma/dev.db} NEXT_TELEMETRY_DISABLED=1 NODE_ENV=production next build --webpack",
     "postinstall": "prisma generate",
-    "build:webpack": "NEXT_DISABLE_TURBOPACK=1 NEXT_TELEMETRY_DISABLED=1 next build",
+    "build:webpack": "DATABASE_URL=${DATABASE_URL:-file:./prisma/dev.db} NEXT_TELEMETRY_DISABLED=1 next build --webpack",
     "start": "next start",
     "lint": "eslint src --ext .ts,.tsx",
     "db:seed": "ts-node --project prisma/tsconfig.seed.json prisma/seed.ts",
