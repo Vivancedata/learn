@@ -1,5 +1,4 @@
 import { PrismaClient, Prisma } from '@prisma/client'
-import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 
@@ -17,13 +16,15 @@ function resolveDatabaseUrl(): string {
     process.env.POSTGRES_URL?.trim()
 
   if (!databaseUrl) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(
-        'DATABASE_URL is required in production. ' +
-        'Use PostgreSQL (for example Neon) or provide a SQLite file URL.'
-      )
-    }
-    return 'file:./prisma/dev.db'
+    throw new Error(
+      'DATABASE_URL is required. Set DATABASE_URL (or POSTGRES_PRISMA_URL/POSTGRES_URL) to a PostgreSQL connection string.'
+    )
+  }
+
+  if (!POSTGRES_URL_PATTERN.test(databaseUrl)) {
+    throw new Error(
+      'Unsupported DATABASE_URL scheme. Use PostgreSQL (postgres://, postgresql://, or prisma+postgres://).'
+    )
   }
 
   return databaseUrl
@@ -38,36 +39,11 @@ function createPrismaClient() {
   const log: Prisma.LogLevel[] =
     process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
 
-  if (POSTGRES_URL_PATTERN.test(databaseUrl)) {
-    const pool = new Pool({
-      connectionString: databaseUrl,
-    })
-    const adapter = new PrismaPg(pool)
-    return new PrismaClient({
-      adapter,
-      log,
-    })
-  }
-
-  if (databaseUrl.startsWith('file:')) {
-    const adapter = new PrismaLibSql({
-      url: databaseUrl,
-    })
-    return new PrismaClient({
-      adapter,
-      log,
-    })
-  }
-
-  if (!databaseUrl.startsWith('libsql:')) {
-    throw new Error(
-      'Unsupported DATABASE_URL scheme. Use PostgreSQL (for example Neon), libsql, or file:./prisma/dev.db.'
-    )
-  }
-
-  const adapter = new PrismaLibSql({
-    url: databaseUrl,
+  const pool = new Pool({
+    connectionString: databaseUrl,
+    max: process.env.NODE_ENV === 'development' ? 5 : 20,
   })
+  const adapter = new PrismaPg(pool)
 
   return new PrismaClient({
     adapter,
