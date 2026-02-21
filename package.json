@@ -5,9 +5,9 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build",
-    "build:ci": "DATABASE_URL=${DATABASE_URL:-file:./prisma/dev.db} NEXT_TELEMETRY_DISABLED=1 NODE_ENV=production next build --webpack",
+    "build:ci": "DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@127.0.0.1:5432/learn} NEXT_TELEMETRY_DISABLED=1 NODE_ENV=production next build --webpack",
     "postinstall": "prisma generate",
-    "build:webpack": "DATABASE_URL=${DATABASE_URL:-file:./prisma/dev.db} NEXT_TELEMETRY_DISABLED=1 next build --webpack",
+    "build:webpack": "DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@127.0.0.1:5432/learn} NEXT_TELEMETRY_DISABLED=1 next build --webpack",
     "start": "next start",
     "lint": "eslint src --ext .ts,.tsx",
     "db:seed": "ts-node --project prisma/tsconfig.seed.json prisma/seed.ts",
