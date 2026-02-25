@@ -20,7 +20,7 @@ jobs:
       SENTRY_READ_TOKEN: ${{ secrets.SENTRY_READ_TOKEN }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run production ops check
         run: bash scripts/ops-check.sh
