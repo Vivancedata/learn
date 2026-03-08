@@ -3,7 +3,7 @@ name: Ops Check
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17 * * * *'
+    - cron: '17 7 * * *'
 
 permissions:
   contents: read
