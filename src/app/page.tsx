@@ -1,4 +1,5 @@
 import Link from "next/link"
+import type { Metadata } from "next"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -19,8 +20,12 @@ import {
 import { getAllCourses, getAllPaths } from "@/lib/content"
 
 export const dynamic = 'force-dynamic'
+export const metadata: Metadata = {
+  title: "Vivance",
+  description: "Learn AI and data science through practical courses, projects, and assessments.",
+}
 
-export default async function Home() {
+export default async function page() {
   let courses: Awaited<ReturnType<typeof getAllCourses>> = []
   let paths: Awaited<ReturnType<typeof getAllPaths>> = []
 

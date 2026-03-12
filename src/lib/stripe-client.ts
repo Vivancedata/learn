@@ -1,34 +1,3 @@
-/**
- * Stripe Client-Side Configuration
- * Provides client-side Stripe.js instance for React components
- */
-
-import { loadStripe, Stripe } from '@stripe/stripe-js'
-
-// ============================================================================
-// Stripe Client Singleton
-// ============================================================================
-
-let stripePromise: Promise<Stripe | null> | null = null
-
-/**
- * Gets or initializes the Stripe client-side instance
- * Uses singleton pattern to avoid multiple Stripe.js loads
- */
-export function getStripe(): Promise<Stripe | null> {
-  if (!stripePromise) {
-    const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-
-    if (!publishableKey) {
-      return Promise.resolve(null)
-    }
-
-    stripePromise = loadStripe(publishableKey)
-  }
-
-  return stripePromise
-}
-
 // ============================================================================
 // Price Configuration (Client-Side)
 // ============================================================================

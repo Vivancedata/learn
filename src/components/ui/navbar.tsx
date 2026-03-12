@@ -31,7 +31,7 @@ export function Navbar() {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10)
     }
-    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
@@ -106,7 +106,7 @@ export function Navbar() {
             )}
             <ThemeToggle />
             <Button variant="ghost" size="icon" asChild className="text-muted-foreground hover:text-foreground">
-              <Link href="/settings">
+              <Link href="/settings" aria-label="Settings">
                 <Settings className="h-4 w-4" />
               </Link>
             </Button>
@@ -119,6 +119,8 @@ export function Navbar() {
             size="icon"
             className="sm:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? (
               <X className="h-5 w-5" />

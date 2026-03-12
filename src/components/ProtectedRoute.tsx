@@ -1,28 +1,13 @@
 "use client"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { Loader2 } from "lucide-react"
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   const router = useRouter()
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/sign-in")
-      return
-    }
-
-    if (!loading && user && user.emailVerified === false) {
-      const params = new URLSearchParams({
-        userId: user.id,
-        email: user.email,
-      })
-      router.push(`/verify-email?${params.toString()}`)
-    }
-  }, [user, loading, router])
+  const pathname = usePathname()
 
   if (loading) {
     return (
@@ -33,6 +18,27 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
+    const currentQuery = typeof window !== 'undefined'
+      ? window.location.search
+      : ''
+    const redirectPath = pathname
+      ? `${pathname}${currentQuery}`
+      : '/dashboard'
+    const redirectParam = encodeURIComponent(redirectPath)
+    if (typeof window !== 'undefined') {
+      void router.replace(`/sign-in?redirect=${redirectParam}`)
+    }
+    return null
+  }
+
+  if (user.emailVerified === false) {
+    const params = new URLSearchParams({
+      userId: user.id,
+      email: user.email,
+    })
+    if (typeof window !== 'undefined') {
+      void router.replace(`/verify-email?${params.toString()}`)
+    }
     return null
   }
 

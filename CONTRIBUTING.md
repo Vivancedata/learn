@@ -374,7 +374,7 @@ Run `npm run lint` to verify formatting compliance.
 When working with database operations:
 
 - Use type adapters from `src/lib/type-adapters.ts` for JSON fields
-- SQLite stores JSON arrays as strings; always parse them safely
+- Several schema fields store JSON arrays as strings; always parse them safely
 - Include proper error handling for database operations
 
 Refer to `CLAUDE.md` for detailed architecture patterns.

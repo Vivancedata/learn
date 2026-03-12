@@ -20,11 +20,21 @@ interface NotificationPreferences {
   quietHoursEnd: number | null
 }
 
+const QUIET_HOURS_OPTIONS = Array.from({ length: 24 }, (_, hour) => hour)
+
+interface NotificationPreferencesUiState {
+  loading: boolean
+  saving: boolean
+  error: string | null
+  success: string | null
+  testSent: boolean
+}
+
 /**
  * Notification Preferences Component
  * Allows users to manage their push notification settings
  */
-export function NotificationPreferences() {
+function useNotificationPreferencesContent() {
   const { user } = useAuth()
   const {
     permission,
@@ -48,17 +58,19 @@ export function NotificationPreferences() {
     quietHoursEnd: null,
   })
 
-  const [loading, setLoading] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const [testSent, setTestSent] = useState(false)
+  const [uiState, setUiState] = useState<NotificationPreferencesUiState>({
+    loading: false,
+    saving: false,
+    error: null,
+    success: null,
+    testSent: false,
+  })
+  const { loading, saving, error, success, testSent } = uiState
 
   const fetchPreferences = useCallback(async () => {
     if (!user) return
 
-    setLoading(true)
-    setError(null)
+    setUiState((prev) => ({ ...prev, loading: true, error: null }))
 
     try {
       const response = await fetch(`/api/notifications/preferences/${user.id}`)
@@ -70,18 +82,19 @@ export function NotificationPreferences() {
       const data = await response.json()
       setPreferences(data.data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load preferences')
+      setUiState((prev) => ({
+        ...prev,
+        error: err instanceof Error ? err.message : 'Failed to load preferences',
+      }))
     } finally {
-      setLoading(false)
+      setUiState((prev) => ({ ...prev, loading: false }))
     }
   }, [user])
 
   const savePreferences = useCallback(async (updates: Partial<NotificationPreferences>) => {
     if (!user) return
 
-    setSaving(true)
-    setError(null)
-    setSuccess(null)
+    setUiState((prev) => ({ ...prev, saving: true, error: null, success: null }))
 
     try {
       const response = await fetch(`/api/notifications/preferences/${user.id}`, {
@@ -98,21 +111,24 @@ export function NotificationPreferences() {
 
       const data = await response.json()
       setPreferences(data.data)
-      setSuccess('Preferences saved')
-      setTimeout(() => setSuccess(null), 3000)
+      setUiState((prev) => ({ ...prev, success: 'Preferences saved' }))
+      setTimeout(() => {
+        setUiState((prev) => ({ ...prev, success: null }))
+      }, 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save preferences')
+      setUiState((prev) => ({
+        ...prev,
+        error: err instanceof Error ? err.message : 'Failed to save preferences',
+      }))
     } finally {
-      setSaving(false)
+      setUiState((prev) => ({ ...prev, saving: false }))
     }
   }, [user])
 
   // Fetch preferences on mount
   useEffect(() => {
-    if (user) {
-      fetchPreferences()
-    }
-  }, [fetchPreferences, user])
+    void fetchPreferences()
+  }, [fetchPreferences])
 
   const togglePreference = useCallback((key: keyof NotificationPreferences) => {
     const currentValue = preferences[key]
@@ -138,8 +154,10 @@ export function NotificationPreferences() {
 
     const success = await sendTestNotification(user.id)
     if (success) {
-      setTestSent(true)
-      setTimeout(() => setTestSent(false), 3000)
+      setUiState((prev) => ({ ...prev, testSent: true }))
+      setTimeout(() => {
+        setUiState((prev) => ({ ...prev, testSent: false }))
+      }, 3000)
     }
   }
 
@@ -315,9 +333,9 @@ export function NotificationPreferences() {
                     disabled={saving}
                   >
                     <option value="">None</option>
-                    {Array.from({ length: 24 }, (_, i) => (
-                      <option key={i} value={i}>
-                        {i.toString().padStart(2, '0')}:00
+                    {QUIET_HOURS_OPTIONS.map((hour) => (
+                      <option key={hour} value={hour}>
+                        {hour.toString().padStart(2, '0')}:00
                       </option>
                     ))}
                   </select>
@@ -333,9 +351,9 @@ export function NotificationPreferences() {
                     disabled={saving}
                   >
                     <option value="">None</option>
-                    {Array.from({ length: 24 }, (_, i) => (
-                      <option key={i} value={i}>
-                        {i.toString().padStart(2, '0')}:00
+                    {QUIET_HOURS_OPTIONS.map((hour) => (
+                      <option key={hour} value={hour}>
+                        {hour.toString().padStart(2, '0')}:00
                       </option>
                     ))}
                   </select>
@@ -365,6 +383,10 @@ export function NotificationPreferences() {
       </CardContent>
     </Card>
   )
+}
+
+export function NotificationPreferences() {
+  return useNotificationPreferencesContent()
 }
 
 /**

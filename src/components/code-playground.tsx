@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useReducer } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
@@ -67,6 +67,17 @@ export interface CodePlaygroundProps {
 
 type PlaygroundState = 'idle' | 'loading-pyodide' | 'running' | 'success' | 'error'
 
+interface PlaygroundUiState {
+  status: PlaygroundState
+  loadingMessage: string
+  output: string
+  error: string | null
+  executionTime: number | null
+  testResults: TestResult[] | null
+  copied: boolean
+  isFullscreen: boolean
+}
+
 /**
  * CodePlayground - Combined code editor and Python execution environment
  *
@@ -78,7 +89,16 @@ type PlaygroundState = 'idle' | 'loading-pyodide' | 'running' | 'success' | 'err
  * - Fullscreen mode
  * - Responsive design
  */
-export function CodePlayground({
+export function CodePlayground(props: CodePlaygroundProps) {
+  const componentKey = `${props.lessonId ?? 'playground'}:${props.initialCode ?? ''}`
+  return <CodePlaygroundContent key={componentKey} {...props} />
+}
+
+function CodePlaygroundContent(props: CodePlaygroundProps) {
+  return useCodePlaygroundContent(props)
+}
+
+function useCodePlaygroundContent({
   initialCode = '',
   expectedOutput,
   testCases,
@@ -92,86 +112,98 @@ export function CodePlayground({
   onSuccess,
   onError,
 }: CodePlaygroundProps) {
-  const [code, setCode] = useState(initialCode)
-  const [state, setState] = useState<PlaygroundState>('idle')
-  const [loadingMessage, setLoadingMessage] = useState('')
-  const [output, setOutput] = useState<string>('')
-  const [error, setError] = useState<string | null>(null)
-  const [executionTime, setExecutionTime] = useState<number | null>(null)
-  const [testResults, setTestResults] = useState<TestResult[] | null>(null)
-  const [copied, setCopied] = useState(false)
-  const [isFullscreen, setIsFullscreen] = useState(false)
-
-  // Reset to initial code when it changes
-  useEffect(() => {
-    setCode(initialCode)
-  }, [initialCode])
+  const [code, setCode] = useReducer((_previousCode: string, nextCode: string) => nextCode, initialCode)
+  const [uiState, setUiState] = useState<PlaygroundUiState>({
+    status: 'idle',
+    loadingMessage: '',
+    output: '',
+    error: null,
+    executionTime: null,
+    testResults: null,
+    copied: false,
+    isFullscreen: false,
+  })
+  const { status, loadingMessage, output, error, executionTime, testResults, copied, isFullscreen } = uiState
 
   // Progress callback for Pyodide loading
   const handleProgress = useCallback((message: string) => {
-    setLoadingMessage(message)
+    setUiState((prev) => ({ ...prev, loadingMessage: message }))
   }, [])
 
   // Execute Python code
   const executeCode = useCallback(async () => {
     if (!code.trim()) {
-      setOutput('')
-      setError('No code to execute')
-      setState('error')
+      setUiState((prev) => ({
+        ...prev,
+        output: '',
+        error: 'No code to execute',
+        status: 'error',
+      }))
       return
     }
 
-    setState('loading-pyodide')
-    setOutput('')
-    setError(null)
-    setExecutionTime(null)
-    setTestResults(null)
+    setUiState((prev) => ({
+      ...prev,
+      status: 'loading-pyodide',
+      output: '',
+      error: null,
+      executionTime: null,
+      testResults: null,
+    }))
 
     try {
       // Load Pyodide if not already loaded
       await loadPyodide(handleProgress)
 
-      setState('running')
-      setLoadingMessage('Executing code...')
+      setUiState((prev) => ({ ...prev, status: 'running', loadingMessage: 'Executing code...' }))
 
-      // Check if we have test cases
+        // Check if we have test cases
       if (testCases && testCases.length > 0) {
         const { results, allPassed } = await runPythonWithTests(code, testCases)
-        setTestResults(results)
+        setUiState((prev) => ({ ...prev, testResults: results }))
 
         // Get output from first code execution
         const initialResult = await runPython(code, handleProgress)
-        setOutput(initialResult.output)
-        setError(initialResult.error)
-        setExecutionTime(initialResult.executionTime)
+        setUiState((prev) => ({
+          ...prev,
+          output: initialResult.output,
+          error: initialResult.error,
+          executionTime: initialResult.executionTime,
+        }))
 
         if (allPassed) {
-          setState('success')
+          setUiState((prev) => ({ ...prev, status: 'success' }))
           onSuccess?.(initialResult)
         } else {
-          setState('error')
+          setUiState((prev) => ({ ...prev, status: 'error' }))
           onError?.('Some tests failed')
         }
       } else {
         // Run code without tests
         const result = await runPython(code, handleProgress)
 
-        setOutput(result.output)
-        setError(result.error)
-        setExecutionTime(result.executionTime)
+        setUiState((prev) => ({
+          ...prev,
+          output: result.output,
+          error: result.error,
+          executionTime: result.executionTime,
+        }))
 
         // Check expected output if provided
         if (expectedOutput && result.success) {
           const outputMatches = result.output.trim() === expectedOutput.trim()
-          setState(outputMatches ? 'success' : 'error')
+          setUiState((prev) => ({ ...prev, status: outputMatches ? 'success' : 'error' }))
           if (!outputMatches) {
-            setError(`Expected output:\n${expectedOutput}\n\nActual output:\n${result.output}`)
+            setUiState((prev) => ({
+              ...prev,
+              error: `Expected output:\n${expectedOutput}\n\nActual output:\n${result.output}`,
+            }))
             onError?.('Output does not match expected')
           } else {
             onSuccess?.(result)
           }
         } else {
-          setState(result.success ? 'success' : 'error')
+          setUiState((prev) => ({ ...prev, status: result.success ? 'success' : 'error' }))
           if (result.success) {
             onSuccess?.(result)
           } else {
@@ -181,8 +213,7 @@ export function CodePlayground({
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred'
-      setError(errorMessage)
-      setState('error')
+      setUiState((prev) => ({ ...prev, error: errorMessage, status: 'error' }))
       onError?.(errorMessage)
     }
   }, [code, expectedOutput, testCases, handleProgress, onSuccess, onError])
@@ -190,11 +221,14 @@ export function CodePlayground({
   // Reset the editor and Python environment
   const handleReset = useCallback(async () => {
     setCode(initialCode)
-    setOutput('')
-    setError(null)
-    setExecutionTime(null)
-    setTestResults(null)
-    setState('idle')
+    setUiState((prev) => ({
+      ...prev,
+      output: '',
+      error: null,
+      executionTime: null,
+      testResults: null,
+      status: 'idle',
+    }))
 
     if (isPyodideReady()) {
       await resetPythonEnvironment()
@@ -205,8 +239,10 @@ export function CodePlayground({
   const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(code)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setUiState((prev) => ({ ...prev, copied: true }))
+      setTimeout(() => {
+        setUiState((prev) => ({ ...prev, copied: false }))
+      }, 2000)
     } catch (_err) {
       // Copy failed - user can try manual copy
     }
@@ -227,7 +263,7 @@ export function CodePlayground({
 
   // Toggle fullscreen mode
   const toggleFullscreen = useCallback(() => {
-    setIsFullscreen((prev) => !prev)
+    setUiState((prev) => ({ ...prev, isFullscreen: !prev.isFullscreen }))
   }, [])
 
   // Auto-run on mount if enabled
@@ -244,21 +280,21 @@ export function CodePlayground({
       // Ctrl/Cmd + Enter to run
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault()
-        if (state !== 'loading-pyodide' && state !== 'running') {
+        if (status !== 'loading-pyodide' && status !== 'running') {
           executeCode()
         }
       }
       // Escape to exit fullscreen
       if (e.key === 'Escape' && isFullscreen) {
-        setIsFullscreen(false)
+        setUiState((prev) => ({ ...prev, isFullscreen: false }))
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [executeCode, state, isFullscreen])
+  }, [executeCode, status, isFullscreen])
 
-  const isLoading = state === 'loading-pyodide' || state === 'running'
+  const isLoading = status === 'loading-pyodide' || status === 'running'
 
   return (
     <Card
@@ -272,13 +308,13 @@ export function CodePlayground({
       <div className="flex items-center justify-between gap-2 p-3 bg-muted/50 border-b">
         <div className="flex items-center gap-2">
           {title && <h3 className="font-semibold text-sm">{title}</h3>}
-          {state === 'success' && (
+          {status === 'success' && (
             <span className="flex items-center gap-1 text-xs text-success">
               <CheckCircle2 className="h-3.5 w-3.5" />
               Success
             </span>
           )}
-          {state === 'error' && (
+          {status === 'error' && (
             <span className="flex items-center gap-1 text-xs text-destructive">
               <AlertCircle className="h-3.5 w-3.5" />
               Error
@@ -292,14 +328,14 @@ export function CodePlayground({
             size="sm"
             onClick={executeCode}
             disabled={isLoading || readOnly}
-            variant={state === 'success' ? 'success' : 'default'}
+            variant={status === 'success' ? 'success' : 'default'}
             className="gap-1.5"
           >
             {isLoading ? (
               <>
                 <Spinner size="sm" />
                 <span className="hidden sm:inline">
-                  {state === 'loading-pyodide' ? 'Loading...' : 'Running...'}
+                  {status === 'loading-pyodide' ? 'Loading...' : 'Running...'}
                 </span>
               </>
             ) : (
@@ -425,7 +461,7 @@ export function CodePlayground({
             )}
           >
             {/* Empty state */}
-            {state === 'idle' && !output && !error && (
+            {status === 'idle' && !output && !error && (
               <div className="text-[#6c7086] italic text-sm">
                 Click &quot;Run&quot; or press Ctrl+Enter to execute your code...
               </div>
@@ -450,9 +486,9 @@ export function CodePlayground({
               <div className="mt-4 pt-4 border-t border-[#313244]">
                 <h4 className="text-xs font-medium text-[#6c7086] mb-2">Test Results</h4>
                 <div className="space-y-2">
-                  {testResults.map((result, index) => (
+                  {testResults.map((result) => (
                     <div
-                      key={index}
+                      key={[result.name, result.expected, result.actual, result.error].join('::')}
                       className={cn(
                         'flex items-start gap-2 p-2 rounded text-sm',
                         result.passed ? 'bg-[#a6e3a1]/10' : 'bg-[#f38ba8]/10'

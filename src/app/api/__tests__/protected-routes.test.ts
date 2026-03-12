@@ -5,6 +5,33 @@ import { POST as postSubmission } from '../submissions/route'
 import { PATCH as patchUserSettings } from '../user/settings/route'
 import prisma from '@/lib/db'
 
+const prismaMock = prisma as unknown as {
+  discussion: {
+    findMany: jest.Mock
+    findUnique: jest.Mock
+    create: jest.Mock
+    update: jest.Mock
+    delete: jest.Mock
+    count: jest.Mock
+  }
+  discussionLike: {
+    findUnique: jest.Mock
+    create: jest.Mock
+    delete: jest.Mock
+    deleteMany: jest.Mock
+  }
+  discussionReply: { deleteMany: jest.Mock }
+  discussionReplyLike: { deleteMany: jest.Mock }
+  projectSubmission: {
+    findFirst: jest.Mock
+    create: jest.Mock
+    update: jest.Mock
+  }
+  lesson: { findUnique: jest.Mock }
+  user: { findUnique: jest.Mock; findFirst: jest.Mock; update: jest.Mock }
+  $transaction: jest.Mock
+}
+
 const TEST_USER_ID = '550e8400-e29b-41d4-a716-446655440000'
 
 // Helper to create a proper NextRequest with body and auth headers
@@ -170,8 +197,7 @@ describe('Protected API Routes', () => {
         user: { id: TEST_USER_ID, name: 'Test User', email: 'test@example.com' },
       }
 
-      // @ts-expect-error - mock implementation
-      prisma.discussion.create.mockResolvedValue(mockDiscussion)
+      prismaMock.discussion.create.mockResolvedValue(mockDiscussion)
 
       const request = createRequest('http://localhost:3000/api/discussions', {
         method: 'POST',
@@ -214,8 +240,7 @@ describe('Protected API Routes', () => {
         likes: 5,
       }
 
-      // @ts-expect-error - mock implementation
-      prisma.discussion.findUnique.mockResolvedValue(mockDiscussion)
+      prismaMock.discussion.findUnique.mockResolvedValue(mockDiscussion)
 
       const request = createRequest('http://localhost:3000/api/discussions/disc-1', {
         method: 'PATCH',
@@ -243,10 +268,8 @@ describe('Protected API Routes', () => {
         user: { id: TEST_USER_ID, name: 'Test User', email: 'test@example.com' },
       }
 
-      // @ts-expect-error - mock implementation
-      prisma.discussion.findUnique.mockResolvedValue(mockDiscussion)
-      // @ts-expect-error - mock implementation
-      prisma.discussion.update.mockResolvedValue(updatedDiscussion)
+      prismaMock.discussion.findUnique.mockResolvedValue(mockDiscussion)
+      prismaMock.discussion.update.mockResolvedValue(updatedDiscussion)
 
       const request = createRequest('http://localhost:3000/api/discussions/disc-1', {
         method: 'PATCH',
@@ -261,8 +284,7 @@ describe('Protected API Routes', () => {
     })
 
     it('should return 404 for non-existent discussion', async () => {
-      // @ts-expect-error - mock implementation
-      prisma.discussion.findUnique.mockResolvedValue(null)
+      prismaMock.discussion.findUnique.mockResolvedValue(null)
 
       const request = createRequest('http://localhost:3000/api/discussions/non-existent', {
         method: 'PATCH',
@@ -315,12 +337,9 @@ describe('Protected API Routes', () => {
         status: 'pending',
       }
 
-      // @ts-expect-error - mock implementation
-      prisma.lesson.findUnique.mockResolvedValue(mockLesson)
-      // @ts-expect-error - mock implementation
-      prisma.projectSubmission.findFirst.mockResolvedValue(null)
-      // @ts-expect-error - mock implementation
-      prisma.projectSubmission.create.mockResolvedValue(mockSubmission)
+      prismaMock.lesson.findUnique.mockResolvedValue(mockLesson)
+      prismaMock.projectSubmission.findFirst.mockResolvedValue(null)
+      prismaMock.projectSubmission.create.mockResolvedValue(mockSubmission)
 
       const request = createRequest('http://localhost:3000/api/submissions', {
         method: 'POST',
@@ -382,10 +401,8 @@ describe('Protected API Routes', () => {
         githubUsername: 'validuser',
       }
 
-      // @ts-expect-error - mock implementation
-      prisma.user.findFirst.mockResolvedValue(null) // No duplicate email
-      // @ts-expect-error - mock implementation
-      prisma.user.update.mockResolvedValue(mockUser)
+      prismaMock.user.findFirst.mockResolvedValue(null) // No duplicate email
+      prismaMock.user.update.mockResolvedValue(mockUser)
 
       const request = createRequest('http://localhost:3000/api/user/settings', {
         method: 'PATCH',

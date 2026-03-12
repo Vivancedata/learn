@@ -12,6 +12,7 @@ if (typeof global.TextDecoder === 'undefined') {
 
 // Set JWT_SECRET for tests
 process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only-32-chars'
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/test'
 
 // Polyfill Response for Node.js environment
 if (typeof Response === 'undefined') {

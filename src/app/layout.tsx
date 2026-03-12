@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Suspense } from "react"
+import "@vivancedata/ui/styles"
 import "./globals.css"
 import { Navbar } from "@/components/ui/navbar"
 import { ThemeProvider } from "@/components/ui/theme-provider"
@@ -43,8 +44,6 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 }
 
 export default function RootLayout({

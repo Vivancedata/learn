@@ -55,12 +55,22 @@ interface TutorProviderProps {
  */
 export function TutorProvider({ children }: TutorProviderProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [context, setContext] = useState<TutorContext>({})
-  const [conversationId, setConversationId] = useState<string | undefined>(undefined)
+  const [tutorState, setTutorState] = useState<{
+    isOpen: boolean
+    isLoading: boolean
+    isExpanded: boolean
+    error: string | null
+    context: TutorContext
+    conversationId: string | undefined
+  }>({
+    isOpen: false,
+    isLoading: false,
+    isExpanded: false,
+    error: null,
+    context: {},
+    conversationId: undefined,
+  })
+  const { isOpen, isLoading, isExpanded, error, context, conversationId } = tutorState
 
   /**
    * Load messages from session storage on mount
@@ -114,8 +124,7 @@ export function TutorProvider({ children }: TutorProviderProps) {
         return updated.slice(-MAX_MESSAGES)
       })
 
-      setIsLoading(true)
-      setError(null)
+      setTutorState((prev) => ({ ...prev, isLoading: true, error: null }))
 
       try {
         const requestBody: {
@@ -160,7 +169,7 @@ export function TutorProvider({ children }: TutorProviderProps) {
         const data = (await response.json()) as ChatApiResponse
 
         if (data.data.conversationId) {
-          setConversationId(data.data.conversationId)
+          setTutorState((prev) => ({ ...prev, conversationId: data.data.conversationId }))
         }
 
         const assistantMessage: ChatMessage = {
@@ -180,9 +189,9 @@ export function TutorProvider({ children }: TutorProviderProps) {
           err instanceof Error
             ? err.message
             : "I'm having trouble connecting. Please try again."
-        setError(errorMessage)
+        setTutorState((prev) => ({ ...prev, error: errorMessage }))
       } finally {
-        setIsLoading(false)
+        setTutorState((prev) => ({ ...prev, isLoading: false }))
       }
     },
     [isLoading, context, conversationId]
@@ -193,8 +202,7 @@ export function TutorProvider({ children }: TutorProviderProps) {
    */
   const clearHistory = useCallback(() => {
     setMessages([])
-    setError(null)
-    setConversationId(undefined)
+    setTutorState((prev) => ({ ...prev, error: null, conversationId: undefined }))
     try {
       sessionStorage.removeItem(STORAGE_KEY)
     } catch {
@@ -206,19 +214,24 @@ export function TutorProvider({ children }: TutorProviderProps) {
    * Set the current lesson context
    */
   const setLessonContext = useCallback((newContext: TutorContext) => {
-    setContext(newContext)
+    setTutorState((prev) => ({ ...prev, context: newContext }))
   }, [])
 
-  const openChat = useCallback(() => setIsOpen(true), [])
+  const openChat = useCallback(() => {
+    setTutorState((prev) => ({ ...prev, isOpen: true }))
+  }, [])
 
   const closeChat = useCallback(() => {
-    setIsOpen(false)
-    setIsExpanded(false)
+    setTutorState((prev) => ({ ...prev, isOpen: false, isExpanded: false }))
   }, [])
 
-  const toggleExpand = useCallback(() => setIsExpanded((prev) => !prev), [])
+  const toggleExpand = useCallback(() => {
+    setTutorState((prev) => ({ ...prev, isExpanded: !prev.isExpanded }))
+  }, [])
 
-  const clearError = useCallback(() => setError(null), [])
+  const clearError = useCallback(() => {
+    setTutorState((prev) => ({ ...prev, error: null }))
+  }, [])
 
   const value = useMemo<TutorContextValue>(
     () => ({

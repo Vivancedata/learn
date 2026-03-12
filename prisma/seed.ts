@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool } from 'pg'
 import { hash } from 'bcryptjs'
 import { importContent } from './content-importer'
 import { seedAssessments } from './seed-assessments'
@@ -24,11 +23,10 @@ function resolveDatabaseUrl(): string {
   return databaseUrl
 }
 
-const pool = new Pool({
+const adapter = new PrismaPg({
   connectionString: resolveDatabaseUrl(),
   allowExitOnIdle: true,
 })
-const adapter = new PrismaPg(pool)
 
 const prisma = new PrismaClient({
   adapter,
@@ -154,11 +152,9 @@ async function main() {
 main()
   .then(async () => {
     await prisma.$disconnect()
-    await pool.end()
   })
   .catch(async (e) => {
     console.error(e)
     await prisma.$disconnect()
-    await pool.end()
     process.exit(1)
   })

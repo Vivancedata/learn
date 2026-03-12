@@ -1,8 +1,26 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
 import * as Sentry from '@sentry/nextjs'
 import { analytics } from '@/lib/analytics'
+
+const DEFERRED_AUTH_PATHS = [
+  '/pricing',
+  '/sign-in',
+  '/sign-up',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+]
+
+function shouldDeferAuthBootstrap(pathname: string | null): boolean {
+  if (!pathname) {
+    return true
+  }
+
+  return DEFERRED_AUTH_PATHS.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+}
 
 export interface User {
   id: string
@@ -27,13 +45,27 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+function syncSentryUser(user: User | null) {
+  if (user) {
+    Sentry.setUser({
+      id: user.id,
+      email: user.email,
+      username: user.name || user.email,
+    })
+    return
+  }
+
+  Sentry.setUser(null)
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const deferAuthBootstrap = shouldDeferAuthBootstrap(pathname)
 
-  // Computed property for authentication status
-  const isAuthenticated = useMemo(() => !!user, [user])
+  const isAuthenticated = !!user
 
   // Clear error state
   const clearError = useCallback(() => {
@@ -51,13 +83,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         const data = await response.json()
-        setUser(data.data.user)
+        const nextUser = data.data.user as User
+        setUser(nextUser)
+        syncSentryUser(nextUser)
       } else {
         setUser(null)
+        syncSentryUser(null)
       }
     } catch (_err) {
       // Auth check failed - user not logged in
       setUser(null)
+      syncSentryUser(null)
     } finally {
       setLoading(false)
     }
@@ -65,33 +101,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch current user on mount
   useEffect(() => {
-    refreshUser()
-  }, [refreshUser])
-
-  // Update Sentry user context when user changes
-  useEffect(() => {
-    if (user) {
-      // Set user context in Sentry for error tracking
-      Sentry.setUser({
-        id: user.id,
-        email: user.email,
-        username: user.name || user.email,
-      })
-
-      // Add breadcrumb for login
-      Sentry.addBreadcrumb({
-        category: 'auth',
-        message: 'User authenticated',
-        level: 'info',
-        data: {
-          userId: user.id,
-        },
-      })
-    } else {
-      // Clear Sentry user context on logout
-      Sentry.setUser(null)
+    if (deferAuthBootstrap) {
+      setLoading(false)
+      return
     }
-  }, [user])
+
+    void refreshUser()
+  }, [deferAuthBootstrap, refreshUser])
 
   const login = async (email: string, password: string) => {
     try {
@@ -113,6 +129,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const loggedInUser = data.data.user
       setUser(loggedInUser)
+      syncSentryUser(loggedInUser)
+
+      Sentry.addBreadcrumb({
+        category: 'auth',
+        message: 'User authenticated',
+        level: 'info',
+        data: {
+          userId: loggedInUser.id,
+        },
+      })
 
       // Track sign in with PostHog analytics
       analytics.identify(loggedInUser.id, {
@@ -169,6 +195,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const newUser = data.data.user as User
       setUser(newUser)
+      syncSentryUser(newUser)
+
+      Sentry.addBreadcrumb({
+        category: 'auth',
+        message: 'User authenticated',
+        level: 'info',
+        data: {
+          userId: newUser.id,
+        },
+      })
 
       // Track sign up with PostHog analytics
       analytics.identify(newUser.id, {
@@ -225,6 +261,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       analytics.reset()
 
       setUser(null)
+      syncSentryUser(null)
     } catch (_err) {
       // Logout API failed - clear local state anyway
       setError('Logout failed')
@@ -240,23 +277,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const contextValue = useMemo(
-    () => ({
-      user,
-      loading,
-      error,
-      isAuthenticated,
-      login,
-      signup,
-      logout,
-      refreshUser,
-      clearError,
-    }),
-    [user, loading, error, isAuthenticated, refreshUser, clearError]
-  )
-
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        error,
+        isAuthenticated,
+        login,
+        signup,
+        logout,
+        refreshUser,
+        clearError,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

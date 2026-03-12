@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -15,25 +17,40 @@ import {
   Discussion,
 } from "@/types/discussion"
 
-export function CommunityDiscussions({ discussions, courseId, lessonId, onRefresh }: CommunityDiscussionsProps) {
+function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRefresh }: CommunityDiscussionsProps) {
   const { user } = useAuth()
-  const [newDiscussion, setNewDiscussion] = useState("")
-  const [replyingTo, setReplyingTo] = useState<string | null>(null)
-  const [replyContent, setReplyContent] = useState("")
-  const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({})
-  const [loading, setLoading] = useState(false)
-  const [replyLoading, setReplyLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const pathname = usePathname()
+  const [discussionState, setDiscussionState] = useState({
+    newDiscussion: "",
+    replyingTo: null as string | null,
+    replyContent: "",
+    expandedReplies: {} as Record<string, boolean>,
+    loading: false,
+    replyLoading: false,
+    error: null as string | null,
+  })
+  const {
+    newDiscussion,
+    replyingTo,
+    replyContent,
+    expandedReplies,
+    loading,
+    replyLoading,
+    error,
+  } = discussionState
+  const signInHref = pathname ? `/sign-in?redirect=${encodeURIComponent(pathname)}` : '/sign-in'
 
   const handlePostDiscussion = async () => {
     if (!newDiscussion.trim()) return
     if (!user) {
-      setError("You must be logged in to post a discussion")
+      setDiscussionState((prev) => ({
+        ...prev,
+        error: "You must be logged in to post a discussion",
+      }))
       return
     }
 
-    setLoading(true)
-    setError(null)
+    setDiscussionState((prev) => ({ ...prev, loading: true, error: null }))
 
     try {
       const response = await fetch('/api/discussions', {
@@ -56,27 +73,32 @@ export function CommunityDiscussions({ discussions, courseId, lessonId, onRefres
       }
 
       // Clear the input and refresh discussions from the API
-      setNewDiscussion("")
+      setDiscussionState((prev) => ({ ...prev, newDiscussion: "" }))
 
       if (onRefresh) {
         await onRefresh()
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to post discussion')
+      setDiscussionState((prev) => ({
+        ...prev,
+        error: err instanceof Error ? err.message : 'Failed to post discussion',
+      }))
     } finally {
-      setLoading(false)
+      setDiscussionState((prev) => ({ ...prev, loading: false }))
     }
   }
 
   const handlePostReply = async (discussionId: string) => {
     if (!replyContent.trim()) return
     if (!user) {
-      setError("You must be logged in to reply")
+      setDiscussionState((prev) => ({
+        ...prev,
+        error: "You must be logged in to reply",
+      }))
       return
     }
 
-    setReplyLoading(true)
-    setError(null)
+    setDiscussionState((prev) => ({ ...prev, replyLoading: true, error: null }))
 
     try {
       const response = await fetch(`/api/discussions/${discussionId}/replies`, {
@@ -98,22 +120,31 @@ export function CommunityDiscussions({ discussions, courseId, lessonId, onRefres
       }
 
       // Clear the input, close the reply form, and refresh discussions
-      setReplyContent("")
-      setReplyingTo(null)
+      setDiscussionState((prev) => ({
+        ...prev,
+        replyContent: "",
+        replyingTo: null,
+      }))
 
       if (onRefresh) {
         await onRefresh()
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to post reply')
+      setDiscussionState((prev) => ({
+        ...prev,
+        error: err instanceof Error ? err.message : 'Failed to post reply',
+      }))
     } finally {
-      setReplyLoading(false)
+      setDiscussionState((prev) => ({ ...prev, replyLoading: false }))
     }
   }
 
   const handleLike = async (id: string, type: "discussion" | "reply") => {
     if (!user) {
-      setError("You must be logged in to like posts")
+      setDiscussionState((prev) => ({
+        ...prev,
+        error: "You must be logged in to like posts",
+      }))
       return
     }
 
@@ -137,14 +168,20 @@ export function CommunityDiscussions({ discussions, courseId, lessonId, onRefres
         await onRefresh()
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update like")
+      setDiscussionState((prev) => ({
+        ...prev,
+        error: err instanceof Error ? err.message : "Failed to update like",
+      }))
     }
   }
   
   const toggleReplies = (discussionId: string) => {
-    setExpandedReplies(prev => ({
+    setDiscussionState(prev => ({
       ...prev,
-      [discussionId]: !prev[discussionId]
+      expandedReplies: {
+        ...prev.expandedReplies,
+        [discussionId]: !prev.expandedReplies[discussionId],
+      },
     }))
   }
   
@@ -198,27 +235,40 @@ export function CommunityDiscussions({ discussions, courseId, lessonId, onRefres
           </div>
         )}
 
-        <div className="space-y-4">
-          <Textarea
-            placeholder="Share your thoughts or ask a question..."
-            value={newDiscussion}
-            onChange={(e) => setNewDiscussion(e.target.value)}
-            rows={3}
-            disabled={loading}
-          />
-          <div className="flex justify-end">
-            <Button onClick={handlePostDiscussion} disabled={!newDiscussion.trim() || loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Posting...
-                </>
-              ) : (
-                'Post'
-              )}
+        {user ? (
+          <div className="space-y-4">
+            <Textarea
+              placeholder="Share your thoughts or ask a question..."
+              value={newDiscussion}
+              onChange={(e) =>
+                setDiscussionState((prev) => ({ ...prev, newDiscussion: e.target.value }))
+              }
+              rows={3}
+              disabled={loading}
+            />
+            <div className="flex justify-end">
+              <Button onClick={handlePostDiscussion} disabled={!newDiscussion.trim() || loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Posting...
+                  </>
+                ) : (
+                  'Post'
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
+            <p className="text-sm text-muted-foreground">
+              Read discussions freely. Sign in to ask questions, reply, and like helpful posts.
+            </p>
+            <Button asChild size="sm" className="mt-3">
+              <Link href={signInHref}>Sign In to Participate</Link>
             </Button>
           </div>
-        </div>
+        )}
         
         <div className="space-y-6">
           {displayedDiscussions.length > 0 ? (
@@ -255,17 +305,21 @@ export function CommunityDiscussions({ discussions, courseId, lessonId, onRefres
                       size="sm"
                       className="flex items-center gap-1 h-auto py-1"
                       onClick={() => handleLike(discussion.id, "discussion")}
+                      disabled={!user}
+                      title={!user ? 'Sign in to like posts' : undefined}
                     >
                       <ThumbsUp className="h-4 w-4" />
                       <span className="text-xs">{discussion.likes}</span>
                     </Button>
 
-                    <GivePointButton
-                      recipientId={discussion.userId}
-                      recipientName={discussion.username}
-                      discussionId={discussion.id}
-                      onPointGiven={onRefresh}
-                    />
+                    {user && (
+                      <GivePointButton
+                        recipientId={discussion.userId}
+                        recipientName={discussion.username}
+                        discussionId={discussion.id}
+                        onPointGiven={onRefresh}
+                      />
+                    )}
                     
                     <Button 
                       variant="ghost" 
@@ -273,12 +327,17 @@ export function CommunityDiscussions({ discussions, courseId, lessonId, onRefres
                       className="flex items-center gap-1 h-auto py-1"
                       onClick={() => {
                         if (replyingTo === discussion.id) {
-                          setReplyingTo(null)
+                          setDiscussionState((prev) => ({ ...prev, replyingTo: null }))
                         } else {
-                          setReplyingTo(discussion.id)
-                          setReplyContent("")
+                          setDiscussionState((prev) => ({
+                            ...prev,
+                            replyingTo: discussion.id,
+                            replyContent: "",
+                          }))
                         }
                       }}
+                      disabled={!user}
+                      title={!user ? 'Sign in to reply' : undefined}
                     >
                       <Reply className="h-4 w-4" />
                       <span className="text-xs">Reply</span>
@@ -305,7 +364,9 @@ export function CommunityDiscussions({ discussions, courseId, lessonId, onRefres
                     <Textarea
                       placeholder="Write a reply..."
                       value={replyContent}
-                      onChange={(e) => setReplyContent(e.target.value)}
+                      onChange={(e) =>
+                        setDiscussionState((prev) => ({ ...prev, replyContent: e.target.value }))
+                      }
                       rows={2}
                       disabled={replyLoading}
                     />
@@ -313,7 +374,7 @@ export function CommunityDiscussions({ discussions, courseId, lessonId, onRefres
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setReplyingTo(null)}
+                        onClick={() => setDiscussionState((prev) => ({ ...prev, replyingTo: null }))}
                         disabled={replyLoading}
                       >
                         Cancel
@@ -367,18 +428,22 @@ export function CommunityDiscussions({ discussions, courseId, lessonId, onRefres
                             size="sm"
                             className="flex items-center gap-1 h-auto py-1"
                             onClick={() => handleLike(reply.id, "reply")}
+                            disabled={!user}
+                            title={!user ? 'Sign in to like posts' : undefined}
                           >
                             <ThumbsUp className="h-3 w-3" />
                             <span className="text-xs">{reply.likes}</span>
                           </Button>
 
-                          <GivePointButton
-                            recipientId={reply.userId}
-                            recipientName={reply.username}
-                            replyId={reply.id}
-                            onPointGiven={onRefresh}
-                            size="sm"
-                          />
+                          {user && (
+                            <GivePointButton
+                              recipientId={reply.userId}
+                              recipientName={reply.username}
+                              replyId={reply.id}
+                              onPointGiven={onRefresh}
+                              size="sm"
+                            />
+                          )}
                         </div>
                       </div>
                     ))}
@@ -402,4 +467,8 @@ export function CommunityDiscussions({ discussions, courseId, lessonId, onRefres
       </CardFooter>
     </Card>
   )
+}
+
+export function CommunityDiscussions(props: CommunityDiscussionsProps) {
+  return useCommunityDiscussionsContent(props)
 }

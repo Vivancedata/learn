@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool } from 'pg'
 
 // PrismaClient is attached to the `global` object in development to prevent
 // exhausting your database connection limit.
 // Learn more: https://pris.ly/d/help/next-js-best-practices
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
+let prismaClient: PrismaClient | undefined
 
 function resolveDatabaseUrl(): string {
   const databaseUrl =
@@ -32,18 +32,38 @@ function resolveDatabaseUrl(): string {
 
 function createPrismaClient() {
   const databaseUrl = resolveDatabaseUrl()
-  const pool = new Pool({
+  const adapter = new PrismaPg({
     connectionString: databaseUrl,
   })
-  const adapter = new PrismaPg(pool)
   return new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   })
 }
 
-export const prisma = globalForPrisma.prisma || createPrismaClient()
+function getPrismaClient(): PrismaClient {
+  if (prismaClient) {
+    return prismaClient
+  }
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+  prismaClient = globalForPrisma.prisma || createPrismaClient()
+
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.prisma = prismaClient
+  }
+
+  return prismaClient
+}
+
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, property, receiver) {
+    const client = getPrismaClient()
+    const value = Reflect.get(client as object, property, receiver)
+    return typeof value === 'function' ? value.bind(client) : value
+  },
+  set(_target, property, value, receiver) {
+    return Reflect.set(getPrismaClient() as object, property, value, receiver)
+  },
+}) as PrismaClient
 
 export default prisma

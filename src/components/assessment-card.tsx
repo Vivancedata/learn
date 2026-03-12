@@ -12,9 +12,14 @@ import { getSkillLevel, getSkillBadgeColor } from '@/types/assessment'
 interface AssessmentCardProps {
   assessment: AssessmentWithUserScore
   className?: string
+  isAuthenticated?: boolean
 }
 
-export function AssessmentCard({ assessment, className }: AssessmentCardProps) {
+export function AssessmentCard({
+  assessment,
+  className,
+  isAuthenticated = false,
+}: AssessmentCardProps) {
   const getDifficultyVariant = (difficulty: CourseDifficulty) => {
     switch (difficulty) {
       case 'Beginner':
@@ -29,6 +34,13 @@ export function AssessmentCard({ assessment, className }: AssessmentCardProps) {
   }
 
   const hasAttempted = assessment.userBestScore !== undefined
+  const assessmentHref = `/assessments/${assessment.slug}`
+  const actionHref = isAuthenticated
+    ? assessmentHref
+    : `/sign-in?redirect=${encodeURIComponent(assessmentHref)}`
+  const actionLabel = isAuthenticated
+    ? hasAttempted ? 'View Details' : 'Start Assessment'
+    : 'Sign In to Start'
 
   return (
     <Card className={cn('relative group', className)}>
@@ -91,8 +103,8 @@ export function AssessmentCard({ assessment, className }: AssessmentCardProps) {
 
       <CardFooter>
         <Button asChild className="w-full group-hover:shadow-lg transition-shadow">
-          <Link href={`/assessments/${assessment.slug}`}>
-            {hasAttempted ? 'View Details' : 'Start Assessment'}
+          <Link href={actionHref}>
+            {actionLabel}
           </Link>
         </Button>
       </CardFooter>

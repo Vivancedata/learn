@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useReducer, useRef } from "react"
 import { cn } from "@/lib/utils"
 
 // Declare global YouTube types
@@ -51,6 +51,26 @@ interface YouTubePlayerProps {
   autoplay?: boolean
   startTime?: number
   className?: string
+}
+
+interface PlayerUiState {
+  isReady: boolean
+  error: string | null
+}
+
+type PlayerUiAction =
+  | { type: "ready" }
+  | { type: "error"; message: string }
+
+function playerUiReducer(state: PlayerUiState, action: PlayerUiAction): PlayerUiState {
+  switch (action.type) {
+    case "ready":
+      return { ...state, isReady: true }
+    case "error":
+      return { ...state, error: action.message }
+    default:
+      return state
+  }
 }
 
 // Track API loading state globally
@@ -119,8 +139,10 @@ export function YouTubePlayer({
   const playerRef = useRef<YT.Player | null>(null)
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const hasReportedCompletion = useRef(false)
-  const [isReady, setIsReady] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [{ isReady, error }, dispatchUi] = useReducer(playerUiReducer, {
+    isReady: false,
+    error: null,
+  })
 
   // Track progress
   const trackProgress = useCallback(() => {
@@ -171,7 +193,7 @@ export function YouTubePlayer({
           events: {
             onReady: () => {
               if (isMounted) {
-                setIsReady(true)
+                dispatchUi({ type: "ready" })
                 // Start progress tracking
                 progressIntervalRef.current = setInterval(trackProgress, 1000)
               }
@@ -183,13 +205,13 @@ export function YouTubePlayer({
               }
             },
             onError: (_event: YT.PlayerEvent) => {
-              setError("Failed to load video. Please try again.")
+              dispatchUi({ type: "error", message: "Failed to load video. Please try again." })
             },
           },
         })
       } catch (_err) {
         if (isMounted) {
-          setError("Failed to initialize video player.")
+          dispatchUi({ type: "error", message: "Failed to initialize video player." })
         }
       }
     }

@@ -1,14 +1,32 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaLibSql } from '@prisma/adapter-libsql'
+import { PrismaPg } from '@prisma/adapter-pg'
 
 function resolveDatabaseUrl(): string {
-  return process.env.DATABASE_URL?.trim() || 'file:./prisma/dev.db'
+  const databaseUrl =
+    process.env.DATABASE_URL?.trim() ||
+    process.env.POSTGRES_PRISMA_URL?.trim() ||
+    process.env.POSTGRES_URL?.trim()
+  if (!databaseUrl) {
+    throw new Error(
+      'Postgres connection string is required for assessment seeding. ' +
+      'Set DATABASE_URL (or POSTGRES_PRISMA_URL/POSTGRES_URL on Vercel).'
+    )
+  }
+
+  if (!/^(postgres|postgresql|prisma\+postgres):\/\//.test(databaseUrl)) {
+    throw new Error('DATABASE_URL for assessment seeding must be a PostgreSQL URL.')
+  }
+
+  return databaseUrl
 }
 
+const adapter = new PrismaPg({
+  connectionString: resolveDatabaseUrl(),
+  allowExitOnIdle: true,
+})
+
 const prisma = new PrismaClient({
-  adapter: new PrismaLibSql({
-    url: resolveDatabaseUrl(),
-  }),
+  adapter,
 })
 
 // Use string literals to avoid dependency on generated Prisma client enums
@@ -885,9 +903,9 @@ export async function seedAssessments(): Promise<void> {
         where: { assessmentId: dbAssessment.id },
         select: { difficulty: true }
       })
-      const easy = questions.filter(q => q.difficulty <= 2).length
-      const medium = questions.filter(q => q.difficulty === 3).length
-      const hard = questions.filter(q => q.difficulty >= 4).length
+      const easy = questions.filter((question) => question.difficulty <= 2).length
+      const medium = questions.filter((question) => question.difficulty === 3).length
+      const hard = questions.filter((question) => question.difficulty >= 4).length
 
       console.log(`     - ${dbAssessment.name}: ${dbAssessment._count.questions} questions`)
       console.log(`       (Easy: ${easy}, Medium: ${medium}, Hard: ${hard})`)

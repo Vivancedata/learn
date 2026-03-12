@@ -99,6 +99,23 @@ describe('Content Utilities', () => {
 
       await expect(getAllCourses()).rejects.toThrow('Failed to load courses')
     })
+
+    it('should avoid logging content errors in production', async () => {
+      const originalNodeEnv = process.env.NODE_ENV
+      const env = process.env as Record<string, string | undefined>
+      env.NODE_ENV = 'production'
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+
+      ;(mockPrisma.course.findMany as jest.Mock).mockRejectedValue(
+        new Error('Database error')
+      )
+
+      await expect(getAllCourses()).rejects.toThrow('Failed to load courses')
+      expect(consoleErrorSpy).not.toHaveBeenCalled()
+
+      consoleErrorSpy.mockRestore()
+      env.NODE_ENV = originalNodeEnv
+    })
   })
 
   describe('getCourseById', () => {
@@ -458,6 +475,77 @@ More content here.
       const result = parseKnowledgeCheck(content)
 
       expect(result).toBeNull()
+    })
+
+    it('should return null for empty content', () => {
+      expect(parseKnowledgeCheck('')).toBeNull()
+    })
+
+    it('should parse section when knowledge check is at end of content', () => {
+      const content = `
+# Lesson Title
+
+## Knowledge Check
+1. End-of-file question?
+   - Correct
+   - Incorrect
+      `
+
+      const result = parseKnowledgeCheck(content)
+
+      expect(result).not.toBeNull()
+      expect(result?.questions).toHaveLength(1)
+      expect(result?.questions[0].question).toBe('End-of-file question?')
+    })
+
+    it('should return null when knowledge check section is empty', () => {
+      const content = `
+# Lesson Title
+
+## Knowledge Check
+
+## Next
+      `
+
+      expect(parseKnowledgeCheck(content)).toBeNull()
+    })
+
+    it('should return null when knowledge check has no numbered questions', () => {
+      const content = `
+# Lesson Title
+
+## Knowledge Check
+
+- Not a valid question format
+- Still not valid
+      `
+
+      expect(parseKnowledgeCheck(content)).toBeNull()
+    })
+
+    it('should return null when question block has no valid options', () => {
+      const content = `
+# Lesson Title
+
+## Knowledge Check
+
+1. This question has no bullet options
+      `
+
+      expect(parseKnowledgeCheck(content)).toBeNull()
+    })
+
+    it('should skip malformed question lines and return null when none are valid', () => {
+      const content = `
+# Lesson Title
+
+## Knowledge Check
+
+1.
+   - Option one
+      `
+
+      expect(parseKnowledgeCheck(content)).toBeNull()
     })
   })
 })

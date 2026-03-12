@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils'
 import type { AssessmentQuestion as AssessmentQuestionType, QuestionType } from '@/types/assessment'
 import { CheckCircle, Circle, Square, CheckSquare, Code } from 'lucide-react'
 
+const EMPTY_ANSWERS: string[] = []
+
 interface AssessmentQuestionProps {
   question: Omit<AssessmentQuestionType, 'correctAnswer'> & { correctAnswer: undefined }
   questionNumber: number
@@ -150,14 +152,14 @@ function SingleChoiceInput({
 }: SingleChoiceInputProps) {
   return (
     <div className="space-y-2">
-      {options.map((option, index) => {
+      {options.map((option) => {
         const isSelected = selectedAnswer === option
         const isCorrectAnswer = showResult && correctAnswer === option
         const isWrongSelected = showResult && isSelected && !isCorrect
 
         return (
           <button
-            key={index}
+            key={option}
             type="button"
             onClick={() => onAnswerChange(option)}
             disabled={disabled}
@@ -213,7 +215,7 @@ function MultipleChoiceInput({
   disabled,
   showResult,
   isCorrect: _isCorrect,
-  correctAnswers = [],
+  correctAnswers = EMPTY_ANSWERS,
 }: MultipleChoiceInputProps) {
   const toggleOption = (option: string) => {
     if (selectedAnswers.includes(option)) {
@@ -226,7 +228,7 @@ function MultipleChoiceInput({
   return (
     <div className="space-y-2">
       <p className="text-sm text-muted-foreground mb-3">Select all that apply</p>
-      {options.map((option, index) => {
+      {options.map((option) => {
         const isSelected = selectedAnswers.includes(option)
         const isCorrectAnswer = showResult && correctAnswers.includes(option)
         const isWrongSelected = showResult && isSelected && !correctAnswers.includes(option)
@@ -234,7 +236,7 @@ function MultipleChoiceInput({
 
         return (
           <button
-            key={index}
+            key={option}
             type="button"
             onClick={() => toggleOption(option)}
             disabled={disabled}

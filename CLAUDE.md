@@ -9,7 +9,7 @@ VivanceData Learning Platform - A production-ready Next.js educational platform 
 **Tech Stack:**
 - Next.js 16+ (App Router with Turbopack)
 - React 19 + TypeScript
-- Prisma ORM with SQLite (dev) / PostgreSQL (production)
+- Prisma ORM with PostgreSQL (Neon-ready)
 - Custom JWT authentication (jose + bcryptjs)
 - Tailwind CSS + shadcn/ui components
 - Zod validation on all API endpoints
@@ -126,9 +126,9 @@ export async function POST(request: NextRequest) {
 - `ForbiddenError(message)` → 403
 - `ApiError(statusCode, message, details)` → custom
 
-### 3. Type Adapter Pattern (Critical for SQLite)
+### 3. Type Adapter Pattern (Critical for Data Compatibility)
 
-**Problem**: SQLite stores JSON arrays as strings. Prisma types don't match application types.
+**Problem**: Several schema fields intentionally store JSON arrays as strings. Prisma types don't match application types.
 
 **Solution**: Type adapters in `src/lib/type-adapters.ts` safely convert Prisma → domain types:
 
@@ -213,7 +213,7 @@ enum ProjectStatus { pending, approved, rejected }
 
 ### Important Schema Notes
 
-1. **JSON Fields**: Store arrays as strings in SQLite
+1. **JSON Fields**: Store arrays as strings for compatibility
    - Always use type adapters to access
    - Never `JSON.parse()` manually - use `safeJsonParse()`
 
@@ -316,7 +316,7 @@ All user input validated by schemas in `src/lib/validations.ts`:
 
 **Required** (see `.env.example`):
 ```bash
-DATABASE_URL="file:./prisma/dev.db"           # SQLite for dev, PostgreSQL for prod
+DATABASE_URL="postgresql://USER:PASSWORD@HOST/DB?sslmode=require"  # Neon/PostgreSQL
 JWT_SECRET="change-to-secure-random-string"   # Generate: openssl rand -base64 32
 ALLOWED_ORIGINS="http://localhost:3000,..."   # Comma-separated
 NODE_ENV="development"                         # development | production
@@ -379,7 +379,7 @@ Middleware automatically enforces authentication. No additional code needed.
 // 1. Add to prisma/schema.prisma
 model MyModel {
   id        String   @id @default(uuid())
-  jsonField String   // JSON stored as string in SQLite
+  jsonField String   // JSON stored as string for compatibility
 }
 ```
 

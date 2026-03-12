@@ -27,7 +27,6 @@ import React, {
   useCallback,
   type ReactNode,
 } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   isNative,
   getPlatform,
@@ -106,6 +105,36 @@ export interface PlatformProviderProps {
 
 const PlatformContext = createContext<PlatformContextValue | null>(null)
 
+const DEFAULT_PLATFORM_OPTIONS: Required<NonNullable<PlatformProviderProps['options']>> = {
+  autoHideSplash: true,
+  splashFadeDuration: 300,
+  statusBarStyle: 'dark',
+  statusBarColor: '#0f172a',
+  handleDeepLinks: true,
+}
+
+function getInitialPlatformState() {
+  if (typeof window === 'undefined') {
+    return {
+      platform: 'web' as const,
+      isNative: false,
+      isIOS: false,
+      isAndroid: false,
+      isWeb: true,
+      isReady: false,
+    }
+  }
+
+  return {
+    platform: getPlatform(),
+    isNative: isNative(),
+    isIOS: isIOS(),
+    isAndroid: isAndroid(),
+    isWeb: isWeb(),
+    isReady: true,
+  }
+}
+
 // ============================================================================
 // Hook
 // ============================================================================
@@ -135,46 +164,25 @@ export function usePlatformContextSafe(): PlatformContextValue | null {
 
 export function PlatformProvider({
   children,
-  options = {},
+  options = DEFAULT_PLATFORM_OPTIONS,
 }: PlatformProviderProps): React.ReactElement {
   const {
-    autoHideSplash = true,
-    splashFadeDuration = 300,
-    statusBarStyle = 'dark',
-    statusBarColor = '#0f172a',
-    handleDeepLinks = true,
+    autoHideSplash = DEFAULT_PLATFORM_OPTIONS.autoHideSplash,
+    splashFadeDuration = DEFAULT_PLATFORM_OPTIONS.splashFadeDuration,
+    statusBarStyle = DEFAULT_PLATFORM_OPTIONS.statusBarStyle,
+    statusBarColor = DEFAULT_PLATFORM_OPTIONS.statusBarColor,
+    handleDeepLinks = DEFAULT_PLATFORM_OPTIONS.handleDeepLinks,
   } = options
 
-  const router = useRouter()
-
   // Platform state
-  const [platformState, setPlatformState] = useState<{
+  const [platformState] = useState<{
     platform: 'ios' | 'android' | 'web'
     isNative: boolean
     isIOS: boolean
     isAndroid: boolean
     isWeb: boolean
     isReady: boolean
-  }>({
-    platform: 'web',
-    isNative: false,
-    isIOS: false,
-    isAndroid: false,
-    isWeb: true,
-    isReady: false,
-  })
-
-  // Initialize platform detection
-  useEffect(() => {
-    setPlatformState({
-      platform: getPlatform(),
-      isNative: isNative(),
-      isIOS: isIOS(),
-      isAndroid: isAndroid(),
-      isWeb: isWeb(),
-      isReady: true,
-    })
-  }, [])
+  }>(() => getInitialPlatformState())
 
   // Initialize native features
   useEffect(() => {
@@ -207,7 +215,7 @@ export function PlatformProvider({
 
     const handleLink = (result: DeepLinkParseResult) => {
       if (result.isValid && result.navigationPath) {
-        router.push(result.navigationPath)
+        window.location.assign(result.navigationPath)
       }
     }
 
@@ -237,7 +245,7 @@ export function PlatformProvider({
     checkInitialDeepLink()
 
     return cleanup
-  }, [handleDeepLinks, platformState.isReady, platformState.isNative, router])
+  }, [handleDeepLinks, platformState.isReady, platformState.isNative])
 
   // Haptic feedback functions
   const haptics = {
