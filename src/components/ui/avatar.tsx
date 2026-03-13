@@ -4,4 +4,4 @@ export {
   AvatarFallback,
   avatarVariants,
   type AvatarProps,
-} from "@vivancedata/ui/components/avatar"
+} from "@vivancedata/ui"

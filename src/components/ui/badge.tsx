@@ -1,1 +1,1 @@
-export { Badge, badgeVariants, type BadgeProps } from "@vivancedata/ui/components/badge"
+export { Badge, badgeVariants, type BadgeProps } from "@vivancedata/ui"

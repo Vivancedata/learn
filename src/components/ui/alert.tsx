@@ -4,4 +4,4 @@ export {
   AlertDescription,
   alertVariants,
   type AlertProps,
-} from "@vivancedata/ui/components/alert"
+} from "@vivancedata/ui"

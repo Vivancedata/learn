@@ -1,1 +1,1 @@
-export { Textarea, textareaVariants, type TextareaProps } from "@vivancedata/ui/components/textarea"
+export { Textarea, textareaVariants, type TextareaProps } from "@vivancedata/ui"

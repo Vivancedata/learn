@@ -7,7 +7,7 @@ import Stripe from 'stripe'
 
 /**
  * Stripe server-side client instance - lazy initialization
- * Uses the latest API version
+ * Uses the SDK-supported pinned API version
  */
 let _stripe: Stripe | null = null
 
@@ -17,7 +17,7 @@ export function getStripe(): Stripe {
       throw new Error('STRIPE_SECRET_KEY environment variable is required')
     }
     _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2026-02-25.clover',
+      apiVersion: '2026-01-28.clover',
       typescript: true,
     })
   }

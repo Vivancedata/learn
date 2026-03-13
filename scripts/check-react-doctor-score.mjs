@@ -38,6 +38,14 @@ if (!rawOutput && diffBase) {
 const scoreMatches = [...rawOutput.matchAll(/^\s*(\d+(?:\.\d+)?)\s*$/gm)];
 const parsedScore = scoreMatches.length > 0 ? Number(scoreMatches.at(-1)[1]) : Number.NaN;
 
+if (!Number.isFinite(parsedScore) && diffBase) {
+  console.log(
+    `React Doctor diff scan returned no numeric score against ${diffBase}. ` +
+      `Treating this as no relevant React changes.\n${rawOutput || "<no output>"}`
+  );
+  process.exit(0);
+}
+
 if (!Number.isFinite(parsedScore)) {
   console.error("Unable to parse React Doctor score from output:");
   console.error(rawOutput || "<no output>");
