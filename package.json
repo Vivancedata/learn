@@ -62,7 +62,7 @@
     "@stripe/stripe-js": "^8.7.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.2",
-    "@vivancedata/ui": "https://github.com/Vivancedata/ui/archive/refs/tags/v0.1.0-ci.1.tar.gz",
+    "@vivancedata/ui": "https://github.com/Vivancedata/ui/archive/refs/tags/v0.1.0-ci.3.tar.gz",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
