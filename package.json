@@ -9,7 +9,7 @@
     "postinstall": "node scripts/postinstall.mjs",
     "build:webpack": "NEXT_TELEMETRY_DISABLED=1 next build --webpack",
     "start": "next start",
-    "lint": "node ../scripts/check-ui-boundary.mjs learn && eslint src --ext .ts,.tsx",
+    "lint": "node scripts/check-ui-boundary.mjs && eslint src --ext .ts,.tsx",
     "db:seed": "ts-node --project prisma/tsconfig.seed.json prisma/seed.ts",
     "db:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
