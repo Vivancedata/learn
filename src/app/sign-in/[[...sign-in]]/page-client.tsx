@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { redirect, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -31,14 +31,8 @@ export default function SignInPage() {
       : null
   )
 
-  useEffect(() => {
-    if (user) {
-      void router.replace(redirectPath)
-    }
-  }, [redirectPath, router, user])
-
   if (user) {
-    return null
+    redirect(redirectPath)
   }
 
   const validateEmail = (email: string): boolean => {

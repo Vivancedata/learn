@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useEffect, useReducer } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -9,13 +8,36 @@ import { CheckCircle2, Crown, ArrowRight, Sparkles } from 'lucide-react'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { useAuth } from '@/hooks/useAuth'
 
+interface CheckoutSuccessState {
+  sessionId: string | null
+  loading: boolean
+}
+
+type CheckoutSuccessAction = {
+  type: 'ready'
+  sessionId: string | null
+}
+
+function checkoutSuccessReducer(
+  _state: CheckoutSuccessState,
+  action: CheckoutSuccessAction
+): CheckoutSuccessState {
+  return {
+    sessionId: action.sessionId,
+    loading: false,
+  }
+}
+
 function CheckoutSuccessContent() {
-  const searchParams = useSearchParams()
-  const sessionId = searchParams.get('session_id')
   const { refreshUser } = useAuth()
-  const [loading, setLoading] = useState(true)
+  const [{ sessionId, loading }, dispatch] = useReducer(checkoutSuccessReducer, {
+    sessionId: null,
+    loading: true,
+  })
 
   useEffect(() => {
+    const nextSessionId = new URLSearchParams(window.location.search).get('session_id')
+
     // Refresh user data to get updated subscription status
     const refreshSubscription = async () => {
       try {
@@ -23,7 +45,7 @@ function CheckoutSuccessContent() {
       } catch (_error) {
         // Refresh failed - user may need to reload page
       } finally {
-        setLoading(false)
+        dispatch({ type: 'ready', sessionId: nextSessionId })
       }
     }
 

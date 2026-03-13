@@ -1,22 +1,26 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, use } from 'react'
+import { use, useCallback, useEffect, useReducer, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { AssessmentQuestion } from '@/components/assessment-question'
 import { AssessmentTimer } from '@/components/assessment-timer'
-import { AssessmentNavigation, AssessmentNavigationCompact, QuestionStatus } from '@/components/assessment-navigation'
+import {
+  AssessmentNavigation,
+  AssessmentNavigationCompact,
+  QuestionStatus,
+} from '@/components/assessment-navigation'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { useAuth } from '@/hooks/useAuth'
 import {
+  AlertTriangle,
   ChevronLeft,
   ChevronRight,
   Flag,
-  Send,
-  AlertTriangle,
-  X,
   Loader2,
+  Send,
+  X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AssessmentQuestion as AssessmentQuestionType } from '@/types/assessment'
@@ -55,6 +59,530 @@ interface SubmitResponse {
   }
 }
 
+type AnswerValue = string | string[] | number
+type AssessmentData = AssessmentStartResponse['data']
+type AssessmentQuestionData = AssessmentData['questions'][number]
+
+interface AssessmentTakeState {
+  assessmentData: AssessmentData | null
+  currentQuestionIndex: number
+  answers: Record<string, AnswerValue>
+  flaggedQuestions: Set<number>
+  loading: boolean
+  error: string | null
+  isSubmitting: boolean
+  showSubmitModal: boolean
+  showSidebar: boolean
+}
+
+type AssessmentTakeAction =
+  | { type: 'startRequested' }
+  | { type: 'startSucceeded'; assessmentData: AssessmentData }
+  | { type: 'startFailed'; error: string }
+  | { type: 'answerChanged'; questionId: string; answer: AnswerValue }
+  | { type: 'flagToggled'; questionIndex: number }
+  | { type: 'questionSelected'; questionIndex: number }
+  | { type: 'previousQuestion' }
+  | { type: 'nextQuestion'; totalQuestions: number }
+  | { type: 'submitModalOpened' }
+  | { type: 'submitModalClosed' }
+  | { type: 'sidebarOpened' }
+  | { type: 'sidebarClosed' }
+  | { type: 'submissionStarted' }
+  | { type: 'submissionFailed'; error: string }
+
+function createInitialAssessmentTakeState(): AssessmentTakeState {
+  return {
+    assessmentData: null,
+    currentQuestionIndex: 0,
+    answers: {},
+    flaggedQuestions: new Set(),
+    loading: true,
+    error: null,
+    isSubmitting: false,
+    showSubmitModal: false,
+    showSidebar: false,
+  }
+}
+
+function assessmentTakeReducer(
+  state: AssessmentTakeState,
+  action: AssessmentTakeAction
+): AssessmentTakeState {
+  switch (action.type) {
+    case 'startRequested':
+      return {
+        ...state,
+        loading: true,
+        error: null,
+      }
+    case 'startSucceeded':
+      return {
+        ...state,
+        assessmentData: action.assessmentData,
+        loading: false,
+      }
+    case 'startFailed':
+      return {
+        ...state,
+        loading: false,
+        error: action.error,
+      }
+    case 'answerChanged':
+      return {
+        ...state,
+        answers: {
+          ...state.answers,
+          [action.questionId]: action.answer,
+        },
+      }
+    case 'flagToggled': {
+      const flaggedQuestions = new Set(state.flaggedQuestions)
+
+      if (flaggedQuestions.has(action.questionIndex)) {
+        flaggedQuestions.delete(action.questionIndex)
+      } else {
+        flaggedQuestions.add(action.questionIndex)
+      }
+
+      return {
+        ...state,
+        flaggedQuestions,
+      }
+    }
+    case 'questionSelected':
+      return {
+        ...state,
+        currentQuestionIndex: action.questionIndex,
+        showSidebar: false,
+      }
+    case 'previousQuestion':
+      if (state.currentQuestionIndex === 0) {
+        return state
+      }
+
+      return {
+        ...state,
+        currentQuestionIndex: state.currentQuestionIndex - 1,
+      }
+    case 'nextQuestion':
+      if (state.currentQuestionIndex >= action.totalQuestions - 1) {
+        return state
+      }
+
+      return {
+        ...state,
+        currentQuestionIndex: state.currentQuestionIndex + 1,
+      }
+    case 'submitModalOpened':
+      return {
+        ...state,
+        showSubmitModal: true,
+      }
+    case 'submitModalClosed':
+      return {
+        ...state,
+        showSubmitModal: false,
+      }
+    case 'sidebarOpened':
+      return {
+        ...state,
+        showSidebar: true,
+      }
+    case 'sidebarClosed':
+      return {
+        ...state,
+        showSidebar: false,
+      }
+    case 'submissionStarted':
+      return {
+        ...state,
+        isSubmitting: true,
+        showSubmitModal: false,
+      }
+    case 'submissionFailed':
+      return {
+        ...state,
+        isSubmitting: false,
+        error: action.error,
+      }
+    default:
+      return state
+  }
+}
+
+function getQuestionStatuses(
+  questions: AssessmentData['questions'],
+  currentQuestionIndex: number,
+  flaggedQuestions: Set<number>,
+  answers: Record<string, AnswerValue>
+): QuestionStatus[] {
+  return questions.map((question, index) => {
+    if (index === currentQuestionIndex) return 'current'
+    if (flaggedQuestions.has(index)) return 'flagged'
+    if (answers[question.id] !== undefined) return 'answered'
+    return 'unanswered'
+  })
+}
+
+function LoadingState() {
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center">
+      <Loader2 className="mb-4 h-12 w-12 animate-spin text-primary" />
+      <p className="text-muted-foreground">Loading assessment...</p>
+    </div>
+  )
+}
+
+function ErrorState({
+  error,
+  onRetry,
+  onBack,
+}: {
+  error: string | null
+  onRetry: () => void
+  onBack: () => void
+}) {
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center">
+      <AlertTriangle className="mb-4 h-12 w-12 text-destructive" />
+      <h2 className="mb-2 text-xl font-semibold">Error Loading Assessment</h2>
+      <p className="mb-4 text-muted-foreground">{error}</p>
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={onBack}>
+          Go Back
+        </Button>
+        <Button onClick={onRetry}>Try Again</Button>
+      </div>
+    </div>
+  )
+}
+
+function AssessmentHeader({
+  assessmentData,
+  currentQuestionIndex,
+  answeredCount,
+  flaggedCount,
+  onTimeUp,
+  onOpenSidebar,
+  onOpenSubmitModal,
+}: {
+  assessmentData: AssessmentData
+  currentQuestionIndex: number
+  answeredCount: number
+  flaggedCount: number
+  onTimeUp: () => void
+  onOpenSidebar: () => void
+  onOpenSubmitModal: () => void
+}) {
+  return (
+    <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container py-3">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <h1 className="hidden max-w-xs truncate text-lg font-semibold sm:block">
+              {assessmentData.name}
+            </h1>
+            <AssessmentNavigationCompact
+              totalQuestions={assessmentData.questions.length}
+              currentQuestion={currentQuestionIndex}
+              answeredCount={answeredCount}
+              flaggedCount={flaggedCount}
+              className="hidden md:block"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <AssessmentTimer
+              timeLimit={assessmentData.timeLimit}
+              startedAt={assessmentData.startedAt}
+              onTimeUp={onTimeUp}
+            />
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="md:hidden"
+              onClick={onOpenSidebar}
+            >
+              Questions
+            </Button>
+
+            <Button onClick={onOpenSubmitModal} size="sm" className="gap-2">
+              <Send className="h-4 w-4" />
+              <span className="hidden sm:inline">Submit</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AssessmentQuestionCard({
+  question,
+  currentQuestionIndex,
+  totalQuestions,
+  currentAnswer,
+  isFlagged,
+  onAnswerChange,
+  onToggleFlag,
+  onPrevious,
+  onNext,
+  onSubmit,
+}: {
+  question: AssessmentQuestionData
+  currentQuestionIndex: number
+  totalQuestions: number
+  currentAnswer: AnswerValue | undefined
+  isFlagged: boolean
+  onAnswerChange: (answer: AnswerValue) => void
+  onToggleFlag: () => void
+  onPrevious: () => void
+  onNext: () => void
+  onSubmit: () => void
+}) {
+  const isLastQuestion = currentQuestionIndex === totalQuestions - 1
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <AssessmentQuestion
+          question={question}
+          questionNumber={currentQuestionIndex + 1}
+          totalQuestions={totalQuestions}
+          selectedAnswer={currentAnswer}
+          onAnswerChange={onAnswerChange}
+        />
+
+        <div className="mt-6 border-t pt-6">
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={isFlagged}
+              onChange={onToggleFlag}
+              className="h-4 w-4 rounded border-input accent-warning"
+            />
+            <Flag
+              className={cn(
+                'h-4 w-4',
+                isFlagged ? 'text-warning' : 'text-muted-foreground'
+              )}
+            />
+            <span className="text-sm">Flag for review</span>
+          </label>
+        </div>
+
+        <div className="mt-6 flex items-center justify-between border-t pt-6">
+          <Button
+            variant="outline"
+            onClick={onPrevious}
+            disabled={currentQuestionIndex === 0}
+            className="gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+
+          <span className="text-sm text-muted-foreground">
+            Question {currentQuestionIndex + 1} of {totalQuestions}
+          </span>
+
+          {isLastQuestion ? (
+            <Button onClick={onSubmit} className="gap-2">
+              Submit
+              <Send className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button onClick={onNext} className="gap-2">
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function DesktopQuestionSidebar({
+  totalQuestions,
+  currentQuestionIndex,
+  questionStatuses,
+  onQuestionClick,
+}: {
+  totalQuestions: number
+  currentQuestionIndex: number
+  questionStatuses: QuestionStatus[]
+  onQuestionClick: (index: number) => void
+}) {
+  return (
+    <div className="hidden lg:block">
+      <Card className="sticky top-24">
+        <CardHeader className="pb-3">
+          <h3 className="font-semibold">Questions</h3>
+        </CardHeader>
+        <CardContent>
+          <AssessmentNavigation
+            totalQuestions={totalQuestions}
+            currentQuestion={currentQuestionIndex}
+            questionStatuses={questionStatuses}
+            onQuestionClick={onQuestionClick}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function MobileQuestionSidebar({
+  isOpen,
+  totalQuestions,
+  currentQuestionIndex,
+  questionStatuses,
+  onQuestionClick,
+  onClose,
+}: {
+  isOpen: boolean
+  totalQuestions: number
+  currentQuestionIndex: number
+  questionStatuses: QuestionStatus[]
+  onQuestionClick: (index: number) => void
+  onClose: () => void
+}) {
+  if (!isOpen) {
+    return null
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 lg:hidden">
+      <button
+        type="button"
+        aria-label="Close question sidebar"
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="absolute right-0 top-0 h-full w-80 max-w-full border-l bg-card shadow-lg">
+        <div className="flex items-center justify-between border-b p-4">
+          <h3 className="font-semibold">Questions</h3>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+        <div className="max-h-[calc(100vh-4rem)] overflow-y-auto p-4">
+          <AssessmentNavigation
+            totalQuestions={totalQuestions}
+            currentQuestion={currentQuestionIndex}
+            questionStatuses={questionStatuses}
+            onQuestionClick={onQuestionClick}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SubmitConfirmationModal({
+  isOpen,
+  answeredCount,
+  totalQuestions,
+  unansweredCount,
+  flaggedCount,
+  isSubmitting,
+  onClose,
+  onSubmit,
+}: {
+  isOpen: boolean
+  answeredCount: number
+  totalQuestions: number
+  unansweredCount: number
+  flaggedCount: number
+  isSubmitting: boolean
+  onClose: () => void
+  onSubmit: () => void
+}) {
+  if (!isOpen) {
+    return null
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button
+        type="button"
+        aria-label="Close submit confirmation"
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <Card className="relative w-full max-w-md">
+        <CardHeader>
+          <h2 className="text-xl font-semibold">Submit Assessment?</h2>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Questions Answered</span>
+              <span className="font-medium">
+                {answeredCount} / {totalQuestions}
+              </span>
+            </div>
+            {unansweredCount > 0 && (
+              <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3">
+                <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-warning" />
+                <div className="text-sm">
+                  <p className="font-medium text-warning">
+                    {unansweredCount} question{unansweredCount !== 1 ? 's' : ''} unanswered
+                  </p>
+                  <p className="text-muted-foreground">
+                    Unanswered questions will be marked as incorrect.
+                  </p>
+                </div>
+              </div>
+            )}
+            {flaggedCount > 0 && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Flag className="h-4 w-4 text-warning" />
+                <span>
+                  {flaggedCount} question{flaggedCount !== 1 ? 's' : ''} flagged for review
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Review Answers
+            </Button>
+            <Button onClick={onSubmit} disabled={isSubmitting} className="flex-1 gap-2">
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              Submit
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function SubmittingOverlay({ isSubmitting }: { isSubmitting: boolean }) {
+  if (!isSubmitting) {
+    return null
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+      <div className="text-center">
+        <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-primary" />
+        <p className="text-lg font-medium">Submitting your assessment...</p>
+        <p className="text-muted-foreground">Please wait</p>
+      </div>
+    </div>
+  )
+}
+
 function AssessmentTakeContent({
   params,
 }: {
@@ -63,40 +591,34 @@ function AssessmentTakeContent({
   const { slug } = use(params)
   const { user } = useAuth()
   const router = useRouter()
-  const [assessmentData, setAssessmentData] = useState<AssessmentStartResponse['data'] | null>(null)
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [answers, setAnswers] = useState<Record<string, string | string[] | number>>({})
-  const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set())
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showSubmitModal, setShowSubmitModal] = useState(false)
-  const [showSidebar, setShowSidebar] = useState(false)
+  const [state, dispatch] = useReducer(
+    assessmentTakeReducer,
+    undefined,
+    createInitialAssessmentTakeState
+  )
 
-  // Refs for tracking time and preventing duplicate submissions
   const submittedRef = useRef(false)
   const startTimeRef = useRef<number | null>(null)
 
-  // Warn user before leaving
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (assessmentData && !submittedRef.current) {
-        e.preventDefault()
-        e.returnValue = ''
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (state.assessmentData && !submittedRef.current) {
+        event.preventDefault()
+        event.returnValue = ''
         return ''
       }
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [assessmentData])
+  }, [state.assessmentData])
 
-  // Start assessment
   const startAssessment = useCallback(async () => {
-    if (!user?.id) return
+    if (!user?.id) {
+      return
+    }
 
-    setLoading(true)
-    setError(null)
+    dispatch({ type: 'startRequested' })
 
     try {
       const response = await fetch(`/api/assessments/${slug}/start`, {
@@ -113,28 +635,28 @@ function AssessmentTakeContent({
       }
 
       const data: AssessmentStartResponse = await response.json()
-      setAssessmentData(data.data)
+      dispatch({ type: 'startSucceeded', assessmentData: data.data })
       startTimeRef.current = Date.now()
-    } catch (_err) {
-      setError('Failed to start assessment. Please try again.')
-    } finally {
-      setLoading(false)
+    } catch {
+      dispatch({
+        type: 'startFailed',
+        error: 'Failed to start assessment. Please try again.',
+      })
     }
   }, [slug, user?.id])
 
   useEffect(() => {
-    startAssessment()
+    void startAssessment()
   }, [startAssessment])
 
-  // Submit assessment
   const submitAssessment = useCallback(async () => {
-    if (!user?.id || !assessmentData || submittedRef.current || isSubmitting) return
+    if (!user?.id || !state.assessmentData || submittedRef.current || state.isSubmitting) {
+      return
+    }
 
     submittedRef.current = true
-    setIsSubmitting(true)
-    setShowSubmitModal(false)
+    dispatch({ type: 'submissionStarted' })
 
-    // Calculate time spent
     const endTime = Date.now()
     const timeSpent = startTimeRef.current
       ? Math.floor((endTime - startTimeRef.current) / 1000)
@@ -148,9 +670,9 @@ function AssessmentTakeContent({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          attemptId: assessmentData.attemptId,
+          attemptId: state.assessmentData.attemptId,
           userId: user.id,
-          answers,
+          answers: state.answers,
           timeSpent,
         }),
       })
@@ -161,365 +683,153 @@ function AssessmentTakeContent({
 
       const data: SubmitResponse = await response.json()
 
-      // Store results in sessionStorage for the results page
       sessionStorage.setItem(
         `assessment-results-${slug}`,
         JSON.stringify({
           ...data.data,
-          assessmentName: assessmentData.name,
-          timeLimit: assessmentData.timeLimit,
-          questions: assessmentData.questions,
+          assessmentName: state.assessmentData.name,
+          timeLimit: state.assessmentData.timeLimit,
+          questions: state.assessmentData.questions,
           timeSpent,
         })
       )
 
-      // Navigate to results page
       router.push(`/assessments/${slug}/results`)
-    } catch (_err) {
+    } catch {
       submittedRef.current = false
-      setIsSubmitting(false)
-      setError('Failed to submit assessment. Please try again.')
+      dispatch({
+        type: 'submissionFailed',
+        error: 'Failed to submit assessment. Please try again.',
+      })
     }
-  }, [user?.id, assessmentData, answers, slug, router, isSubmitting])
+  }, [router, slug, state.answers, state.assessmentData, state.isSubmitting, user?.id])
 
-  // Handle time up
   const handleTimeUp = useCallback(() => {
     if (!submittedRef.current) {
-      submitAssessment()
+      void submitAssessment()
     }
   }, [submitAssessment])
 
-  // Handle answer change
-  const handleAnswerChange = (answer: string | string[] | number) => {
-    if (!assessmentData) return
-    const questionId = assessmentData.questions[currentQuestionIndex].id
-    setAnswers((prev) => ({ ...prev, [questionId]: answer }))
+  const handleAnswerChange = (answer: AnswerValue) => {
+    if (!state.assessmentData) {
+      return
+    }
+
+    const questionId = state.assessmentData.questions[state.currentQuestionIndex].id
+    dispatch({ type: 'answerChanged', questionId, answer })
   }
 
-  // Handle flag toggle
-  const toggleFlag = () => {
-    setFlaggedQuestions((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(currentQuestionIndex)) {
-        newSet.delete(currentQuestionIndex)
-      } else {
-        newSet.add(currentQuestionIndex)
-      }
-      return newSet
+  const handleFlagToggle = () => {
+    dispatch({ type: 'flagToggled', questionIndex: state.currentQuestionIndex })
+  }
+
+  const handleQuestionSelect = (questionIndex: number) => {
+    dispatch({ type: 'questionSelected', questionIndex })
+  }
+
+  const handlePrevious = () => {
+    dispatch({ type: 'previousQuestion' })
+  }
+
+  const handleNext = () => {
+    if (!state.assessmentData) {
+      return
+    }
+
+    dispatch({
+      type: 'nextQuestion',
+      totalQuestions: state.assessmentData.questions.length,
     })
   }
 
-  // Navigation
-  const goToQuestion = (index: number) => {
-    setCurrentQuestionIndex(index)
-    setShowSidebar(false)
+  if (state.loading) {
+    return <LoadingState />
   }
 
-  const goToPrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex((prev) => prev - 1)
-    }
-  }
-
-  const goToNext = () => {
-    if (assessmentData && currentQuestionIndex < assessmentData.questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1)
-    }
-  }
-
-  // Get question statuses for navigation
-  const getQuestionStatuses = (): QuestionStatus[] => {
-    if (!assessmentData) return []
-
-    return assessmentData.questions.map((q, index) => {
-      if (index === currentQuestionIndex) return 'current'
-      if (flaggedQuestions.has(index)) return 'flagged'
-      if (answers[q.id] !== undefined) return 'answered'
-      return 'unanswered'
-    })
-  }
-
-  const answeredCount = assessmentData
-    ? Object.keys(answers).length
-    : 0
-
-  const unansweredCount = assessmentData
-    ? assessmentData.questions.length - answeredCount
-    : 0
-
-  if (loading) {
+  if (state.error || !state.assessmentData) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Loading assessment...</p>
-      </div>
+      <ErrorState
+        error={state.error}
+        onBack={() => router.push(`/assessments/${slug}`)}
+        onRetry={startAssessment}
+      />
     )
   }
 
-  if (error || !assessmentData) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Error Loading Assessment</h2>
-        <p className="text-muted-foreground mb-4">{error}</p>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => router.push(`/assessments/${slug}`)}>
-            Go Back
-          </Button>
-          <Button onClick={startAssessment}>Try Again</Button>
-        </div>
-      </div>
-    )
-  }
-
-  const currentQuestion = assessmentData.questions[currentQuestionIndex]
-  const currentAnswer = answers[currentQuestion.id]
+  const { assessmentData } = state
+  const currentQuestion = assessmentData.questions[state.currentQuestionIndex]
+  const currentAnswer = state.answers[currentQuestion.id]
+  const answeredCount = Object.keys(state.answers).length
+  const unansweredCount = assessmentData.questions.length - answeredCount
+  const flaggedCount = state.flaggedQuestions.size
+  const questionStatuses = getQuestionStatuses(
+    assessmentData.questions,
+    state.currentQuestionIndex,
+    state.flaggedQuestions,
+    state.answers
+  )
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Fixed Header */}
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container py-3">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <h1 className="font-semibold text-lg hidden sm:block truncate max-w-xs">
-                {assessmentData.name}
-              </h1>
-              <AssessmentNavigationCompact
-                totalQuestions={assessmentData.questions.length}
-                currentQuestion={currentQuestionIndex}
-                answeredCount={answeredCount}
-                flaggedCount={flaggedQuestions.size}
-                className="hidden md:block"
-              />
-            </div>
+      <AssessmentHeader
+        assessmentData={assessmentData}
+        currentQuestionIndex={state.currentQuestionIndex}
+        answeredCount={answeredCount}
+        flaggedCount={flaggedCount}
+        onTimeUp={handleTimeUp}
+        onOpenSidebar={() => dispatch({ type: 'sidebarOpened' })}
+        onOpenSubmitModal={() => dispatch({ type: 'submitModalOpened' })}
+      />
 
-            <div className="flex items-center gap-3">
-              <AssessmentTimer
-                timeLimit={assessmentData.timeLimit}
-                startedAt={assessmentData.startedAt}
-                onTimeUp={handleTimeUp}
-              />
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="md:hidden"
-                onClick={() => setShowSidebar(true)}
-              >
-                Questions
-              </Button>
-
-              <Button
-                onClick={() => setShowSubmitModal(true)}
-                size="sm"
-                className="gap-2"
-              >
-                <Send className="h-4 w-4" />
-                <span className="hidden sm:inline">Submit</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
       <div className="container py-6">
-        <div className="grid lg:grid-cols-4 gap-6">
-          {/* Question Area */}
+        <div className="grid gap-6 lg:grid-cols-4">
           <div className="lg:col-span-3">
-            <Card>
-              <CardContent className="p-6">
-                <AssessmentQuestion
-                  question={currentQuestion}
-                  questionNumber={currentQuestionIndex + 1}
-                  totalQuestions={assessmentData.questions.length}
-                  selectedAnswer={currentAnswer}
-                  onAnswerChange={handleAnswerChange}
-                />
-
-                {/* Flag for Review */}
-                <div className="mt-6 pt-6 border-t">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={flaggedQuestions.has(currentQuestionIndex)}
-                      onChange={toggleFlag}
-                      className="w-4 h-4 rounded border-input accent-warning"
-                    />
-                    <Flag className={cn(
-                      'h-4 w-4',
-                      flaggedQuestions.has(currentQuestionIndex) ? 'text-warning' : 'text-muted-foreground'
-                    )} />
-                    <span className="text-sm">Flag for review</span>
-                  </label>
-                </div>
-
-                {/* Navigation Buttons */}
-                <div className="flex items-center justify-between mt-6 pt-6 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={goToPrevious}
-                    disabled={currentQuestionIndex === 0}
-                    className="gap-2"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-
-                  <span className="text-sm text-muted-foreground">
-                    Question {currentQuestionIndex + 1} of {assessmentData.questions.length}
-                  </span>
-
-                  {currentQuestionIndex === assessmentData.questions.length - 1 ? (
-                    <Button
-                      onClick={() => setShowSubmitModal(true)}
-                      className="gap-2"
-                    >
-                      Submit
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={goToNext}
-                      className="gap-2"
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <AssessmentQuestionCard
+              question={currentQuestion}
+              currentQuestionIndex={state.currentQuestionIndex}
+              totalQuestions={assessmentData.questions.length}
+              currentAnswer={currentAnswer}
+              isFlagged={state.flaggedQuestions.has(state.currentQuestionIndex)}
+              onAnswerChange={handleAnswerChange}
+              onToggleFlag={handleFlagToggle}
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+              onSubmit={() => dispatch({ type: 'submitModalOpened' })}
+            />
           </div>
 
-          {/* Desktop Sidebar - Question Navigation */}
-          <div className="hidden lg:block">
-            <Card className="sticky top-24">
-              <CardHeader className="pb-3">
-                <h3 className="font-semibold">Questions</h3>
-              </CardHeader>
-              <CardContent>
-                <AssessmentNavigation
-                  totalQuestions={assessmentData.questions.length}
-                  currentQuestion={currentQuestionIndex}
-                  questionStatuses={getQuestionStatuses()}
-                  onQuestionClick={goToQuestion}
-                />
-              </CardContent>
-            </Card>
-          </div>
+          <DesktopQuestionSidebar
+            totalQuestions={assessmentData.questions.length}
+            currentQuestionIndex={state.currentQuestionIndex}
+            questionStatuses={questionStatuses}
+            onQuestionClick={handleQuestionSelect}
+          />
         </div>
       </div>
 
-      {/* Mobile Sidebar Overlay */}
-      {showSidebar && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <button
-            type="button"
-            aria-label="Close question sidebar"
-            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-            onClick={() => setShowSidebar(false)}
-          />
-          <div className="absolute right-0 top-0 h-full w-80 max-w-full bg-card border-l shadow-lg">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="font-semibold">Questions</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowSidebar(false)}
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-            <div className="p-4 overflow-y-auto max-h-[calc(100vh-4rem)]">
-              <AssessmentNavigation
-                totalQuestions={assessmentData.questions.length}
-                currentQuestion={currentQuestionIndex}
-                questionStatuses={getQuestionStatuses()}
-                onQuestionClick={goToQuestion}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      <MobileQuestionSidebar
+        isOpen={state.showSidebar}
+        totalQuestions={assessmentData.questions.length}
+        currentQuestionIndex={state.currentQuestionIndex}
+        questionStatuses={questionStatuses}
+        onQuestionClick={handleQuestionSelect}
+        onClose={() => dispatch({ type: 'sidebarClosed' })}
+      />
 
-      {/* Submit Confirmation Modal */}
-      {showSubmitModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <button
-            type="button"
-            aria-label="Close submit confirmation"
-            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-            onClick={() => setShowSubmitModal(false)}
-          />
-          <Card className="relative w-full max-w-md">
-            <CardHeader>
-              <h2 className="text-xl font-semibold">Submit Assessment?</h2>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Questions Answered</span>
-                  <span className="font-medium">{answeredCount} / {assessmentData.questions.length}</span>
-                </div>
-                {unansweredCount > 0 && (
-                  <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/30 rounded-lg">
-                    <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-medium text-warning">
-                        {unansweredCount} question{unansweredCount !== 1 ? 's' : ''} unanswered
-                      </p>
-                      <p className="text-muted-foreground">
-                        Unanswered questions will be marked as incorrect.
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {flaggedQuestions.size > 0 && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Flag className="h-4 w-4 text-warning" />
-                    <span>{flaggedQuestions.size} question{flaggedQuestions.size !== 1 ? 's' : ''} flagged for review</span>
-                  </div>
-                )}
-              </div>
+      <SubmitConfirmationModal
+        isOpen={state.showSubmitModal}
+        answeredCount={answeredCount}
+        totalQuestions={assessmentData.questions.length}
+        unansweredCount={unansweredCount}
+        flaggedCount={flaggedCount}
+        isSubmitting={state.isSubmitting}
+        onClose={() => dispatch({ type: 'submitModalClosed' })}
+        onSubmit={() => {
+          void submitAssessment()
+        }}
+      />
 
-              <div className="flex gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowSubmitModal(false)}
-                  className="flex-1"
-                >
-                  Review Answers
-                </Button>
-                <Button
-                  onClick={submitAssessment}
-                  disabled={isSubmitting}
-                  className="flex-1 gap-2"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                  Submit
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Submitting Overlay */}
-      {isSubmitting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-lg font-medium">Submitting your assessment...</p>
-            <p className="text-muted-foreground">Please wait</p>
-          </div>
-        </div>
-      )}
+      <SubmittingOverlay isSubmitting={state.isSubmitting} />
     </div>
   )
 }

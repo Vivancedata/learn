@@ -67,6 +67,8 @@ interface TransformedDiscussion {
   }[]
 }
 
+type AuthUser = ReturnType<typeof useAuth>["user"]
+
 function extractTableOfContents(content: string): TableOfContentsItem[] {
   const headings = content.match(/^#{1,6}\s+.+$/gm) || []
   return headings.map(heading => {
@@ -129,6 +131,206 @@ function createMarkdownComponents(): Components {
       )
     }
   }
+}
+
+function LessonPrimaryContent({
+  user,
+  lesson,
+  courseId,
+  lessonId,
+  signInHref,
+  markdownComponents,
+  completionLoading,
+  isCompleted,
+  onMarkComplete,
+  onQuizComplete,
+  discussions,
+  onRefreshDiscussions,
+  repositoryUrl,
+  issueTitle,
+  lessonContentPath,
+}: {
+  user: AuthUser
+  lesson: Lesson
+  courseId: string
+  lessonId: string
+  signInHref: string
+  markdownComponents: Components
+  completionLoading: boolean
+  isCompleted: boolean
+  onMarkComplete: () => void
+  onQuizComplete: (result: { score: number; selectedAnswers: number[] }) => Promise<void>
+  discussions: TransformedDiscussion[]
+  onRefreshDiscussions: () => Promise<void>
+  repositoryUrl: string
+  issueTitle: string
+  lessonContentPath: string
+}) {
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <h1 className="text-3xl font-bold">{lesson.title}</h1>
+        <div className="flex items-center gap-2">
+          <AiTutorButton
+            label="Ask AI"
+            variant="outline"
+            size="default"
+            prefillMessage={`Help me understand ${lesson.title}`}
+          />
+          <Button
+            variant={!user ? "outline" : isCompleted ? "default" : "outline"}
+            onClick={onMarkComplete}
+            disabled={completionLoading}
+          >
+            {completionLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : !user ? (
+              "Sign In to Save Progress"
+            ) : (
+              <>
+                <CheckCircle
+                  className={`mr-2 h-4 w-4 ${isCompleted ? "text-white" : "text-muted-foreground"}`}
+                />
+                {isCompleted ? "Completed" : "Mark as Complete"}
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      <Card>
+        <CardContent className="prose prose-slate dark:prose-invert max-w-none p-6">
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+            {lesson.content}
+          </ReactMarkdown>
+        </CardContent>
+      </Card>
+
+      {!user && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Keep exploring lessons freely. Sign in to save progress, quiz scores, and streaks.
+            </p>
+            <Button asChild size="sm">
+              <Link href={signInHref}>Sign In to Save Progress</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {lesson.knowledgeCheck && (
+        <KnowledgeCheck
+          questions={lesson.knowledgeCheck.questions}
+          onComplete={user ? onQuizComplete : undefined}
+        />
+      )}
+
+      {lesson.type === "project" && (
+        <>
+          <ProjectSubmission lessonId={lessonId} courseId={courseId} />
+          <StudentSolutions lessonId={lessonId} courseId={courseId} />
+        </>
+      )}
+
+      <CommunityDiscussions
+        discussions={discussions}
+        courseId={courseId}
+        lessonId={lessonId}
+        onRefresh={onRefreshDiscussions}
+      />
+
+      <div className="flex items-center justify-between border-t pt-6">
+        <div className="space-x-4">
+          <Button variant="outline" asChild>
+            <Link
+              href={`${repositoryUrl}/tree/main/${lessonContentPath}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center"
+            >
+              <Github className="mr-2 h-4 w-4" />
+              Improve this lesson
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link
+              href={`${repositoryUrl}/issues/new?title=${issueTitle}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center"
+            >
+              <Flag className="mr-2 h-4 w-4" />
+              Report an issue
+            </Link>
+          </Button>
+        </div>
+
+        <div className="space-x-2">
+          {lesson.prevLessonId && (
+            <Button variant="outline" asChild>
+              <Link href={`/courses/${courseId}/${lesson.prevLessonId}`}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Previous
+              </Link>
+            </Button>
+          )}
+          {lesson.nextLessonId && (
+            <Button asChild>
+              <Link href={`/courses/${courseId}/${lesson.nextLessonId}`}>
+                Next
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LessonSidebar({ tableOfContents }: { tableOfContents: TableOfContentsItem[] }) {
+  return (
+    <div className="hidden lg:block lg:col-span-4 xl:col-span-3">
+      <div className="sticky top-20">
+        <h3 className="font-semibold mb-4">Table of Contents</h3>
+        <div className="h-[calc(100vh-16rem)] overflow-auto">
+          <nav className="space-y-1">
+            {tableOfContents.map((item) => (
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                className={`
+                  block text-sm py-1 text-muted-foreground hover:text-foreground transition-colors
+                  ${item.level === 1 ? "font-medium" : "pl-4"}
+                `}
+              >
+                {item.title}
+              </a>
+            ))}
+          </nav>
+        </div>
+        <div className="mt-6 p-4 rounded-lg border border-border bg-card/50">
+          <div className="flex items-center gap-2 mb-2">
+            <MessageSquare className="h-4 w-4 text-primary" />
+            <h4 className="font-medium text-sm">Need Help?</h4>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Ask the AI Tutor any questions about this lesson.
+          </p>
+          <AiTutorButton
+            label="Ask AI Tutor"
+            variant="default"
+            size="sm"
+            className="w-full"
+          />
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function LessonContent() {
@@ -371,179 +573,28 @@ function LessonContent() {
     <div className="min-h-screen bg-background">
       <div className="container py-8">
         <div className="grid grid-cols-12 gap-6">
-          {/* Main Content */}
           <div className="col-span-12 lg:col-span-8 xl:col-span-9">
-            <div className="space-y-8">
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <h1 className="text-3xl font-bold">{lesson.title}</h1>
-                <div className="flex items-center gap-2">
-                  <AiTutorButton
-                    label="Ask AI"
-                    variant="outline"
-                    size="default"
-                    prefillMessage={`Help me understand ${lesson.title}`}
-                  />
-                  <Button
-                    variant={!user ? "outline" : isCompleted ? "default" : "outline"}
-                    onClick={handleMarkComplete}
-                    disabled={completionLoading}
-                  >
-                    {completionLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : !user ? (
-                      "Sign In to Save Progress"
-                    ) : (
-                      <>
-                        <CheckCircle className={`mr-2 h-4 w-4 ${isCompleted ? "text-white" : "text-muted-foreground"}`} />
-                        {isCompleted ? "Completed" : "Mark as Complete"}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              <Card>
-                <CardContent className="prose prose-slate dark:prose-invert max-w-none p-6">
-                  <ReactMarkdown 
-                    remarkPlugins={[remarkGfm]}
-                    components={markdownComponents}
-                  >
-                    {lesson.content}
-                  </ReactMarkdown>
-                </CardContent>
-              </Card>
-
-              {!user && (
-                <Card className="border-primary/30 bg-primary/5">
-                  <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-muted-foreground">
-                      Keep exploring lessons freely. Sign in to save progress, quiz scores, and streaks.
-                    </p>
-                    <Button asChild size="sm">
-                      <Link href={signInHref}>Sign In to Save Progress</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-
-              {lesson.knowledgeCheck && (
-                <KnowledgeCheck
-                  questions={lesson.knowledgeCheck.questions}
-                  onComplete={user ? handleQuizComplete : undefined}
-                />
-              )}
-
-              {lesson.type === "project" && (
-                <>
-                  <ProjectSubmission
-                    lessonId={lessonId}
-                    courseId={courseId}
-                  />
-                  <StudentSolutions
-                    lessonId={lessonId}
-                    courseId={courseId}
-                  />
-                </>
-              )}
-
-              <CommunityDiscussions
-                discussions={discussions}
-                courseId={courseId}
-                lessonId={lessonId}
-                onRefresh={async () => {
-                  await mutate()
-                }}
-              />
-
-              <div className="flex items-center justify-between border-t pt-6">
-                <div className="space-x-4">
-                  <Button variant="outline" asChild>
-                    <Link 
-                      href={`${repositoryUrl}/tree/main/${lessonContentPath}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center"
-                    >
-                      <Github className="mr-2 h-4 w-4" />
-                      Improve this lesson
-                    </Link>
-                  </Button>
-                  <Button variant="outline" asChild>
-                    <Link 
-                      href={`${repositoryUrl}/issues/new?title=${issueTitle}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center"
-                    >
-                      <Flag className="mr-2 h-4 w-4" />
-                      Report an issue
-                    </Link>
-                  </Button>
-                </div>
-
-                <div className="space-x-2">
-                  {lesson.prevLessonId && (
-                    <Button variant="outline" asChild>
-                      <Link href={`/courses/${courseId}/${lesson.prevLessonId}`}>
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Previous
-                      </Link>
-                    </Button>
-                  )}
-                  {lesson.nextLessonId && (
-                    <Button asChild>
-                      <Link href={`/courses/${courseId}/${lesson.nextLessonId}`}>
-                        Next
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
+            <LessonPrimaryContent
+              user={user}
+              lesson={lesson}
+              courseId={courseId}
+              lessonId={lessonId}
+              signInHref={signInHref}
+              markdownComponents={markdownComponents}
+              completionLoading={completionLoading}
+              isCompleted={isCompleted}
+              onMarkComplete={handleMarkComplete}
+              onQuizComplete={handleQuizComplete}
+              discussions={discussions}
+              onRefreshDiscussions={async () => {
+                await mutate()
+              }}
+              repositoryUrl={repositoryUrl}
+              issueTitle={issueTitle}
+              lessonContentPath={lessonContentPath}
+            />
           </div>
-
-          {/* Table of Contents Sidebar */}
-          <div className="hidden lg:block lg:col-span-4 xl:col-span-3">
-            <div className="sticky top-20">
-              <h3 className="font-semibold mb-4">Table of Contents</h3>
-              <div className="h-[calc(100vh-16rem)] overflow-auto">
-                <nav className="space-y-1">
-                  {tableOfContents.map((item) => (
-                    <a
-                      key={item.id}
-                      href={`#${item.id}`}
-                      className={`
-                        block text-sm py-1 text-muted-foreground hover:text-foreground transition-colors
-                        ${item.level === 1 ? "font-medium" : "pl-4"}
-                      `}
-                    >
-                      {item.title}
-                    </a>
-                  ))}
-                </nav>
-              </div>
-              {/* AI Tutor Help Card */}
-              <div className="mt-6 p-4 rounded-lg border border-border bg-card/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <MessageSquare className="h-4 w-4 text-primary" />
-                  <h4 className="font-medium text-sm">Need Help?</h4>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Ask the AI Tutor any questions about this lesson.
-                </p>
-                <AiTutorButton
-                  label="Ask AI Tutor"
-                  variant="default"
-                  size="sm"
-                  className="w-full"
-                />
-              </div>
-            </div>
-          </div>
+          <LessonSidebar tableOfContents={tableOfContents} />
         </div>
       </div>
     </div>

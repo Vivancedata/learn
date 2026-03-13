@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useReducer, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -43,22 +43,89 @@ const typeIcons: Record<LeaderboardType, React.ReactNode> = {
 const periodOptions: LeaderboardPeriod[] = ['weekly', 'monthly', 'all_time']
 const typeOptions: LeaderboardType[] = ['xp', 'streaks', 'courses', 'lessons', 'helping']
 
+interface LeaderboardPageState {
+  leaderboardData: LeaderboardResponse | null
+  selectedPeriod: LeaderboardPeriod
+  selectedType: LeaderboardType
+  loading: boolean
+  error: string | null
+  refreshing: boolean
+}
+
+type LeaderboardPageAction =
+  | { type: 'setPeriod'; period: LeaderboardPeriod }
+  | { type: 'setType'; leaderboardType: LeaderboardType }
+  | { type: 'fetchStart'; refreshing: boolean }
+  | { type: 'fetchSuccess'; data: LeaderboardResponse }
+  | { type: 'fetchError'; error: string }
+
+const initialLeaderboardPageState: LeaderboardPageState = {
+  leaderboardData: null,
+  selectedPeriod: 'weekly',
+  selectedType: 'xp',
+  loading: true,
+  error: null,
+  refreshing: false,
+}
+
+function leaderboardPageReducer(
+  state: LeaderboardPageState,
+  action: LeaderboardPageAction
+): LeaderboardPageState {
+  switch (action.type) {
+    case 'setPeriod':
+      return {
+        ...state,
+        selectedPeriod: action.period,
+      }
+    case 'setType':
+      return {
+        ...state,
+        selectedType: action.leaderboardType,
+      }
+    case 'fetchStart':
+      return {
+        ...state,
+        loading: action.refreshing ? state.loading : true,
+        error: null,
+        refreshing: action.refreshing ? true : state.refreshing,
+      }
+    case 'fetchSuccess':
+      return {
+        ...state,
+        leaderboardData: action.data,
+        loading: false,
+        refreshing: false,
+      }
+    case 'fetchError':
+      return {
+        ...state,
+        error: action.error,
+        loading: false,
+        refreshing: false,
+      }
+    default:
+      return state
+  }
+}
+
 function LeaderboardContent() {
   const { user } = useAuth()
-  const [leaderboardData, setLeaderboardData] = useState<LeaderboardResponse | null>(null)
-  const [selectedPeriod, setSelectedPeriod] = useState<LeaderboardPeriod>('weekly')
-  const [selectedType, setSelectedType] = useState<LeaderboardType>('xp')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [refreshing, setRefreshing] = useState(false)
+  const [state, dispatch] = useReducer(
+    leaderboardPageReducer,
+    initialLeaderboardPageState
+  )
+  const {
+    leaderboardData,
+    selectedPeriod,
+    selectedType,
+    loading,
+    error,
+    refreshing,
+  } = state
 
   const fetchLeaderboard = useCallback(async (showRefreshing = false) => {
-    if (showRefreshing) {
-      setRefreshing(true)
-    } else {
-      setLoading(true)
-    }
-    setError(null)
+    dispatch({ type: 'fetchStart', refreshing: showRefreshing })
 
     try {
       const params = new URLSearchParams({
@@ -76,12 +143,12 @@ function LeaderboardContent() {
       }
 
       const result: ApiResponse<LeaderboardResponse> = await response.json()
-      setLeaderboardData(result.data)
+      dispatch({ type: 'fetchSuccess', data: result.data })
     } catch (_err) {
-      setError('Failed to load leaderboard. Please try again.')
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
+      dispatch({
+        type: 'fetchError',
+        error: 'Failed to load leaderboard. Please try again.',
+      })
     }
   }, [selectedPeriod, selectedType])
 
@@ -166,7 +233,7 @@ function LeaderboardContent() {
                   key={period}
                   variant={selectedPeriod === period ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setSelectedPeriod(period)}
+                  onClick={() => dispatch({ type: 'setPeriod', period })}
                   className="min-w-20"
                 >
                   {leaderboardPeriodLabels[period]}
@@ -184,7 +251,7 @@ function LeaderboardContent() {
                   key={type}
                   variant={selectedType === type ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setSelectedType(type)}
+                  onClick={() => dispatch({ type: 'setType', leaderboardType: type })}
                   className="gap-2"
                 >
                   {typeIcons[type]}

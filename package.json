@@ -117,11 +117,53 @@
     "diff": "^8.0.3",
     "lodash": "^4.17.23",
     "hono": "^4.12.7",
+    "@eslint/config-array": {
+      "minimatch": "^3.1.4"
+    },
+    "@eslint/eslintrc": {
+      "ajv": "^6.14.0",
+      "minimatch": "^3.1.4"
+    },
+    "@jest/reporters": {
+      "minimatch": "^9.0.7"
+    },
+    "@prisma/dev": {
+      "@hono/node-server": "^1.19.10"
+    },
     "@sentry/bundler-plugin-core": {
       "glob": "^11.1.0"
     },
     "@sentry/node": {
-      "minimatch": "^10.2.2"
+      "minimatch": "^10.2.4"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^9.0.7"
+    },
+    "eslint": {
+      "ajv": "^6.14.0",
+      "minimatch": "^3.1.4"
+    },
+    "eslint-plugin-import": {
+      "minimatch": "^3.1.4"
+    },
+    "eslint-plugin-jsx-a11y": {
+      "minimatch": "^3.1.4"
+    },
+    "eslint-plugin-react": {
+      "minimatch": "^3.1.4"
+    },
+    "flatted": "^3.4.0",
+    "jest-config": {
+      "minimatch": "^9.0.7"
+    },
+    "jest-runtime": {
+      "minimatch": "^9.0.7"
+    },
+    "native-run": {
+      "yauzl": "^3.2.1"
+    },
+    "test-exclude": {
+      "minimatch": "^3.1.4"
     }
   }
 }

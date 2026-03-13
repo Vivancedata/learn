@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useEffect, useReducer } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -24,15 +23,95 @@ import {
   KeyRound,
 } from 'lucide-react'
 
-function ResetPasswordForm() {
-  const searchParams = useSearchParams()
-  const token = searchParams.get('token')
+interface ResetPasswordState {
+  token: string | null
+  tokenReady: boolean
+  password: string
+  confirmPassword: string
+  error: string | null
+  success: boolean
+  isSubmitting: boolean
+}
 
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+type ResetPasswordAction =
+  | { type: 'tokenLoaded'; token: string | null }
+  | { type: 'setPassword'; value: string }
+  | { type: 'setConfirmPassword'; value: string }
+  | { type: 'setError'; value: string | null }
+  | { type: 'submitStart' }
+  | { type: 'submitSuccess' }
+  | { type: 'submitEnd' }
+
+const initialResetPasswordState: ResetPasswordState = {
+  token: null,
+  tokenReady: false,
+  password: '',
+  confirmPassword: '',
+  error: null,
+  success: false,
+  isSubmitting: false,
+}
+
+function resetPasswordReducer(
+  state: ResetPasswordState,
+  action: ResetPasswordAction
+): ResetPasswordState {
+  switch (action.type) {
+    case 'tokenLoaded':
+      return {
+        ...state,
+        token: action.token,
+        tokenReady: true,
+      }
+    case 'setPassword':
+      return {
+        ...state,
+        password: action.value,
+      }
+    case 'setConfirmPassword':
+      return {
+        ...state,
+        confirmPassword: action.value,
+      }
+    case 'setError':
+      return {
+        ...state,
+        error: action.value,
+      }
+    case 'submitStart':
+      return {
+        ...state,
+        error: null,
+        isSubmitting: true,
+      }
+    case 'submitSuccess':
+      return {
+        ...state,
+        success: true,
+        isSubmitting: false,
+      }
+    case 'submitEnd':
+      return {
+        ...state,
+        isSubmitting: false,
+      }
+    default:
+      return state
+  }
+}
+
+function ResetPasswordForm() {
+  const [
+    { token, tokenReady, password, confirmPassword, error, success, isSubmitting },
+    dispatch,
+  ] = useReducer(resetPasswordReducer, initialResetPasswordState)
+
+  useEffect(() => {
+    dispatch({
+      type: 'tokenLoaded',
+      token: new URLSearchParams(window.location.search).get('token'),
+    })
+  }, [])
 
   const passwordStrength = {
     hasMinLength: password.length >= 8,
@@ -46,29 +125,29 @@ function ResetPasswordForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
+    dispatch({ type: 'setError', value: null })
 
     if (!token) {
-      setError('Reset token is missing or invalid')
+      dispatch({ type: 'setError', value: 'Reset token is missing or invalid' })
       return
     }
 
     if (!password || !confirmPassword) {
-      setError('Please fill in all fields')
+      dispatch({ type: 'setError', value: 'Please fill in all fields' })
       return
     }
 
     if (!isPasswordValid) {
-      setError('Password does not meet the requirements')
+      dispatch({ type: 'setError', value: 'Password does not meet the requirements' })
       return
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      dispatch({ type: 'setError', value: 'Passwords do not match' })
       return
     }
 
-    setIsSubmitting(true)
+    dispatch({ type: 'submitStart' })
 
     try {
       const response = await fetch('/api/auth/reset-password', {
@@ -88,12 +167,23 @@ function ResetPasswordForm() {
         throw new Error(result.message || 'Failed to reset password')
       }
 
-      setSuccess(true)
+      dispatch({ type: 'submitSuccess' })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      dispatch({
+        type: 'setError',
+        value: err instanceof Error ? err.message : 'Something went wrong',
+      })
     } finally {
-      setIsSubmitting(false)
+      dispatch({ type: 'submitEnd' })
     }
+  }
+
+  if (!tokenReady) {
+    return (
+      <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   if (!token) {
@@ -174,7 +264,7 @@ function ResetPasswordForm() {
                 type="password"
                 placeholder="Enter new password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => dispatch({ type: 'setPassword', value: e.target.value })}
                 disabled={isSubmitting}
                 autoComplete="new-password"
                 required
@@ -257,7 +347,7 @@ function ResetPasswordForm() {
                 type="password"
                 placeholder="Confirm new password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => dispatch({ type: 'setConfirmPassword', value: e.target.value })}
                 disabled={isSubmitting}
                 autoComplete="new-password"
                 required
@@ -311,15 +401,5 @@ function ResetPasswordForm() {
 }
 
 export default function ResetPasswordPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      }
-    >
-      <ResetPasswordForm />
-    </Suspense>
-  )
+  return <ResetPasswordForm />
 }
