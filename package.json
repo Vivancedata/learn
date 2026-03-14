@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "prisma generate && next build",
-    "build:ci": "DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@127.0.0.1:5432/learn} NEXT_TELEMETRY_DISABLED=1 NODE_ENV=production next build --webpack",
-    "postinstall": "prisma generate",
-    "build:webpack": "DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@127.0.0.1:5432/learn} NEXT_TELEMETRY_DISABLED=1 next build --webpack",
+    "build": "prisma generate && next build --webpack",
+    "build:ci": "NODE_ENV=production prisma migrate deploy && NODE_ENV=production prisma generate && NEXT_TELEMETRY_DISABLED=1 NODE_ENV=production next build --webpack",
+    "postinstall": "node scripts/postinstall.mjs",
+    "build:webpack": "NEXT_TELEMETRY_DISABLED=1 next build --webpack",
     "start": "next start",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "node scripts/check-ui-boundary.mjs && eslint src --ext .ts,.tsx",
     "db:seed": "ts-node --project prisma/tsconfig.seed.json prisma/seed.ts",
     "db:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
@@ -17,6 +17,9 @@
     "test:watch": "jest --watch",
     "test:unit:coverage": "npm test -- --runInBand --coverage --coverageDirectory=coverage/unit --coverageReporters=text-summary --coverageReporters=json-summary --testPathPatterns='src/lib/__tests__|src/types/__tests__' --coverageThreshold='{\"global\":{\"statements\":0,\"branches\":0,\"functions\":0,\"lines\":0}}' && node scripts/check-coverage-threshold.js coverage/unit/coverage-summary.json 85 unit",
     "test:integration:coverage": "npm test -- --runInBand --coverage --coverageDirectory=coverage/integration --coverageReporters=text-summary --coverageReporters=json-summary --testPathPatterns='src/app/api/__tests__|__tests__/api' --coverageThreshold='{\"global\":{\"statements\":0,\"branches\":0,\"functions\":0,\"lines\":0}}' && node scripts/check-coverage-threshold.js coverage/integration/coverage-summary.json 85 integration /src/app/api/",
+    "react-doctor:score": "npx -y react-doctor@latest . --score",
+    "react-doctor:ci": "node scripts/check-react-doctor-score.mjs",
+    "lighthouse:ci": "node scripts/check-lighthouse-score.mjs http://127.0.0.1:3000 /pricing /sign-in",
     "smoke": "npm run lint && npm test -- --runInBand && npm run build:ci",
     "test:e2e": "bash scripts/test-e2e.sh",
     "test:e2e:coverage": "MIN_E2E_ASSERTION_COVERAGE=85 bash scripts/test-e2e.sh",
@@ -25,7 +28,7 @@
     "ops:check:prod": "BASE_URL=https://learn.vivancedata.com bash scripts/ops-check.sh",
     "ops:sentry:bootstrap": "bash scripts/bootstrap-sentry-read-checks.sh",
     "lint:content": "markdownlint-cli2 'content/**/*.md'",
-    "build:mobile": "CAPACITOR_BUILD=true next build",
+    "build:mobile": "CAPACITOR_BUILD=true next build --webpack",
     "cap:sync": "npx cap sync",
     "cap:sync:ios": "npx cap sync ios",
     "cap:sync:android": "npx cap sync android",
@@ -36,7 +39,8 @@
     "mobile:ios": "npm run build:mobile && npm run cap:sync:ios && npm run cap:open:ios",
     "mobile:android": "npm run build:mobile && npm run cap:sync:android && npm run cap:open:android",
     "mobile:dev:ios": "npx cap run ios --livereload --external",
-    "mobile:dev:android": "npx cap run android --livereload --external"
+    "mobile:dev:android": "npx cap run android --livereload --external",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@capacitor/android": "^7.0.0",
@@ -50,32 +54,31 @@
     "@capacitor/push-notifications": "^7.0.0",
     "@capacitor/splash-screen": "^7.0.0",
     "@capacitor/status-bar": "^7.0.0",
-    "@prisma/adapter-libsql": "^7.4.1",
-    "@prisma/adapter-pg": "^7.4.1",
-    "@prisma/client": "^7.4.1",
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "^7.5.0",
     "@radix-ui/react-scroll-area": "^1.2.3",
     "@radix-ui/react-slot": "^1.1.2",
-    "@sentry/nextjs": "^10.39.0",
+    "@sentry/nextjs": "^10.43.0",
     "@stripe/stripe-js": "^8.7.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.2",
-    "@vivancedata/ui": "github:Vivancedata/ui",
+    "@vivancedata/ui": "https://github.com/Vivancedata/ui/archive/refs/tags/v0.1.0-ci.3.tar.gz",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "gray-matter": "^4.0.3",
     "jose": "^6.1.3",
     "lucide-react": "^0.475.0",
-    "next": "^16.1.3",
+    "next": "^16.1.6",
     "next-themes": "^0.4.4",
     "pg": "^8.18.0",
-    "posthog-js": "^1.337.1",
-    "posthog-node": "^5.24.9",
+    "posthog-js": "^1.360.1",
+    "posthog-node": "^5.28.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-markdown": "^10.0.0",
     "remark-gfm": "^4.0.1",
-    "resend": "^6.9.1",
+    "resend": "^6.9.3",
     "stripe": "^20.3.0",
     "swr": "^2.4.0",
     "tailwind-merge": "^3.0.2",
@@ -100,7 +103,7 @@
     "jest-environment-jsdom": "^30.2.0",
     "markdownlint-cli2": "^0.21.0",
     "postcss": "^8",
-    "prisma": "^7.4.1",
+    "prisma": "^7.5.0",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
@@ -113,12 +116,54 @@
   "overrides": {
     "diff": "^8.0.3",
     "lodash": "^4.17.23",
-    "hono": "^4.12.0",
+    "hono": "^4.12.7",
+    "@eslint/config-array": {
+      "minimatch": "^3.1.4"
+    },
+    "@eslint/eslintrc": {
+      "ajv": "^6.14.0",
+      "minimatch": "^3.1.4"
+    },
+    "@jest/reporters": {
+      "minimatch": "^9.0.7"
+    },
+    "@prisma/dev": {
+      "@hono/node-server": "^1.19.10"
+    },
     "@sentry/bundler-plugin-core": {
       "glob": "^11.1.0"
     },
     "@sentry/node": {
-      "minimatch": "^10.2.2"
+      "minimatch": "^10.2.4"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^9.0.7"
+    },
+    "eslint": {
+      "ajv": "^6.14.0",
+      "minimatch": "^3.1.4"
+    },
+    "eslint-plugin-import": {
+      "minimatch": "^3.1.4"
+    },
+    "eslint-plugin-jsx-a11y": {
+      "minimatch": "^3.1.4"
+    },
+    "eslint-plugin-react": {
+      "minimatch": "^3.1.4"
+    },
+    "flatted": "^3.4.0",
+    "jest-config": {
+      "minimatch": "^9.0.7"
+    },
+    "jest-runtime": {
+      "minimatch": "^9.0.7"
+    },
+    "native-run": {
+      "yauzl": "^3.2.1"
+    },
+    "test-exclude": {
+      "minimatch": "^3.1.4"
     }
   }
 }

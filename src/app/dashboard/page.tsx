@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import Link from "next/link"
+import useSWR from "swr"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -52,102 +52,82 @@ interface UserPointsData {
   }
 }
 
-function DashboardContent() {
+function useDashboardContentView() {
   const { user } = useAuth()
-  const [courses, setCourses] = useState<Course[]>([])
-  const [paths, setPaths] = useState<Path[]>([])
-  const [userProgress, setUserProgress] = useState<UserProgress | null>(null)
-  const [userPoints, setUserPoints] = useState<UserPointsData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data, isLoading, error, mutate } = useSWR(
+    user ? ['dashboard-data', user.id] as const : null,
+    async ([, userId]) => {
+      const [coursesResult, pathsResult, progressResult, pointsResult] = await Promise.allSettled([
+        fetch('/api/courses').then(async (res) => {
+          if (!res.ok) throw new Error('Failed to load courses')
+          const payload = await res.json()
+          return (payload.data || []) as Course[]
+        }),
+        fetch('/api/paths').then(async (res) => {
+          if (!res.ok) throw new Error('Failed to load paths')
+          const payload = await res.json()
+          return (payload.data || []) as Path[]
+        }),
+        fetch(`/api/progress/user/${userId}`, {
+          credentials: 'include',
+        }).then(async (res) => {
+          if (!res.ok) throw new Error('Failed to fetch progress')
+          return (await res.json()) as UserProgress
+        }),
+        fetch(`/api/points/user/${userId}`, {
+          credentials: 'include',
+        }).then(async (res) => {
+          if (!res.ok) throw new Error('Failed to fetch points')
+          const payload = await res.json()
+          return payload.data as UserPointsData
+        }),
+      ])
 
-  useEffect(() => {
-    async function loadData() {
-      if (!user) return
+      const loadErrors: string[] = []
+      const baseCourses = coursesResult.status === 'fulfilled' ? coursesResult.value : []
+      const paths = pathsResult.status === 'fulfilled' ? pathsResult.value : []
+      const userProgress = progressResult.status === 'fulfilled' ? progressResult.value : null
+      const userPoints = pointsResult.status === 'fulfilled' ? pointsResult.value : null
 
-      try {
-        // Load courses, paths, user progress, and user points
-        const [coursesResult, pathsResult, progressResult, pointsResult] = await Promise.allSettled([
-          fetch('/api/courses').then(res => res.ok ? res.json() : { data: [] }).then(d => (d.data || []) as Course[]),
-          fetch('/api/paths').then(res => res.ok ? res.json() : { data: [] }).then(d => (d.data || []) as Path[]),
-          fetch(`/api/progress/user/${user.id}`, {
-            credentials: 'include', // Send HTTP-only auth cookie
-          }).then(res => {
-            if (!res.ok) throw new Error('Failed to fetch progress')
-            return res.json()
-          }),
-          fetch(`/api/points/user/${user.id}`, {
-            credentials: 'include',
-          }).then(res => {
-            if (!res.ok) throw new Error('Failed to fetch points')
-            return res.json()
-          }),
-        ])
+      if (coursesResult.status === 'rejected') loadErrors.push('Failed to load courses')
+      if (pathsResult.status === 'rejected') loadErrors.push('Failed to load paths')
 
-        // Handle courses result
-        if (coursesResult.status === 'fulfilled') {
-          setCourses(coursesResult.value)
-        } else {
-          setError((prev) => prev ? `${prev}; Failed to load courses` : 'Failed to load courses')
-        }
+      const courses = userProgress
+        ? baseCourses.map((course) => {
+            const progressData = userProgress.courses.find(
+              (p: CourseProgressData) => p.courseId === course.id
+            )
 
-        // Handle paths result
-        if (pathsResult.status === 'fulfilled') {
-          setPaths(pathsResult.value)
-        } else {
-          setError((prev) => prev ? `${prev}; Failed to load paths` : 'Failed to load paths')
-        }
+            if (!progressData) return course
 
-        // Handle progress result
-        if (progressResult.status === 'fulfilled') {
-          setUserProgress(progressResult.value)
+            return {
+              ...course,
+              progress: {
+                completed: progressData.completedLessons,
+                total: progressData.totalLessons,
+                lastAccessed: progressData.lastAccessed,
+              },
+            }
+          })
+        : baseCourses
 
-          // Merge progress data into courses
-          if (coursesResult.status === 'fulfilled') {
-            const coursesWithProgress = coursesResult.value.map(course => {
-              const progressData = progressResult.value.courses.find(
-                (p: CourseProgressData) => p.courseId === course.id
-              )
-
-              if (progressData) {
-                return {
-                  ...course,
-                  progress: {
-                    completed: progressData.completedLessons,
-                    total: progressData.totalLessons,
-                    lastAccessed: progressData.lastAccessed,
-                  },
-                }
-              }
-
-              return course
-            })
-
-            setCourses(coursesWithProgress)
-          }
-        } else {
-          // Don't set error here - progress is optional
-          void progressResult.reason
-        }
-
-        // Handle points result
-        if (pointsResult.status === 'fulfilled') {
-          setUserPoints(pointsResult.value.data)
-        } else {
-          // Don't set error here - points is optional
-          void pointsResult.reason
-        }
-      } catch (_error) {
-        setError('An unexpected error occurred while loading dashboard data')
-      } finally {
-        setLoading(false)
-      }
+      return { courses, paths, userProgress, userPoints, loadErrors }
     }
+  )
 
-    loadData()
-  }, [user])
+  const courses = data?.courses || []
+  const paths = data?.paths || []
+  const userProgress = data?.userProgress || null
+  const userPoints = data?.userPoints || null
+  const loadErrors = data?.loadErrors ?? []
+  const displayError =
+    error instanceof Error
+      ? error.message
+      : loadErrors.length > 0 && courses.length === 0 && paths.length === 0
+        ? loadErrors.join('; ')
+        : null
 
-  if (loading) {
+  if (isLoading || !data) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -155,11 +135,11 @@ function DashboardContent() {
     )
   }
 
-  if (error && courses.length === 0 && paths.length === 0) {
+  if (displayError && courses.length === 0 && paths.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="text-destructive text-lg mb-4">{error}</div>
-        <Button onClick={() => window.location.reload()}>Try Again</Button>
+        <div className="text-destructive text-lg mb-4">{displayError}</div>
+        <Button onClick={() => void mutate()}>Try Again</Button>
       </div>
     )
   }
@@ -694,6 +674,10 @@ function DashboardContent() {
       </div>
     </div>
   )
+}
+
+function DashboardContent() {
+  return useDashboardContentView()
 }
 
 export default function DashboardPage() {

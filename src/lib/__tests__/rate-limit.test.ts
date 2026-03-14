@@ -1,14 +1,20 @@
-
 // Mock @upstash modules to avoid ESM issues
 jest.mock('@upstash/redis', () => ({
   Redis: jest.fn(),
 }))
 
-jest.mock('@upstash/ratelimit', () => ({
-  Ratelimit: {
-    slidingWindow: jest.fn(),
-  },
-}))
+jest.mock('@upstash/ratelimit', () => {
+  const limit = jest.fn()
+  const Ratelimit = jest.fn().mockImplementation(() => ({
+    limit,
+  })) as jest.Mock & { slidingWindow?: jest.Mock }
+  Ratelimit.slidingWindow = jest.fn()
+
+  return {
+    Ratelimit,
+    __mockLimit: limit,
+  }
+})
 
 // Mock the redis module to prevent Redis connection attempts during tests
 jest.mock('../redis', () => ({
@@ -25,8 +31,23 @@ import rateLimiter, {
   RateLimitResult,
 } from '../rate-limit'
 
+const redisMock = jest.requireMock('../redis') as {
+  isRedisConfigured: jest.Mock
+  getRedis: jest.Mock
+}
+const upstashRatelimitMock = jest.requireMock('@upstash/ratelimit') as {
+  Ratelimit: jest.Mock & { slidingWindow: jest.Mock }
+  __mockLimit: jest.Mock
+}
+
 describe('Rate Limiter', () => {
   beforeEach(() => {
+    redisMock.isRedisConfigured.mockReturnValue(false)
+    redisMock.getRedis.mockReturnValue(null)
+    upstashRatelimitMock.Ratelimit.mockClear()
+    upstashRatelimitMock.Ratelimit.slidingWindow.mockClear()
+    upstashRatelimitMock.__mockLimit.mockReset()
+
     // Reset the rate limiter between tests
     rateLimiter.destroy()
   })
@@ -404,16 +425,114 @@ describe('Rate Limiter', () => {
       expect(result.success).toBe(true)
     })
   })
-})
 
-describe('Rate Limiter with Redis mock', () => {
-  beforeEach(() => {
-    jest.resetModules()
+  describe('Redis backend behavior', () => {
+    beforeEach(() => {
+      redisMock.isRedisConfigured.mockReturnValue(true)
+      redisMock.getRedis.mockReturnValue({})
+      upstashRatelimitMock.__mockLimit.mockResolvedValue({
+        success: true,
+        remaining: 9,
+        reset: 123456,
+        limit: 10,
+      })
+      rateLimiter.destroy()
+    })
+
+    afterEach(() => {
+      redisMock.isRedisConfigured.mockReturnValue(false)
+      redisMock.getRedis.mockReturnValue(null)
+      rateLimiter.destroy()
+    })
+
+    it('should use Redis backend when configured', async () => {
+      const result = await rateLimiter.check('redis-user', 10, 1000)
+
+      expect(result).toEqual({
+        success: true,
+        remaining: 9,
+        resetTime: 123456,
+        limit: 10,
+      })
+      expect(upstashRatelimitMock.Ratelimit).toHaveBeenCalledTimes(1)
+      expect(upstashRatelimitMock.Ratelimit.slidingWindow).toHaveBeenCalledWith(10, '1 s')
+    })
+
+    it('should reuse limiter instance for repeated checks with same config', async () => {
+      await rateLimiter.check('redis-user-a', 10, 1000)
+      await rateLimiter.check('redis-user-b', 10, 1000)
+
+      expect(upstashRatelimitMock.Ratelimit).toHaveBeenCalledTimes(1)
+      expect(upstashRatelimitMock.__mockLimit).toHaveBeenCalledTimes(2)
+    })
+
+    it('should fail open when redis limiter throws', async () => {
+      upstashRatelimitMock.__mockLimit.mockRejectedValueOnce(new Error('redis unavailable'))
+
+      const result = await rateLimiter.check('redis-user', 3, 2000)
+
+      expect(result.success).toBe(true)
+      expect(result.remaining).toBe(3)
+      expect(result.limit).toBe(3)
+      expect(result.resetTime).toBeGreaterThan(Date.now())
+    })
+
+    it('should fail open when redis client is unexpectedly missing', async () => {
+      redisMock.getRedis.mockReturnValue(null)
+      rateLimiter.destroy()
+
+      const result = await rateLimiter.check('redis-user', 4, 1500)
+
+      expect(result.success).toBe(true)
+      expect(result.remaining).toBe(4)
+      expect(result.limit).toBe(4)
+    })
+
+    it('should return true for isUsingRedis in redis mode', () => {
+      expect(rateLimiter.isUsingRedis()).toBe(true)
+    })
+
+    it('should warn and fail open for checkSync with redis backend', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+      const result = rateLimiter.checkSync('redis-sync', 7, 5000)
+
+      expect(result.success).toBe(true)
+      expect(result.remaining).toBe(7)
+      expect(warnSpy).toHaveBeenCalledTimes(1)
+      warnSpy.mockRestore()
+    })
+
+    it('should no-op reset and clear with redis backend', async () => {
+      await rateLimiter.check('redis-user', 10, 1000)
+      rateLimiter.reset('redis-user')
+      rateLimiter.clear()
+      rateLimiter.destroy()
+
+      expect(upstashRatelimitMock.__mockLimit).toHaveBeenCalledTimes(1)
+    })
   })
 
-  it('should detect when Redis is not configured', () => {
-    // The mock sets isRedisConfigured to false
-    const { isRedisConfigured } = jest.requireMock('../redis')
-    expect(isRedisConfigured()).toBe(false)
+  describe('Production configuration', () => {
+    const originalNodeEnv = process.env.NODE_ENV
+    const env = process.env as Record<string, string | undefined>
+
+    afterEach(() => {
+      env.NODE_ENV = originalNodeEnv
+      redisMock.isRedisConfigured.mockReturnValue(false)
+      redisMock.getRedis.mockReturnValue(null)
+      rateLimiter.destroy()
+    })
+
+    it('should throw when redis is not configured in production', async () => {
+      env.NODE_ENV = 'production'
+      redisMock.isRedisConfigured.mockReturnValue(false)
+      redisMock.getRedis.mockReturnValue(null)
+      rateLimiter.destroy()
+
+      await expect(rateLimiter.check('prod-user', 1, 1000)).rejects.toThrow(
+        'Redis is not configured'
+      )
+    })
   })
 })

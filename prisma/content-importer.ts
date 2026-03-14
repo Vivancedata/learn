@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool } from 'pg'
 import fs from 'fs'
 import path from 'path'
 import { createHash } from 'crypto'
@@ -25,11 +24,10 @@ function resolveDatabaseUrl(): string {
   return databaseUrl
 }
 
-const pool = new Pool({
+const adapter = new PrismaPg({
   connectionString: resolveDatabaseUrl(),
   allowExitOnIdle: true,
 })
-const adapter = new PrismaPg(pool)
 
 const prisma = new PrismaClient({
   adapter,
@@ -637,12 +635,10 @@ if (require.main === module) {
   importContent()
     .then(async () => {
       await prisma.$disconnect()
-      await pool.end()
     })
     .catch(async (e) => {
       console.error(e)
       await prisma.$disconnect()
-      await pool.end()
       process.exit(1)
     })
 }

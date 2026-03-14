@@ -33,20 +33,22 @@ export function InteractiveCodeBlock({
   interactive = false,
   className,
 }: InteractiveCodeBlockProps) {
-  const [isExpanded, setIsExpanded] = useState(interactive)
+  const [isExpandedByUser, setIsExpandedByUser] = useState(false)
 
   // Clean up the code (remove trailing newlines)
   const cleanCode = useMemo(() => code.trim(), [code])
 
   // Handle toggle between static and interactive view
   const toggleInteractive = useCallback(() => {
-    setIsExpanded((prev) => !prev)
+    setIsExpandedByUser((prev) => !prev)
   }, [])
+
+  const isExpanded = interactive || isExpandedByUser
 
   // For Python, offer the option to make any code block interactive
   const canBeInteractive = language === 'python' || language === 'py'
 
-  if (interactive || isExpanded) {
+  if (isExpanded) {
     // Render as full playground
     return (
       <div className={cn('my-4', className)}>

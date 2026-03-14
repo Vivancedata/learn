@@ -7,7 +7,7 @@ import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
 
 // Mock environment variables
 process.env.JWT_SECRET = 'test-secret-key-for-testing-only'
-process.env.DATABASE_URL = 'file:./test.db'
+process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/test'
 
 describe('Critical Security Fixes - Integration Tests', () => {
    

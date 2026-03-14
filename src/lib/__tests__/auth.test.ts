@@ -228,7 +228,7 @@ describe('Auth Utilities', () => {
 
       const request = new NextRequest('http://localhost/api/test')
 
-      await expect(requireAuth(request)).rejects.toThrow('Unauthorized')
+      await expect(requireAuth(request)).rejects.toThrow('Please sign in')
     })
   })
 

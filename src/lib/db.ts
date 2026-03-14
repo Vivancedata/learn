@@ -1,13 +1,12 @@
-import { PrismaClient, Prisma } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool } from 'pg'
 
 // PrismaClient is attached to the `global` object in development to prevent
 // exhausting your database connection limit.
 // Learn more: https://pris.ly/d/help/next-js-best-practices
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
-const POSTGRES_URL_PATTERN = /^(postgres|postgresql|prisma\+postgres):\/\//
+let prismaClient: PrismaClient | undefined
 
 function resolveDatabaseUrl(): string {
   const databaseUrl =
@@ -17,13 +16,14 @@ function resolveDatabaseUrl(): string {
 
   if (!databaseUrl) {
     throw new Error(
-      'DATABASE_URL is required. Set DATABASE_URL (or POSTGRES_PRISMA_URL/POSTGRES_URL) to a PostgreSQL connection string.'
+      'Postgres connection string is required. ' +
+      'Set DATABASE_URL (or POSTGRES_PRISMA_URL/POSTGRES_URL on Vercel).'
     )
   }
 
-  if (!POSTGRES_URL_PATTERN.test(databaseUrl)) {
+  if (!/^(postgres|postgresql|prisma\+postgres):\/\//.test(databaseUrl)) {
     throw new Error(
-      'Unsupported DATABASE_URL scheme. Use PostgreSQL (postgres://, postgresql://, or prisma+postgres://).'
+      'DATABASE_URL must be a PostgreSQL connection string (for example Neon).'
     )
   }
 
@@ -32,27 +32,38 @@ function resolveDatabaseUrl(): string {
 
 function createPrismaClient() {
   const databaseUrl = resolveDatabaseUrl()
-  if (!process.env.DATABASE_URL) {
-    process.env.DATABASE_URL = databaseUrl
-  }
-
-  const log: Prisma.LogLevel[] =
-    process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
-
-  const pool = new Pool({
+  const adapter = new PrismaPg({
     connectionString: databaseUrl,
-    max: process.env.NODE_ENV === 'development' ? 5 : 20,
   })
-  const adapter = new PrismaPg(pool)
-
   return new PrismaClient({
     adapter,
-    log,
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   })
 }
 
-export const prisma = globalForPrisma.prisma || createPrismaClient()
+function getPrismaClient(): PrismaClient {
+  if (prismaClient) {
+    return prismaClient
+  }
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+  prismaClient = globalForPrisma.prisma || createPrismaClient()
+
+  if (process.env.NODE_ENV !== 'production') {
+    globalForPrisma.prisma = prismaClient
+  }
+
+  return prismaClient
+}
+
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, property, receiver) {
+    const client = getPrismaClient()
+    const value = Reflect.get(client as object, property, receiver)
+    return typeof value === 'function' ? value.bind(client) : value
+  },
+  set(_target, property, value, receiver) {
+    return Reflect.set(getPrismaClient() as object, property, value, receiver)
+  },
+}) as PrismaClient
 
 export default prisma

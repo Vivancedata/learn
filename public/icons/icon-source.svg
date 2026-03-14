@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title>VivanceData Learning</title>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#14532d" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#a7f3d0" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#bg)" />
+  <path
+    d="M148 124h76l76 192 76-192h76L336 388h-72L148 124Z"
+    fill="none"
+    stroke="url(#accent)"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="34"
+  />
+  <circle cx="366" cy="158" r="26" fill="#f8fafc" opacity="0.9" />
+</svg>

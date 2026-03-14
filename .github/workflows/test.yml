@@ -8,10 +8,18 @@ on:
     branches: [master, main]
   pull_request:
     branches: [master, main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+  BASE_BRANCH: ${{ github.base_ref || github.event.repository.default_branch }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   lint:
@@ -25,17 +33,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
       - name: Run ESLint
-        run: npx eslint src --ext .ts,.tsx
+        run: npm run lint
 
-  test:
-    name: Test
+  typecheck:
+    name: Type Check
     runs-on: ubuntu-latest
     needs: lint
 
@@ -46,7 +54,28 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript
+        run: npm run type-check
+
+  coverage:
+    name: Test Coverage (>=85%)
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
@@ -55,8 +84,11 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Run tests
-        run: npm test -- --coverage --passWithNoTests
+      - name: Run unit coverage
+        run: npm run test:unit:coverage
+
+      - name: Run integration coverage
+        run: npm run test:integration:coverage
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -69,7 +101,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: test
+    needs: [coverage, typecheck]
 
     steps:
       - name: Checkout code
@@ -78,7 +110,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
@@ -89,7 +121,47 @@ jobs:
 
       - name: Build application
         run: npm run build
-        env:
-          DATABASE_URL: "file:./prisma/dev.db"
-          JWT_SECRET: "ci-test-secret-not-for-production"
-          ALLOWED_ORIGINS: "http://localhost:3000"
+
+  lighthouse:
+    name: Lighthouse (100/100/100/100)
+    runs-on: ubuntu-latest
+    needs: [coverage, typecheck]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start application
+        run: |
+          npm run start -- -p 3000 > /tmp/learn.log 2>&1 &
+          echo $! > /tmp/learn.pid
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/pricing > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/learn.log
+          exit 1
+
+      - name: Enforce Lighthouse scores
+        run: npm run lighthouse:ci
+
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f /tmp/learn.pid ]; then
+            kill "$(cat /tmp/learn.pid)" || true
+          fi

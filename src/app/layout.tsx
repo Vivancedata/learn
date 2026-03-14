@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Suspense } from "react"
+import "@vivancedata/ui/styles"
 import "./globals.css"
 import { Navbar } from "@/components/ui/navbar"
 import { ThemeProvider } from "@/components/ui/theme-provider"
@@ -8,8 +9,6 @@ import { AuthProvider } from "@/contexts/AuthContext"
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext"
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
 import { PostHogProvider } from "@/components/providers/posthog-provider"
-import { TutorProvider } from "@/components/ai-tutor/tutor-provider"
-import { ChatContainer } from "@/components/ai-tutor/chat-container"
 import { MobileProvider } from "@/components/mobile/mobile-provider"
 
 export const metadata: Metadata = {
@@ -43,8 +42,6 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 }
 
 export default function RootLayout({
@@ -71,21 +68,18 @@ export default function RootLayout({
                     enableSystem
                     disableTransitionOnChange
                   >
-                    <TutorProvider>
-                      <ServiceWorkerRegistration />
-                      <MobileProvider
-                        showBottomNav={true}
-                        showOfflineIndicator={true}
-                        showInstallPrompt={true}
-                        installPromptMinVisits={2}
-                      >
-                        <Navbar />
-                        <main className="container mx-auto py-8 px-4 pb-24 md:pb-8">
-                          {children}
-                        </main>
-                        <ChatContainer />
-                      </MobileProvider>
-                    </TutorProvider>
+                    <ServiceWorkerRegistration />
+                    <MobileProvider
+                      showBottomNav={true}
+                      showOfflineIndicator={true}
+                      showInstallPrompt={true}
+                      installPromptMinVisits={2}
+                    >
+                      <Navbar />
+                      <main className="container mx-auto py-8 px-4 pb-24 md:pb-8">
+                        {children}
+                      </main>
+                    </MobileProvider>
                   </ThemeProvider>
                 </SubscriptionProvider>
               </AuthProvider>

@@ -3,6 +3,14 @@ import { POST as toggleDiscussionLike } from '../discussions/[id]/like/route'
 import { POST as toggleReplyLike } from '../discussions/replies/[replyId]/like/route'
 import prisma from '@/lib/db'
 
+const prismaMock = prisma as unknown as {
+  discussion: { findUnique: jest.Mock; update: jest.Mock }
+  discussionLike: { findUnique: jest.Mock; create: jest.Mock; delete: jest.Mock }
+  discussionReply: { findUnique: jest.Mock; update: jest.Mock }
+  discussionReplyLike: { findUnique: jest.Mock; create: jest.Mock; delete: jest.Mock }
+  $transaction: jest.Mock
+}
+
 jest.mock('@/lib/db', () => ({
   __esModule: true,
   default: {
@@ -44,12 +52,9 @@ describe('Discussion likes', () => {
   })
 
   it('toggles like on discussion', async () => {
-    // @ts-expect-error mock
-    prisma.discussion.findUnique.mockResolvedValue({ id: 'disc-1', likes: 1 })
-    // @ts-expect-error mock
-    prisma.discussionLike.findUnique.mockResolvedValue(null)
-    // @ts-expect-error mock
-    prisma.$transaction.mockResolvedValue([])
+    prismaMock.discussion.findUnique.mockResolvedValue({ id: 'disc-1', likes: 1 })
+    prismaMock.discussionLike.findUnique.mockResolvedValue(null)
+    prismaMock.$transaction.mockResolvedValue([])
 
     const req = new NextRequest('http://localhost/api/discussions/disc-1/like', { method: 'POST' })
     const res = await toggleDiscussionLike(req, { params: Promise.resolve({ id: 'disc-1' }) })
@@ -57,16 +62,13 @@ describe('Discussion likes', () => {
 
     expect(res.status).toBe(200)
     expect(data.data.liked).toBe(true)
-    expect(prisma.$transaction).toHaveBeenCalled()
+    expect(prismaMock.$transaction).toHaveBeenCalled()
   })
 
   it('toggles unlike on discussion', async () => {
-    // @ts-expect-error mock
-    prisma.discussion.findUnique.mockResolvedValue({ id: 'disc-1', likes: 2 })
-    // @ts-expect-error mock
-    prisma.discussionLike.findUnique.mockResolvedValue({ id: 'like-1' })
-    // @ts-expect-error mock
-    prisma.$transaction.mockResolvedValue([])
+    prismaMock.discussion.findUnique.mockResolvedValue({ id: 'disc-1', likes: 2 })
+    prismaMock.discussionLike.findUnique.mockResolvedValue({ id: 'like-1' })
+    prismaMock.$transaction.mockResolvedValue([])
 
     const req = new NextRequest('http://localhost/api/discussions/disc-1/like', { method: 'POST' })
     const res = await toggleDiscussionLike(req, { params: Promise.resolve({ id: 'disc-1' }) })
@@ -77,8 +79,7 @@ describe('Discussion likes', () => {
   })
 
   it('returns 404 when discussion is not found', async () => {
-    // @ts-expect-error mock
-    prisma.discussion.findUnique.mockResolvedValue(null)
+    prismaMock.discussion.findUnique.mockResolvedValue(null)
 
     const req = new NextRequest('http://localhost/api/discussions/missing/like', { method: 'POST' })
     const res = await toggleDiscussionLike(req, { params: Promise.resolve({ id: 'missing' }) })
@@ -89,12 +90,9 @@ describe('Discussion likes', () => {
   })
 
   it('toggles like on reply', async () => {
-    // @ts-expect-error mock
-    prisma.discussionReply.findUnique.mockResolvedValue({ id: 'reply-1', likes: 0 })
-    // @ts-expect-error mock
-    prisma.discussionReplyLike.findUnique.mockResolvedValue(null)
-    // @ts-expect-error mock
-    prisma.$transaction.mockResolvedValue([])
+    prismaMock.discussionReply.findUnique.mockResolvedValue({ id: 'reply-1', likes: 0 })
+    prismaMock.discussionReplyLike.findUnique.mockResolvedValue(null)
+    prismaMock.$transaction.mockResolvedValue([])
 
     const req = new NextRequest('http://localhost/api/discussions/replies/reply-1/like', { method: 'POST' })
     const res = await toggleReplyLike(req, { params: Promise.resolve({ replyId: 'reply-1' }) })
@@ -105,12 +103,9 @@ describe('Discussion likes', () => {
   })
 
   it('toggles unlike on reply', async () => {
-    // @ts-expect-error mock
-    prisma.discussionReply.findUnique.mockResolvedValue({ id: 'reply-1', likes: 3 })
-    // @ts-expect-error mock
-    prisma.discussionReplyLike.findUnique.mockResolvedValue({ id: 'reply-like-1' })
-    // @ts-expect-error mock
-    prisma.$transaction.mockResolvedValue([])
+    prismaMock.discussionReply.findUnique.mockResolvedValue({ id: 'reply-1', likes: 3 })
+    prismaMock.discussionReplyLike.findUnique.mockResolvedValue({ id: 'reply-like-1' })
+    prismaMock.$transaction.mockResolvedValue([])
 
     const req = new NextRequest('http://localhost/api/discussions/replies/reply-1/like', { method: 'POST' })
     const res = await toggleReplyLike(req, { params: Promise.resolve({ replyId: 'reply-1' }) })
@@ -121,8 +116,7 @@ describe('Discussion likes', () => {
   })
 
   it('returns 404 when reply is not found', async () => {
-    // @ts-expect-error mock
-    prisma.discussionReply.findUnique.mockResolvedValue(null)
+    prismaMock.discussionReply.findUnique.mockResolvedValue(null)
 
     const req = new NextRequest('http://localhost/api/discussions/replies/missing/like', { method: 'POST' })
     const res = await toggleReplyLike(req, { params: Promise.resolve({ replyId: 'missing' }) })

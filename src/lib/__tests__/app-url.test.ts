@@ -2,11 +2,13 @@ import { getAppUrl } from '../app-url'
 
 describe('getAppUrl', () => {
   const originalEnv = process.env
+  const getMutableEnv = () => process.env as Record<string, string | undefined>
 
   beforeEach(() => {
     process.env = { ...originalEnv }
-    delete process.env.NEXT_PUBLIC_APP_URL
-    delete process.env.NODE_ENV
+    const env = getMutableEnv()
+    delete env.NEXT_PUBLIC_APP_URL
+    delete env.NODE_ENV
   })
 
   afterAll(() => {
@@ -14,12 +16,12 @@ describe('getAppUrl', () => {
   })
 
   it('returns localhost fallback outside production when NEXT_PUBLIC_APP_URL is missing', () => {
-    process.env.NODE_ENV = 'development'
+    getMutableEnv().NODE_ENV = 'development'
     expect(getAppUrl()).toBe('http://localhost:3000')
   })
 
   it('throws when NEXT_PUBLIC_APP_URL is missing in production', () => {
-    process.env.NODE_ENV = 'production'
+    getMutableEnv().NODE_ENV = 'production'
     expect(() => getAppUrl()).toThrow('NEXT_PUBLIC_APP_URL environment variable is required in production.')
   })
 

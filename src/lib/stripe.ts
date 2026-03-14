@@ -7,7 +7,7 @@ import Stripe from 'stripe'
 
 /**
  * Stripe server-side client instance - lazy initialization
- * Uses the latest API version
+ * Uses the SDK-supported pinned API version
  */
 let _stripe: Stripe | null = null
 

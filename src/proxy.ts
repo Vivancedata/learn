@@ -78,6 +78,24 @@ function addRateLimitHeaders(
   return response
 }
 
+async function safeRateLimitCheck(
+  key: string,
+  limit: number,
+  windowMs: number
+) {
+  try {
+    return await rateLimiter.check(key, limit, windowMs)
+  } catch (error) {
+    console.warn('[Proxy] Rate limiter unavailable, failing open', error)
+    return {
+      success: true,
+      remaining: limit,
+      resetTime: Date.now() + windowMs,
+      limit,
+    }
+  }
+}
+
 /**
  * Next.js proxy for authentication, rate limiting, and security
  * Protects API routes (except auth endpoints) by requiring authentication
@@ -94,7 +112,7 @@ export async function proxy(request: NextRequest) {
       return addSecurityHeaders(response)
     }
 
-    const rateLimitResult = await rateLimiter.check(
+    const rateLimitResult = await safeRateLimitCheck(
       `auth:${clientIp}`,
       RATE_LIMITS.AUTH.limit,
       RATE_LIMITS.AUTH.windowMs
@@ -137,7 +155,7 @@ export async function proxy(request: NextRequest) {
   // Apply rate limiting to all other API routes.
   // Public read-only endpoints bypass auth, while sensitive routes require auth.
   if (pathname.startsWith('/api/') && !pathname.startsWith('/api/auth/')) {
-    const rateLimitResult = await rateLimiter.check(
+    const rateLimitResult = await safeRateLimitCheck(
       `api:${clientIp}`,
       RATE_LIMITS.API.limit,
       RATE_LIMITS.API.windowMs

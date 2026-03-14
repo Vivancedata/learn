@@ -140,8 +140,8 @@ model Course {
   difficulty       CourseDifficulty
   durationHours    Int
   pathId           String
-  prerequisites    String? // JSON array - SQLite doesn't support native JSON type
-  learningOutcomes String? // JSON array - SQLite doesn't support native JSON type
+  prerequisites    String? // JSON array stored as string for compatibility
+  learningOutcomes String? // JSON array stored as string for compatibility
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
   sections         CourseSection[]
@@ -201,7 +201,7 @@ model Lesson {
 model QuizQuestion {
   id            String   @id @default(uuid())
   question      String
-  options       String // JSON array of options - SQLite doesn't support native JSON type
+  options       String // JSON array of options stored as string for compatibility
   correctAnswer Int
   explanation   String?
   lessonId      String
@@ -219,7 +219,7 @@ model Path {
   icon           String?
   estimatedHours Int?
   difficulty     String?
-  prerequisites  String? // JSON array - SQLite doesn't support native JSON type
+  prerequisites  String? // JSON array stored as string for compatibility
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   courses        Course[]
@@ -353,7 +353,7 @@ model Certificate {
   issueDate        DateTime  @default(now())
   expiryDate       DateTime?
   verificationCode String    @unique
-  skills           String // JSON array of skills - SQLite doesn't support native JSON type
+  skills           String // JSON array of skills stored as string for compatibility
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   user             User      @relation(fields: [userId], references: [id])
@@ -563,7 +563,7 @@ model AssessmentQuestion {
   assessmentId  String
   question      String
   questionType  QuestionType
-  options       String       // JSON array - SQLite doesn't support native JSON type
+  options       String       // JSON array stored as string for compatibility
   correctAnswer String       // JSON (supports multiple correct for multi-select)
   explanation   String
   difficulty    Int          // 1-5, for adaptive scoring

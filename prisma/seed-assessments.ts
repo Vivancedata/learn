@@ -1,13 +1,11 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool } from 'pg'
 
 function resolveDatabaseUrl(): string {
   const databaseUrl =
     process.env.DATABASE_URL?.trim() ||
     process.env.POSTGRES_PRISMA_URL?.trim() ||
     process.env.POSTGRES_URL?.trim()
-
   if (!databaseUrl) {
     throw new Error(
       'Postgres connection string is required for assessment seeding. ' +
@@ -22,11 +20,10 @@ function resolveDatabaseUrl(): string {
   return databaseUrl
 }
 
-const pool = new Pool({
+const adapter = new PrismaPg({
   connectionString: resolveDatabaseUrl(),
   allowExitOnIdle: true,
 })
-const adapter = new PrismaPg(pool)
 
 const prisma = new PrismaClient({
   adapter,
@@ -906,9 +903,9 @@ export async function seedAssessments(): Promise<void> {
         where: { assessmentId: dbAssessment.id },
         select: { difficulty: true }
       })
-      const easy = questions.filter(q => q.difficulty <= 2).length
-      const medium = questions.filter(q => q.difficulty === 3).length
-      const hard = questions.filter(q => q.difficulty >= 4).length
+      const easy = questions.filter((question) => question.difficulty <= 2).length
+      const medium = questions.filter((question) => question.difficulty === 3).length
+      const hard = questions.filter((question) => question.difficulty >= 4).length
 
       console.log(`     - ${dbAssessment.name}: ${dbAssessment._count.questions} questions`)
       console.log(`       (Easy: ${easy}, Medium: ${medium}, Hard: ${hard})`)
@@ -921,13 +918,11 @@ if (require.main === module) {
   seedAssessments()
     .then(async () => {
       await prisma.$disconnect()
-      await pool.end()
       console.log('\n✅ Assessment seeding completed successfully!')
     })
     .catch(async (e) => {
       console.error('Error seeding assessments:', e)
       await prisma.$disconnect()
-      await pool.end()
       process.exit(1)
     })
 }

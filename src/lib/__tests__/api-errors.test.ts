@@ -1,3 +1,9 @@
+jest.mock('@sentry/nextjs', () => ({
+  captureException: jest.fn(),
+  addBreadcrumb: jest.fn(),
+}))
+
+import * as Sentry from '@sentry/nextjs'
 import { z } from 'zod'
 import {
   ApiError,
@@ -16,6 +22,18 @@ import {
 } from '../api-errors'
 
 describe('API Error Utilities', () => {
+  const originalNodeEnv = process.env.NODE_ENV
+  const env = process.env as Record<string, string | undefined>
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    env.NODE_ENV = originalNodeEnv
+  })
+
+  afterAll(() => {
+    env.NODE_ENV = originalNodeEnv
+  })
+
   describe('Error Classes', () => {
     describe('ApiError', () => {
       it('should create error with correct properties', () => {
@@ -122,6 +140,31 @@ describe('API Error Utilities', () => {
         const body = await response.json()
         expect(body.message).toBe('Test error message')
       })
+
+      it('should default to internal server error status', async () => {
+        const response = apiError('Default status error')
+
+        expect(response.status).toBe(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+      })
+
+      it('should use fallback error name for unknown status', async () => {
+        const response = apiError('Unknown status', 418)
+
+        const body = await response.json()
+        expect(body.error).toBe('Error')
+      })
+
+      it('should include details and log in development mode', async () => {
+        env.NODE_ENV = 'development'
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined)
+
+        const response = apiError(new Error('Dev error'), HTTP_STATUS.BAD_REQUEST, { token: 'abc' })
+        const body = await response.json()
+
+        expect(body.details).toEqual({ token: 'abc' })
+        expect(consoleSpy).toHaveBeenCalledTimes(1)
+        consoleSpy.mockRestore()
+      })
     })
   })
 
@@ -225,6 +268,41 @@ describe('API Error Utilities', () => {
 
       const body = await response.json()
       expect(body.message).toBe('Something went wrong')
+    })
+
+    it('should report 5xx ApiError with sanitized context to Sentry', async () => {
+      const error = new ApiError(HTTP_STATUS.INTERNAL_SERVER_ERROR, 'Server exploded', {
+        context: 'test',
+      })
+      const response = handleApiError(error, {
+        route: '/api/test',
+        userId: 'user-123',
+        requestData: {
+          password: 'secret',
+          nullable: null,
+          nested: {
+            apiKey: 'sensitive',
+            safe: 'value',
+          },
+        },
+      })
+
+      expect(response.status).toBe(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+      expect(Sentry.captureException).toHaveBeenCalledTimes(1)
+      expect(Sentry.addBreadcrumb).toHaveBeenCalledTimes(1)
+
+      const sentryContext = (Sentry.captureException as jest.Mock).mock.calls[0][1]
+      expect(sentryContext.contexts.request.body).toEqual({
+        password: '[REDACTED]',
+        nullable: null,
+        nested: {
+          apiKey: '[REDACTED]',
+          safe: 'value',
+        },
+      })
+      expect(sentryContext.user).toEqual({ id: 'user-123' })
+      expect(sentryContext.tags.route).toBe('/api/test')
+      expect(sentryContext.level).toBe('error')
     })
 
     it('should handle unknown error type', async () => {

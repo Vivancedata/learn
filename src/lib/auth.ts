@@ -8,7 +8,7 @@ import type { JWTPayload as JoseJWTPayload } from 'jose'
 import { cookies } from 'next/headers'
 import { NextRequest } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { ForbiddenError } from './api-errors'
+import { ForbiddenError, UnauthorizedError } from './api-errors'
 
 // JWT configuration - lazy initialization to avoid build-time errors
 function getJwtSecret(): Uint8Array {
@@ -249,7 +249,7 @@ export async function requireAuth(
   const user = await getAuthUser(request)
 
   if (!user) {
-    throw new Error('Unauthorized - Please sign in')
+    throw new UnauthorizedError('Please sign in')
   }
 
   return user
