@@ -9,8 +9,6 @@ import { AuthProvider } from "@/contexts/AuthContext"
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext"
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
 import { PostHogProvider } from "@/components/providers/posthog-provider"
-import { TutorProvider } from "@/components/ai-tutor/tutor-provider"
-import { ChatContainer } from "@/components/ai-tutor/chat-container"
 import { MobileProvider } from "@/components/mobile/mobile-provider"
 
 export const metadata: Metadata = {
@@ -70,21 +68,18 @@ export default function RootLayout({
                     enableSystem
                     disableTransitionOnChange
                   >
-                    <TutorProvider>
-                      <ServiceWorkerRegistration />
-                      <MobileProvider
-                        showBottomNav={true}
-                        showOfflineIndicator={true}
-                        showInstallPrompt={true}
-                        installPromptMinVisits={2}
-                      >
-                        <Navbar />
-                        <main className="container mx-auto py-8 px-4 pb-24 md:pb-8">
-                          {children}
-                        </main>
-                        <ChatContainer />
-                      </MobileProvider>
-                    </TutorProvider>
+                    <ServiceWorkerRegistration />
+                    <MobileProvider
+                      showBottomNav={true}
+                      showOfflineIndicator={true}
+                      showInstallPrompt={true}
+                      installPromptMinVisits={2}
+                    >
+                      <Navbar />
+                      <main className="container mx-auto py-8 px-4 pb-24 md:pb-8">
+                        {children}
+                      </main>
+                    </MobileProvider>
                   </ThemeProvider>
                 </SubscriptionProvider>
               </AuthProvider>
