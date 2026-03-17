@@ -84,10 +84,10 @@ export async function GET(): Promise<NextResponse<ReadinessStatus>> {
       : undefined,
   }
 
-  // Database is required. Redis is required only when explicitly configured.
-  const ready =
-    databaseStatus.status === 'up' &&
-    (!redisConfigured || redisStatus.status === 'up')
+  // Database readiness gates traffic. Redis remains observable, but a Redis
+  // outage should not pull the instance out of rotation because rate limiting
+  // already fails open when Upstash is unavailable.
+  const ready = databaseStatus.status === 'up'
 
   const body: ReadinessStatus = {
     ready,

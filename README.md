@@ -207,6 +207,7 @@ learn/
 - `npm run build:ci` - Production CI/deploy build (runs migrations + build)
 - `npm start` - Start the production server
 - `npm run lint` - Run ESLint
+- `npm run audit` - Run a dependency vulnerability audit
 - `npm test` - Run tests
 - `npm run smoke` - Run lint + tests + production build gate
 - `npm run test:e2e` - Production-like browser flow checks (pricing, auth, courses, lessons, assessments, offline)
@@ -228,7 +229,7 @@ The platform currently offers the following learning paths:
 
 ## Rate Limiting with Redis
 
-The platform uses Redis-based rate limiting for production scalability. This ensures rate limits persist across server restarts and work correctly in distributed environments (multiple instances, serverless).
+The platform uses Redis-based rate limiting for production scalability. This keeps rate limits consistent across restarts and across distributed deployments.
 
 ### Rate Limit Configuration
 
@@ -240,7 +241,7 @@ The platform uses Redis-based rate limiting for production scalability. This ens
 
 ### Setting Up Redis (Upstash)
 
-For production deployments, you need to configure Redis. We recommend [Upstash](https://upstash.com/) for serverless-compatible Redis.
+For production deployments, Redis is strongly recommended. We recommend [Upstash](https://upstash.com/) for serverless-compatible Redis so rate limits remain distributed and durable.
 
 1. **Create an Upstash account** at [upstash.com](https://upstash.com/)
 
@@ -271,9 +272,11 @@ This is acceptable for local development but NOT suitable for:
 - Multiple server instances
 - Serverless environments (Vercel, AWS Lambda)
 
+If Redis is configured but temporarily unavailable, the application degrades its health status and rate limiting fails open so requests can still be served while the dependency recovers.
+
 ### Health Check Endpoint
 
-The `/api/health` endpoint provides status information including Redis connectivity:
+The `/api/health` endpoint provides status information including Redis connectivity. Database availability is the hard failure condition; Redis outages are reported as a degraded state:
 
 ```bash
 curl http://localhost:3000/api/health

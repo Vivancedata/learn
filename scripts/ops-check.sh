@@ -22,9 +22,12 @@ db_status="$(jq -r '.checks.database.status // "unknown"' <<<"${health_json}")"
 redis_status="$(jq -r '.checks.redis.status // "unknown"' <<<"${health_json}")"
 
 echo "Health: status=${health_status} db=${db_status} redis=${redis_status}"
-if [[ "${health_status}" != "healthy" || "${db_status}" != "up" || "${redis_status}" != "up" ]]; then
-  echo "ops-check failed: /api/health is not fully healthy."
+if [[ "${db_status}" != "up" || "${health_status}" == "unhealthy" ]]; then
+  echo "ops-check failed: /api/health reports a critical dependency outage."
   exit 1
+fi
+if [[ "${health_status}" == "degraded" || "${redis_status}" != "up" ]]; then
+  echo "ops-check warning: /api/health reports a degraded non-critical dependency."
 fi
 
 readiness_json="$(curl -fsS "${BASE_URL}/api/readiness")"
