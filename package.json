@@ -20,6 +20,8 @@
     "react-doctor:score": "npx -y react-doctor@latest . --score",
     "react-doctor:ci": "node scripts/check-react-doctor-score.mjs",
     "lighthouse:ci": "node scripts/check-lighthouse-score.mjs http://127.0.0.1:3000 /pricing /sign-in",
+    "audit": "npm audit --workspaces=false",
+    "audit:json": "npm audit --workspaces=false --json",
     "smoke": "npm run lint && npm test -- --runInBand && npm run build:ci",
     "test:e2e": "bash scripts/test-e2e.sh",
     "test:e2e:coverage": "MIN_E2E_ASSERTION_COVERAGE=85 bash scripts/test-e2e.sh",
