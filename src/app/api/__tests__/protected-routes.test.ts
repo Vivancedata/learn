@@ -3,6 +3,8 @@ import { POST as postDiscussion } from '../discussions/route'
 import { PATCH as patchDiscussion } from '../discussions/[id]/route'
 import { POST as postSubmission } from '../submissions/route'
 import { PATCH as patchUserSettings } from '../user/settings/route'
+import { GET as getPointsUser } from '../points/user/[userId]/route'
+import { POST as awardXpRoute } from '../xp/award/route'
 import prisma from '@/lib/db'
 
 const prismaMock = prisma as unknown as {
@@ -29,6 +31,8 @@ const prismaMock = prisma as unknown as {
   }
   lesson: { findUnique: jest.Mock }
   user: { findUnique: jest.Mock; findFirst: jest.Mock; update: jest.Mock }
+  communityPoint: { findMany: jest.Mock; count: jest.Mock }
+  xpTransaction: { create: jest.Mock; findFirst: jest.Mock }
   $transaction: jest.Mock
 }
 
@@ -93,6 +97,14 @@ jest.mock('@/lib/db', () => ({
       findUnique: jest.fn(),
       findFirst: jest.fn(),
       update: jest.fn(),
+    },
+    communityPoint: {
+      findMany: jest.fn(),
+      count: jest.fn(),
+    },
+    xpTransaction: {
+      create: jest.fn(),
+      findFirst: jest.fn(),
     },
     $transaction: jest.fn(),
   },
@@ -414,6 +426,76 @@ describe('Protected API Routes', () => {
 
       expect(response.status).toBe(200)
       expect(data.name).toBe('Updated Name')
+    })
+  })
+
+  describe('GET /api/points/user/[userId]', () => {
+    const OTHER_USER_ID = '550e8400-e29b-41d4-a716-446655440099'
+
+    it('should forbid reading another user point history', async () => {
+      const request = createRequest(
+        `http://localhost:3000/api/points/user/${OTHER_USER_ID}`,
+        { method: 'GET', body: undefined, userId: TEST_USER_ID }
+      )
+
+      const response = await getPointsUser(request, {
+        params: Promise.resolve({ userId: OTHER_USER_ID }),
+      })
+      const data = await response.json()
+
+      expect(response.status).toBe(403)
+      expect(data.error).toContain('Forbidden')
+      // Must short-circuit before touching point data
+      expect(prismaMock.communityPoint.findMany).not.toHaveBeenCalled()
+    })
+
+    it('should allow a user to read their own point history', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({
+        id: TEST_USER_ID,
+        name: 'Test User',
+        email: 'test@example.com',
+        points: 12,
+        showOnLeaderboard: true,
+      })
+      prismaMock.communityPoint.findMany.mockResolvedValue([])
+      prismaMock.communityPoint.count.mockResolvedValue(0)
+
+      const request = createRequest(
+        `http://localhost:3000/api/points/user/${TEST_USER_ID}`,
+        { method: 'GET', body: undefined, userId: TEST_USER_ID }
+      )
+
+      const response = await getPointsUser(request, {
+        params: Promise.resolve({ userId: TEST_USER_ID }),
+      })
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.user.totalPoints).toBe(12)
+    })
+  })
+
+  describe('POST /api/xp/award', () => {
+    it('should derive XP amount server-side and ignore a client-supplied amount', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ totalXp: 0, level: 1 })
+      prismaMock.$transaction.mockResolvedValue([])
+
+      const request = createRequest('http://localhost:3000/api/xp/award', {
+        method: 'POST',
+        body: {
+          userId: TEST_USER_ID,
+          amount: 9999, // attempted self-cheat — must be ignored
+          source: 'LESSON_COMPLETE',
+        },
+      })
+
+      const response = await awardXpRoute(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(201)
+      // Canonical XP_VALUES.LESSON_COMPLETE is 50, not the client's 9999
+      expect(data.data.xpAwarded).toBe(50)
+      expect(data.data.totalXp).toBe(50)
     })
   })
 })

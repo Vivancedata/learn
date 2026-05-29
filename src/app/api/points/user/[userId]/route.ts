@@ -5,6 +5,7 @@ import {
   handleApiError,
   NotFoundError,
 } from '@/lib/api-errors'
+import { requireOwnership } from '@/lib/authorization'
 
 // Type for community point with included relations
 interface PointWithRelations {
@@ -42,6 +43,10 @@ export async function GET(
 ) {
   try {
     const { userId } = await params
+
+    // Authorization: point history (incl. giver identities and discussion
+    // content previews) is private to the recipient.
+    requireOwnership(request, userId, 'points history')
 
     // Get query params
     const { searchParams } = new URL(request.url)

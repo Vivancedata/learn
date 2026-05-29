@@ -472,6 +472,56 @@ describe('Leaderboards API', () => {
       expect(data.error).toBe('Not Found')
     })
 
+    it('should anonymize rankings for an opted-out user viewed by someone else', async () => {
+      const OTHER_VIEWER_ID = '11111111-1111-1111-1111-111111111111'
+      const mockUser = {
+        id: TEST_USER_ID,
+        name: 'Private User',
+        email: 'private@example.com',
+        showOnLeaderboard: false,
+      }
+      ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser)
+
+      const request = new NextRequest(
+        `http://localhost:3000/api/leaderboards/user/${TEST_USER_ID}`,
+        { headers: { 'x-user-id': OTHER_VIEWER_ID } }
+      )
+      const response = await getUserLeaderboards(request, createParams({ userId: TEST_USER_ID }))
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.showOnLeaderboard).toBe(false)
+      expect(data.data.userName).toBe('Anonymous')
+      expect(data.data.rankings).toHaveLength(0)
+      // Must not leak cached rankings for a hidden user
+      expect(prisma.leaderboardCache.findMany).not.toHaveBeenCalled()
+    })
+
+    it('should show full rankings to an opted-out user viewing themselves', async () => {
+      const mockUser = {
+        id: TEST_USER_ID,
+        name: 'Private User',
+        email: 'private@example.com',
+        showOnLeaderboard: false,
+      }
+      ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser)
+      ;(prisma.leaderboardCache.findMany as jest.Mock).mockResolvedValue([
+        { type: 'XP', period: 'ALL_TIME', rank: 5, previousRank: 7, score: 1200 },
+      ])
+      ;(prisma.leaderboardCache.count as jest.Mock).mockResolvedValue(100)
+
+      const request = new NextRequest(
+        `http://localhost:3000/api/leaderboards/user/${TEST_USER_ID}`,
+        { headers: { 'x-user-id': TEST_USER_ID } }
+      )
+      const response = await getUserLeaderboards(request, createParams({ userId: TEST_USER_ID }))
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.userName).toBe('Private User')
+      expect(data.data.rankings).toHaveLength(1)
+    })
+
     it('should return empty rankings when user has no cached entries', async () => {
       const mockUser = {
         id: TEST_USER_ID,

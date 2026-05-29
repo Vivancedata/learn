@@ -449,14 +449,18 @@ export const xpUserParamsSchema = z.object({
 
 export const awardXpSchema = z.object({
   userId: z.string().uuid('Invalid user ID'),
-  amount: z.number().int().min(1, 'Amount must be at least 1').max(10000, 'Amount too large'),
+  // The XP amount is NOT trusted from the client — it is derived server-side
+  // from the canonical XP_VALUES table for the given source. This field is
+  // accepted for backward compatibility but ignored.
+  amount: z.number().int().min(1).max(10000).optional(),
   source: z.enum(xpSourceValues),
   sourceId: z.string().optional(),
   description: z
     .string()
-    .min(1, 'Description is required')
+    .min(1)
     .max(500, 'Description must be less than 500 characters')
-    .transform(sanitizeHtml),
+    .transform(sanitizeHtml)
+    .optional(),
 })
 
 export const xpHistoryQuerySchema = z.object({

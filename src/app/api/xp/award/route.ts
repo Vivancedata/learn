@@ -12,6 +12,7 @@ import {
   getTierForLevel,
   getTierConfigForLevel,
   getLevelName,
+  XP_VALUES,
 } from '@/lib/xp-config'
 import type { XpSource } from '@/lib/xp-config'
 
@@ -29,11 +30,16 @@ export async function POST(request: NextRequest) {
   try {
     const body = await parseRequestBody(request, awardXpSchema)
 
-    const { userId, amount, source, sourceId, description } = body
+    const { userId, source, sourceId, description } = body
 
     // Authorization: Users can only receive XP for themselves
-    // In a real app, this might also allow admins to award XP
     requireOwnership(request, userId, 'XP award')
+
+    // The amount is derived server-side from the canonical XP table for the
+    // given source — never from the client — to prevent self-awarding
+    // arbitrary XP. Variable awards (achievements, streak milestones) go
+    // through the dedicated helpers in xp-service.
+    const amount = XP_VALUES[source as XpSource]
 
     const result = await awardXp(
       userId,
