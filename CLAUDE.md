@@ -441,7 +441,7 @@ npm test -- --coverage          # With coverage report
 
 ## Production Deployment
 
-See `PRODUCTION_CHECKLIST.md` and `PRODUCTION_AUDIT_REPORT.md` for complete guide.
+See `docs/PRODUCTION_CHECKLIST.md` for the complete guide.
 
 **Critical steps**:
 1. Generate secure JWT secret: `openssl rand -base64 32`
