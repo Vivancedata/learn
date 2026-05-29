@@ -22,6 +22,9 @@ jest.mock('@/lib/db', () => ({
     path: {
       findMany: jest.fn(),
     },
+    course: {
+      count: jest.fn(),
+    },
   },
 }))
 
@@ -55,6 +58,7 @@ describe('Achievements API', () => {
     ;(prisma.achievement.findUnique as jest.Mock).mockImplementation(() => Promise.resolve(null))
     ;(prisma.achievement.create as jest.Mock).mockImplementation(() => Promise.resolve({}))
     ;(prisma.path.findMany as jest.Mock).mockImplementation(() => Promise.resolve([]))
+    ;(prisma.course.count as jest.Mock).mockImplementation(() => Promise.resolve(0))
   })
 
   describe('GET /api/achievements/all', () => {
@@ -238,6 +242,155 @@ describe('Achievements API', () => {
       expect(data.data.newAchievements).toHaveLength(0)
       expect(data.data.stats).toBeDefined()
       expect(data.data.stats.completedLessons).toBe(0)
+    })
+
+    it('should NOT award perfect-score for merely-passed (non-100%) quizzes', async () => {
+      const userWithPassedQuizzes = {
+        id: TEST_USER_ID,
+        name: 'Quizzer',
+        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+        achievements: [],
+        courses: [
+          {
+            completedLessons: [],
+            // 10 quizzes passed but none perfect (score < maxScore)
+            quizScores: Array.from({ length: 10 }, (_, i) => ({
+              id: `q${i}`,
+              score: 7,
+              maxScore: 10,
+            })),
+            course: { durationHours: 1, sections: [{ lessons: [{ id: 'l1' }] }] },
+          },
+        ],
+        projectSubmissions: [],
+        certificates: [],
+        discussions: [],
+        discussionReplies: [],
+      }
+      ;(prisma.user.findUnique as jest.Mock)
+        .mockResolvedValueOnce(userWithPassedQuizzes)
+        .mockResolvedValueOnce({ id: TEST_USER_ID, achievements: [] })
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/achievements/check', {
+        method: 'POST',
+        body: JSON.stringify({ userId: TEST_USER_ID }),
+      })
+      const response = await checkAchievements(request)
+      const data = await response.json()
+
+      expect(data.data.stats.quizzesPassed).toBe(10)
+      expect(data.data.stats.perfectQuizzes).toBe(0)
+      expect(data.data.newAchievements).not.toContain('perfect-score')
+      // The threshold quiz achievements still apply
+      expect(data.data.newAchievements).toContain('quiz-rookie')
+    })
+
+    it('should award perfect-score only once 10 quizzes are scored 100%', async () => {
+      const userWithPerfectQuizzes = {
+        id: TEST_USER_ID,
+        name: 'Perfectionist',
+        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+        achievements: [],
+        courses: [
+          {
+            completedLessons: [],
+            quizScores: Array.from({ length: 10 }, (_, i) => ({
+              id: `q${i}`,
+              score: 10,
+              maxScore: 10,
+            })),
+            course: { durationHours: 1, sections: [{ lessons: [{ id: 'l1' }] }] },
+          },
+        ],
+        projectSubmissions: [],
+        certificates: [],
+        discussions: [],
+        discussionReplies: [],
+      }
+      ;(prisma.user.findUnique as jest.Mock)
+        .mockResolvedValueOnce(userWithPerfectQuizzes)
+        .mockResolvedValueOnce({ id: TEST_USER_ID, achievements: [] })
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/achievements/check', {
+        method: 'POST',
+        body: JSON.stringify({ userId: TEST_USER_ID }),
+      })
+      const response = await checkAchievements(request)
+      const data = await response.json()
+
+      expect(data.data.stats.perfectQuizzes).toBe(10)
+      expect(data.data.newAchievements).toContain('perfect-score')
+    })
+
+    it('should award completionist against the live course count, not a hardcoded 6', async () => {
+      // Only 2 courses exist; user has completed both.
+      ;(prisma.course.count as jest.Mock).mockResolvedValue(2)
+      const completedCourse = (id: string) => ({
+        courseId: id,
+        completedLessons: [{ id: `${id}-l1` }],
+        quizScores: [],
+        course: { pathId: null, durationHours: 1, sections: [{ lessons: [{ id: `${id}-l1` }] }] },
+      })
+      const userCompletedAll = {
+        id: TEST_USER_ID,
+        name: 'Finisher',
+        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+        achievements: [],
+        courses: [completedCourse('course-1'), completedCourse('course-2')],
+        projectSubmissions: [],
+        certificates: [],
+        discussions: [],
+        discussionReplies: [],
+      }
+      ;(prisma.user.findUnique as jest.Mock)
+        .mockResolvedValueOnce(userCompletedAll)
+        .mockResolvedValueOnce({ id: TEST_USER_ID, achievements: [] })
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/achievements/check', {
+        method: 'POST',
+        body: JSON.stringify({ userId: TEST_USER_ID }),
+      })
+      const response = await checkAchievements(request)
+      const data = await response.json()
+
+      expect(data.data.stats.completedCourses).toBe(2)
+      expect(data.data.stats.totalCoursesAvailable).toBe(2)
+      expect(data.data.newAchievements).toContain('completionist')
+    })
+
+    it('should NOT award completionist when courses remain incomplete', async () => {
+      ;(prisma.course.count as jest.Mock).mockResolvedValue(5)
+      const userPartial = {
+        id: TEST_USER_ID,
+        name: 'In Progress',
+        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+        achievements: [],
+        courses: [
+          {
+            courseId: 'course-1',
+            completedLessons: [{ id: 'l1' }],
+            quizScores: [],
+            course: { pathId: null, durationHours: 1, sections: [{ lessons: [{ id: 'l1' }] }] },
+          },
+        ],
+        projectSubmissions: [],
+        certificates: [],
+        discussions: [],
+        discussionReplies: [],
+      }
+      ;(prisma.user.findUnique as jest.Mock)
+        .mockResolvedValueOnce(userPartial)
+        .mockResolvedValueOnce({ id: TEST_USER_ID, achievements: [] })
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/achievements/check', {
+        method: 'POST',
+        body: JSON.stringify({ userId: TEST_USER_ID }),
+      })
+      const response = await checkAchievements(request)
+      const data = await response.json()
+
+      expect(data.data.stats.totalCoursesAvailable).toBe(5)
+      expect(data.data.newAchievements).not.toContain('completionist')
     })
 
     it('should award first-lesson achievement and return 201 when user completes first lesson', async () => {
