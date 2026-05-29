@@ -1,6 +1,6 @@
 # VivanceData Learning Platform
 
-[![Security](https://img.shields.io/badge/Runtime_Audit-0_Vulnerabilities-success)]() [![Tests](https://img.shields.io/badge/Test_Suites-23_Passing-success)]()
+[![Security](https://img.shields.io/badge/Audit-0_high%2Fcritical-success)]() [![Tests](https://img.shields.io/badge/Test_Suites-26_Passing-success)]()
 
 VivanceData Learning is a comprehensive educational platform focused on AI and data science skills, providing structured courses, interactive content, and community-driven learning experiences.
 
@@ -34,7 +34,7 @@ The VivanceData Learning Platform is designed to help professionals and organiza
 
 ## Tech Stack
 
-- **Framework**: Next.js 15+ (App Router with Turbopack)
+- **Framework**: Next.js 16+ (App Router with Turbopack)
 - **Frontend**: React, TypeScript, Tailwind CSS
 - **UI Components**: Shadcn/UI components
 - **Database**: Prisma ORM with PostgreSQL (Neon-ready)
@@ -61,11 +61,9 @@ cd learn
 2. Install dependencies:
 ```bash
 npm install
-# or
-yarn
-# or
-bun install
 ```
+> This project standardizes on **npm** (CI uses `npm ci` against the committed
+> `package-lock.json`). Using yarn or bun will not match the lockfile.
 
 3. Create a `.env` file in the root directory:
 ```bash
@@ -92,10 +90,6 @@ npm run db:seed  # Imports content, generates starter lessons when needed, and s
 5. Start the development server:
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-bun dev
 ```
 
 6. Open [http://localhost:3000](http://localhost:3000) in your browser
@@ -392,7 +386,8 @@ All API endpoints (except `/api/auth/*`) require authentication. Include the JWT
 
 ### Platform Status
 - **Build Status**: Zero TypeScript errors
-- **Runtime Security**: 0 vulnerabilities in production dependencies (`npm audit --omit=dev`)
+- **Runtime Security**: 0 high/critical advisories; 3 moderate advisories remain
+  from Next.js's internally bundled `postcss` (`npm audit`)
 - **Styling Consistency**: 9/10 (up from 7.5/10)
 - **Infrastructure**: Deployable when required production env vars are configured
 
