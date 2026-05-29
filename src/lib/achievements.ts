@@ -16,11 +16,15 @@ export interface UserStats {
   completedCourses: number
   completedPaths: number
   quizzesPassed: number
+  /** Quizzes answered with a perfect (100%) score. */
+  perfectQuizzes: number
   projectsSubmitted: number
   certificatesEarned: number
   discussionsPosts: number
   daysActive: number
   totalLearningHours: number
+  /** Total number of courses that exist on the platform. */
+  totalCoursesAvailable: number
 }
 
 /**
@@ -109,7 +113,7 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     name: 'Perfect Scholar',
     description: 'Get 100% on 10 quizzes',
     icon: '💯',
-    checkCondition: (stats) => stats.quizzesPassed >= 10,
+    checkCondition: (stats) => stats.perfectQuizzes >= 10,
   },
 
   // Project Achievements
@@ -226,7 +230,9 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     name: 'The Completionist',
     description: 'Complete every available course',
     icon: '🎯',
-    checkCondition: (stats) => stats.completedCourses >= 6, // Adjust based on total courses
+    checkCondition: (stats) =>
+      stats.totalCoursesAvailable > 0 &&
+      stats.completedCourses >= stats.totalCoursesAvailable,
   },
 ]
 

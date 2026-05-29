@@ -76,6 +76,16 @@ export async function POST(request: NextRequest) {
       0
     )
 
+    // Count only genuinely perfect (100%) quiz scores, not merely passed ones.
+    const perfectQuizzes = user.courses.reduce(
+      (sum, progress) =>
+        sum +
+        progress.quizScores.filter(
+          (qs) => qs.maxScore > 0 && qs.score >= qs.maxScore
+        ).length,
+      0
+    )
+
     const totalLearningHours = user.courses.reduce((sum, progress) => {
       return sum + (progress.course.durationHours || 0)
     }, 0)
@@ -145,16 +155,22 @@ export async function POST(request: NextRequest) {
       }).length
     }
 
+    // Total courses on the platform — drives the "Completionist" achievement
+    // (complete every available course) instead of a hardcoded count.
+    const totalCoursesAvailable = await prisma.course.count()
+
     const stats: UserStats = {
       completedLessons: completedLessonsCount,
       completedCourses: completedCoursesCount,
       completedPaths: completedPathsCount,
       quizzesPassed,
+      perfectQuizzes,
       projectsSubmitted: user.projectSubmissions.length,
       certificatesEarned: user.certificates.length,
       discussionsPosts: user.discussions.length + user.discussionReplies.length,
       daysActive,
       totalLearningHours,
+      totalCoursesAvailable,
     }
 
     // 3. Get current achievement IDs

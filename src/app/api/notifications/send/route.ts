@@ -10,10 +10,10 @@ import {
   handleApiError,
   parseRequestBody,
   NotFoundError,
-  ForbiddenError,
   HTTP_STATUS,
 } from '@/lib/api-errors'
 import { sendNotificationSchema } from '@/lib/validations'
+import { requireRole } from '@/lib/auth'
 import prisma from '@/lib/db'
 import { sendPushNotification, isWithinQuietHours } from '@/lib/push-notifications'
 
@@ -28,18 +28,10 @@ export async function POST(request: NextRequest) {
     // Get the authenticated user from middleware headers
     const authenticatedUserId = request.headers.get('x-user-id')
 
-    // For now, users can only send notifications to themselves (test notifications)
-    // In production, add admin role check for sending to other users
+    // Users may send test notifications to themselves; sending to any other
+    // user requires the admin role (consistent with other admin endpoints).
     if (authenticatedUserId !== body.userId) {
-      // Check if user is admin
-      const authenticatedUser = await prisma.user.findUnique({
-        where: { id: authenticatedUserId || '' },
-        select: { role: true },
-      })
-
-      if (authenticatedUser?.role !== 'admin') {
-        throw new ForbiddenError('Only admins can send notifications to other users')
-      }
+      await requireRole(request, ['admin'])
     }
 
     // Get user and their notification preferences
