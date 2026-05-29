@@ -2,7 +2,14 @@ import { NextRequest } from 'next/server'
 import { POST as postDiscussion } from '../discussions/route'
 import { PATCH as patchDiscussion } from '../discussions/[id]/route'
 import { POST as postSubmission } from '../submissions/route'
+import {
+  GET as getSubmission,
+  PATCH as patchSubmission,
+  DELETE as deleteSubmission,
+} from '../submissions/[id]/route'
 import { PATCH as patchUserSettings } from '../user/settings/route'
+import { GET as getPointsUser } from '../points/user/[userId]/route'
+import { POST as awardXpRoute } from '../xp/award/route'
 import prisma from '@/lib/db'
 
 const prismaMock = prisma as unknown as {
@@ -24,11 +31,15 @@ const prismaMock = prisma as unknown as {
   discussionReplyLike: { deleteMany: jest.Mock }
   projectSubmission: {
     findFirst: jest.Mock
+    findUnique: jest.Mock
     create: jest.Mock
     update: jest.Mock
+    delete: jest.Mock
   }
   lesson: { findUnique: jest.Mock }
   user: { findUnique: jest.Mock; findFirst: jest.Mock; update: jest.Mock }
+  communityPoint: { findMany: jest.Mock; count: jest.Mock }
+  xpTransaction: { create: jest.Mock; findFirst: jest.Mock }
   $transaction: jest.Mock
 }
 
@@ -83,8 +94,10 @@ jest.mock('@/lib/db', () => ({
     },
     projectSubmission: {
       findFirst: jest.fn(),
+      findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      delete: jest.fn(),
     },
     lesson: {
       findUnique: jest.fn(),
@@ -93,6 +106,14 @@ jest.mock('@/lib/db', () => ({
       findUnique: jest.fn(),
       findFirst: jest.fn(),
       update: jest.fn(),
+    },
+    communityPoint: {
+      findMany: jest.fn(),
+      count: jest.fn(),
+    },
+    xpTransaction: {
+      create: jest.fn(),
+      findFirst: jest.fn(),
     },
     $transaction: jest.fn(),
   },
@@ -120,7 +141,7 @@ jest.mock('@/lib/rate-limit', () => ({
   },
 }))
 
-import { requireAuth, getAuthUser } from '@/lib/auth'
+import { requireAuth, getAuthUser, getUserId } from '@/lib/auth'
 import { checkRateLimit } from '@/lib/rate-limit'
 
 describe('Protected API Routes', () => {
@@ -141,6 +162,7 @@ describe('Protected API Routes', () => {
       role: 'student',
       emailVerified: true,
     })
+    ;(getUserId as jest.Mock).mockReturnValue(TEST_USER_ID)
   })
 
   describe('POST /api/discussions', () => {
@@ -414,6 +436,371 @@ describe('Protected API Routes', () => {
 
       expect(response.status).toBe(200)
       expect(data.name).toBe('Updated Name')
+    })
+  })
+
+  describe('/api/submissions/[id]', () => {
+    const SUBMISSION_ID = 'sub-1'
+    const paramsFor = (id = SUBMISSION_ID) => ({ params: Promise.resolve({ id }) })
+    const ownSubmission = { id: SUBMISSION_ID, userId: TEST_USER_ID }
+    const otherSubmission = { id: SUBMISSION_ID, userId: 'someone-else' }
+
+    describe('GET', () => {
+      it('should return 401 when unauthenticated', async () => {
+        ;(getUserId as jest.Mock).mockReturnValueOnce(null)
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          { method: 'GET', body: undefined, userId: null }
+        )
+        const response = await getSubmission(request, paramsFor())
+        expect(response.status).toBe(401)
+      })
+
+      it('should return 404 when the submission does not exist', async () => {
+        prismaMock.projectSubmission.findUnique.mockResolvedValue(null)
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          { method: 'GET', body: undefined }
+        )
+        const response = await getSubmission(request, paramsFor())
+        expect(response.status).toBe(404)
+      })
+
+      it('should forbid reading another user submission', async () => {
+        prismaMock.projectSubmission.findUnique.mockResolvedValue(otherSubmission)
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          { method: 'GET', body: undefined }
+        )
+        const response = await getSubmission(request, paramsFor())
+        expect(response.status).toBe(403)
+      })
+
+      it('should return the submission to its owner', async () => {
+        prismaMock.projectSubmission.findUnique.mockResolvedValue(ownSubmission)
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          { method: 'GET', body: undefined }
+        )
+        const response = await getSubmission(request, paramsFor())
+        const data = await response.json()
+        expect(response.status).toBe(200)
+        expect(data.id).toBe(SUBMISSION_ID)
+      })
+
+      it('should return 500 on an unexpected error', async () => {
+        prismaMock.projectSubmission.findUnique.mockRejectedValue(new Error('db down'))
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          { method: 'GET', body: undefined }
+        )
+        const response = await getSubmission(request, paramsFor())
+        expect(response.status).toBe(500)
+      })
+    })
+
+    describe('PATCH', () => {
+      it('should return 401 when unauthenticated', async () => {
+        ;(getUserId as jest.Mock).mockReturnValueOnce(null)
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          { method: 'PATCH', body: {}, userId: null }
+        )
+        const response = await patchSubmission(request, paramsFor())
+        expect(response.status).toBe(401)
+      })
+
+      it('should return 404 when the submission does not exist', async () => {
+        prismaMock.projectSubmission.findUnique.mockResolvedValue(null)
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          { method: 'PATCH', body: { notes: 'hi' } }
+        )
+        const response = await patchSubmission(request, paramsFor())
+        expect(response.status).toBe(404)
+      })
+
+      it('should forbid editing another user submission', async () => {
+        prismaMock.projectSubmission.findUnique.mockResolvedValue(otherSubmission)
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          { method: 'PATCH', body: { notes: 'hi' } }
+        )
+        const response = await patchSubmission(request, paramsFor())
+        expect(response.status).toBe(403)
+      })
+
+      it('should reject an invalid (non-GitHub) githubUrl', async () => {
+        prismaMock.projectSubmission.findUnique.mockResolvedValue(ownSubmission)
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          { method: 'PATCH', body: { githubUrl: 'https://evil.com/not-github' } }
+        )
+        const response = await patchSubmission(request, paramsFor())
+        const data = await response.json()
+        expect(response.status).toBe(400)
+        expect(data.error).toContain('Validation')
+        expect(prismaMock.projectSubmission.update).not.toHaveBeenCalled()
+      })
+
+      it('should accept a valid update including liveUrl and notes', async () => {
+        prismaMock.projectSubmission.findUnique.mockResolvedValue(ownSubmission)
+        prismaMock.projectSubmission.update.mockResolvedValue({
+          id: SUBMISSION_ID,
+          userId: TEST_USER_ID,
+          githubUrl: 'https://github.com/user/repo',
+          liveUrl: 'https://example.com',
+          notes: 'updated',
+          status: 'pending',
+        })
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          {
+            method: 'PATCH',
+            body: {
+              githubUrl: 'https://github.com/user/repo',
+              liveUrl: 'https://example.com',
+              notes: 'updated',
+            },
+          }
+        )
+        const response = await patchSubmission(request, paramsFor())
+        const data = await response.json()
+        expect(response.status).toBe(200)
+        expect(data.githubUrl).toBe('https://github.com/user/repo')
+      })
+
+      it('should return 500 on an unexpected error', async () => {
+        prismaMock.projectSubmission.findUnique.mockResolvedValue(ownSubmission)
+        prismaMock.projectSubmission.update.mockRejectedValue(new Error('db down'))
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          { method: 'PATCH', body: { notes: 'ok' } }
+        )
+        const response = await patchSubmission(request, paramsFor())
+        expect(response.status).toBe(500)
+      })
+    })
+
+    describe('DELETE', () => {
+      it('should return 401 when unauthenticated', async () => {
+        ;(getUserId as jest.Mock).mockReturnValueOnce(null)
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          { method: 'DELETE', body: undefined, userId: null }
+        )
+        const response = await deleteSubmission(request, paramsFor())
+        expect(response.status).toBe(401)
+      })
+
+      it('should return 404 when the submission does not exist', async () => {
+        prismaMock.projectSubmission.findUnique.mockResolvedValue(null)
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          { method: 'DELETE', body: undefined }
+        )
+        const response = await deleteSubmission(request, paramsFor())
+        expect(response.status).toBe(404)
+      })
+
+      it('should forbid deleting another user submission', async () => {
+        prismaMock.projectSubmission.findUnique.mockResolvedValue(otherSubmission)
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          { method: 'DELETE', body: undefined }
+        )
+        const response = await deleteSubmission(request, paramsFor())
+        expect(response.status).toBe(403)
+      })
+
+      it('should delete the submission for its owner', async () => {
+        prismaMock.projectSubmission.findUnique.mockResolvedValue(ownSubmission)
+        prismaMock.projectSubmission.delete.mockResolvedValue(ownSubmission)
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          { method: 'DELETE', body: undefined }
+        )
+        const response = await deleteSubmission(request, paramsFor())
+        const data = await response.json()
+        expect(response.status).toBe(200)
+        expect(data.message).toContain('deleted')
+      })
+
+      it('should return 500 on an unexpected error', async () => {
+        prismaMock.projectSubmission.findUnique.mockResolvedValue(ownSubmission)
+        prismaMock.projectSubmission.delete.mockRejectedValue(new Error('db down'))
+        const request = createRequest(
+          `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+          { method: 'DELETE', body: undefined }
+        )
+        const response = await deleteSubmission(request, paramsFor())
+        expect(response.status).toBe(500)
+      })
+    })
+  })
+
+  describe('GET /api/points/user/[userId]', () => {
+    const OTHER_USER_ID = '550e8400-e29b-41d4-a716-446655440099'
+
+    it('should forbid reading another user point history', async () => {
+      const request = createRequest(
+        `http://localhost:3000/api/points/user/${OTHER_USER_ID}`,
+        { method: 'GET', body: undefined, userId: TEST_USER_ID }
+      )
+
+      const response = await getPointsUser(request, {
+        params: Promise.resolve({ userId: OTHER_USER_ID }),
+      })
+      const data = await response.json()
+
+      expect(response.status).toBe(403)
+      expect(data.error).toContain('Forbidden')
+      // Must short-circuit before touching point data
+      expect(prismaMock.communityPoint.findMany).not.toHaveBeenCalled()
+    })
+
+    it('should allow a user to read their own point history', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({
+        id: TEST_USER_ID,
+        name: 'Test User',
+        email: 'test@example.com',
+        points: 12,
+        showOnLeaderboard: true,
+      })
+      prismaMock.communityPoint.findMany.mockResolvedValue([])
+      prismaMock.communityPoint.count.mockResolvedValue(0)
+
+      const request = createRequest(
+        `http://localhost:3000/api/points/user/${TEST_USER_ID}`,
+        { method: 'GET', body: undefined, userId: TEST_USER_ID }
+      )
+
+      const response = await getPointsUser(request, {
+        params: Promise.resolve({ userId: TEST_USER_ID }),
+      })
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.user.totalPoints).toBe(12)
+      expect(data.data.user.badge.level).toBe('helper')
+    })
+
+    it('should return 404 when the user does not exist', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(null)
+
+      const request = createRequest(
+        `http://localhost:3000/api/points/user/${TEST_USER_ID}`,
+        { method: 'GET', body: undefined, userId: TEST_USER_ID }
+      )
+      const response = await getPointsUser(request, {
+        params: Promise.resolve({ userId: TEST_USER_ID }),
+      })
+      expect(response.status).toBe(404)
+    })
+
+    it('should award the super-helper badge and map discussion/reply context', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({
+        id: TEST_USER_ID,
+        name: null, // exercises the email-prefix fallback for giver name
+        email: 'owner@example.com',
+        points: 50,
+        showOnLeaderboard: true,
+      })
+      prismaMock.communityPoint.findMany.mockResolvedValue([
+        {
+          id: 'cp-1',
+          reason: 'great answer',
+          createdAt: new Date(),
+          giver: { id: 'g1', name: null, email: 'helper@example.com' },
+          discussion: { id: 'd1', content: 'x'.repeat(200), courseId: 'c1', lessonId: null },
+          reply: null,
+        },
+        {
+          id: 'cp-2',
+          reason: null,
+          createdAt: new Date(),
+          giver: { id: 'g2', name: 'Giver Two', email: 'g2@example.com' },
+          discussion: null,
+          reply: { id: 'r1', content: 'short reply', discussionId: 'd2' },
+        },
+        {
+          id: 'cp-3',
+          reason: null,
+          createdAt: new Date(),
+          giver: { id: 'g3', name: 'Giver Three', email: 'g3@example.com' },
+          discussion: null,
+          reply: null,
+        },
+      ])
+      prismaMock.communityPoint.count.mockResolvedValue(3)
+
+      const request = createRequest(
+        `http://localhost:3000/api/points/user/${TEST_USER_ID}`,
+        { method: 'GET', body: undefined, userId: TEST_USER_ID }
+      )
+      const response = await getPointsUser(request, {
+        params: Promise.resolve({ userId: TEST_USER_ID }),
+      })
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.user.badge.level).toBe('super')
+      const contexts = data.data.recentPointsReceived.map(
+        (p: { context: { type: string } | null }) => p.context?.type ?? null
+      )
+      expect(contexts).toEqual(['discussion', 'reply', null])
+      // Long discussion content is truncated with an ellipsis
+      expect(data.data.recentPointsReceived[0].context.preview.endsWith('...')).toBe(true)
+      // Giver with no name falls back to the email prefix
+      expect(data.data.recentPointsReceived[0].giver.name).toBe('helper')
+    })
+
+    it('should return no badge for a user below the helper threshold', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({
+        id: TEST_USER_ID,
+        name: 'Low Points',
+        email: 'low@example.com',
+        points: 3,
+        showOnLeaderboard: true,
+      })
+      prismaMock.communityPoint.findMany.mockResolvedValue([])
+      prismaMock.communityPoint.count.mockResolvedValue(0)
+
+      const request = createRequest(
+        `http://localhost:3000/api/points/user/${TEST_USER_ID}`,
+        { method: 'GET', body: undefined, userId: TEST_USER_ID }
+      )
+      const response = await getPointsUser(request, {
+        params: Promise.resolve({ userId: TEST_USER_ID }),
+      })
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.user.badge).toBeNull()
+    })
+  })
+
+  describe('POST /api/xp/award', () => {
+    it('should derive XP amount server-side and ignore a client-supplied amount', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ totalXp: 0, level: 1 })
+      prismaMock.$transaction.mockResolvedValue([])
+
+      const request = createRequest('http://localhost:3000/api/xp/award', {
+        method: 'POST',
+        body: {
+          userId: TEST_USER_ID,
+          amount: 9999, // attempted self-cheat — must be ignored
+          source: 'LESSON_COMPLETE',
+        },
+      })
+
+      const response = await awardXpRoute(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(201)
+      // Canonical XP_VALUES.LESSON_COMPLETE is 50, not the client's 9999
+      expect(data.data.xpAwarded).toBe(50)
+      expect(data.data.totalXp).toBe(50)
     })
   })
 })

@@ -51,7 +51,9 @@ npx prisma migrate deploy     # Apply migrations (production)
 
 ### 1. Two-Layer Security Model
 
-**Layer 1: Middleware Authentication** (`src/middleware.ts`)
+**Layer 1: Middleware Authentication** (`src/proxy.ts`)
+> Next.js 16 renamed `middleware.ts` to `proxy.ts`; the file exports `proxy`
+> plus a `config.matcher`. References to "middleware" below mean this file.
 - All `/api/*` routes (except `/api/auth/*`) require JWT authentication
 - JWT validated from HTTP-only cookie OR `Authorization: Bearer <token>` header
 - User info extracted and injected into request headers: `x-user-id`, `x-user-email`, `x-user-name`
@@ -417,9 +419,12 @@ Errors automatically caught and displayed with recovery UI.
 
 ## Testing
 
-**Configuration**: `jest.config.js` with module aliases (`@/` → `src/`)
+**Configuration**: `jest.config.mjs` with module aliases (`@/` → `src/`)
 
-**Current coverage**: 99.55% lines, 100% functions, 262 tests passing
+**Current coverage**: 26 suites / 493 tests passing. Coverage thresholds are
+enforced in CI (`test:unit:coverage` / `test:integration:coverage` via
+`scripts/check-coverage-threshold.js`, currently 85%) rather than by a number
+hardcoded here — run `npm test -- --coverage` for the live figure.
 
 **Test structure**:
 - Tests in `__tests__/` directories or `*.test.ts(x)` files
@@ -441,7 +446,7 @@ npm test -- --coverage          # With coverage report
 
 ## Production Deployment
 
-See `PRODUCTION_CHECKLIST.md` and `PRODUCTION_AUDIT_REPORT.md` for complete guide.
+See `docs/PRODUCTION_CHECKLIST.md` for the complete guide.
 
 **Critical steps**:
 1. Generate secure JWT secret: `openssl rand -base64 32`
@@ -450,12 +455,13 @@ See `PRODUCTION_CHECKLIST.md` and `PRODUCTION_AUDIT_REPORT.md` for complete guid
 4. Run `npx prisma migrate deploy` (not `migrate dev`)
 5. Set `NODE_ENV=production`
 6. Build: `npm run build`
-7. Verify: `npm audit` (should be 0 vulnerabilities)
+7. Verify: `npm audit` (0 high/critical; 3 moderate remain from Next.js's
+   bundled postcss — see commit history / `overrides` in package.json)
 8. Start: `npm start`
 
-**Production Status**: ✅ **100% Production Ready**
-- 0 security vulnerabilities (`npm audit`)
-- 99.55% test coverage (262 tests)
+**Production Status**:
+- 0 high/critical advisories; 3 moderate (Next.js bundled postcss)
+- 26 suites / 493 tests passing; coverage gated in CI
 - Complete authentication & authorization
 - All security headers configured
 - Rate limiting active

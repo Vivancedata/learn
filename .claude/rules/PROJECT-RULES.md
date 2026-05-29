@@ -82,7 +82,7 @@ api:
 ### Next.js
 ```yaml
 nextjs:
-  version: 15
+  version: 16
   router: app
   prefer_server_components: true
   use_server_actions: true
@@ -103,9 +103,9 @@ react:
 ### Unit Tests
 ```yaml
 testing:
-  framework: vitest
-  coverage_minimum: 80%
-  test_file_location: adjacent
+  framework: jest
+  coverage_minimum: 85%
+  test_file_location: __tests__ directories or *.test.ts(x)
   mock_external_deps: true
 ```
 

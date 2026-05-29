@@ -13,147 +13,8 @@ import {
   hasReceivedXpFor,
   awardStreakBonusXp,
 } from '@/lib/xp-service'
+import { recordActivityAndUpdateStreak } from '@/lib/streak-service'
 import { serverAnalytics } from '@/lib/analytics-server'
-
-/**
- * Helper to get the start of today in UTC
- */
-function getTodayStart(): Date {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  return today
-}
-
-/**
- * Helper to get the start of yesterday in UTC
- */
-function getYesterdayStart(): Date {
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  yesterday.setHours(0, 0, 0, 0)
-  return yesterday
-}
-
-/**
- * Record daily activity and update streak
- * Internal helper function to keep streak logic consistent
- */
-async function recordActivityAndUpdateStreak(
-  userId: string,
-  lessonsCompleted: number = 1,
-  xpEarned: number = 0
-): Promise<{
-  currentStreak: number
-  longestStreak: number
-  streakAction: 'started' | 'continued' | 'extended' | 'maintained'
-}> {
-  // Get current user streak data
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      currentStreak: true,
-      longestStreak: true,
-      lastActivityDate: true,
-      streakFreezes: true,
-    },
-  })
-
-  if (!user) {
-    throw new Error('User not found')
-  }
-
-  const today = getTodayStart()
-  const yesterday = getYesterdayStart()
-
-  // Upsert today's activity record
-  await prisma.dailyActivity.upsert({
-    where: {
-      userId_date: {
-        userId,
-        date: today,
-      },
-    },
-    create: {
-      userId,
-      date: today,
-      xpEarned: xpEarned,
-      lessonsCompleted: lessonsCompleted,
-      quizzesTaken: 0,
-      timeSpentMinutes: 0,
-    },
-    update: {
-      xpEarned: { increment: xpEarned },
-      lessonsCompleted: { increment: lessonsCompleted },
-    },
-  })
-
-  // Calculate streak updates
-  let newStreak = user.currentStreak
-  let newLongestStreak = user.longestStreak
-  let streakAction: 'started' | 'continued' | 'extended' | 'maintained' = 'maintained'
-
-  if (user.lastActivityDate) {
-    const lastActivity = new Date(user.lastActivityDate)
-    lastActivity.setHours(0, 0, 0, 0)
-
-    if (lastActivity.getTime() === today.getTime()) {
-      // Already active today - maintain current streak
-      streakAction = 'maintained'
-    } else if (lastActivity.getTime() === yesterday.getTime()) {
-      // Consecutive day - extend streak
-      newStreak = user.currentStreak + 1
-      streakAction = 'extended'
-    } else {
-      // Streak was broken - check if freeze should be used
-      const daysSinceActivity = Math.floor(
-        (today.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24)
-      )
-
-      if (daysSinceActivity === 2 && user.streakFreezes > 0) {
-        // One day missed, use freeze automatically if available
-        newStreak = user.currentStreak + 1
-        streakAction = 'continued'
-
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            streakFreezes: { decrement: 1 },
-          },
-        })
-      } else {
-        // Streak is broken - restart at 1
-        newStreak = 1
-        streakAction = 'started'
-      }
-    }
-  } else {
-    // First activity ever - start streak at 1
-    newStreak = 1
-    streakAction = 'started'
-  }
-
-  // Update longest streak if needed
-  if (newStreak > newLongestStreak) {
-    newLongestStreak = newStreak
-  }
-
-  // Update user's streak data
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      currentStreak: newStreak,
-      longestStreak: newLongestStreak,
-      lastActivityDate: today,
-    },
-  })
-
-  return {
-    currentStreak: newStreak,
-    longestStreak: newLongestStreak,
-    streakAction,
-  }
-}
 
 /**
  * POST /api/progress/lessons
@@ -265,8 +126,15 @@ export async function POST(request: NextRequest) {
           leveledUp = xpResult.leveledUp
 
           // Check for streak bonus milestones
-          const streakResult = await recordActivityAndUpdateStreak(userId, 1, xpAwarded)
-          streakData = streakResult
+          const streakResult = await recordActivityAndUpdateStreak(userId, {
+            lessonsCompleted: 1,
+            xpEarned: xpAwarded,
+          })
+          streakData = {
+            currentStreak: streakResult.currentStreak,
+            longestStreak: streakResult.longestStreak,
+            streakAction: streakResult.streakAction,
+          }
 
           // Award streak bonus if hitting milestones (7 days, 30 days)
           if (streakResult.streakAction === 'extended') {

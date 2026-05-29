@@ -5,6 +5,7 @@ import {
   handleApiError,
   NotFoundError,
 } from '@/lib/api-errors'
+import { getAuthenticatedUserId } from '@/lib/authorization'
 import {
   LeaderboardType,
   LeaderboardPeriod,
@@ -59,6 +60,27 @@ export async function GET(
 
     if (!user) {
       throw new NotFoundError('User')
+    }
+
+    // Honor the leaderboard opt-out: if a user has hidden themselves, only
+    // they may see their own rankings. Other viewers get an empty, anonymized
+    // response rather than their rank, score, or display name. The viewer is
+    // only resolved when needed (opted-in users are visible to all).
+    if (!user.showOnLeaderboard && getAuthenticatedUserId(request) !== user.id) {
+      const hiddenResponse: UserRankings & {
+        userName: string
+        showOnLeaderboard: boolean
+        typeLabels: Record<LeaderboardType, string>
+        periodLabels: Record<LeaderboardPeriod, string>
+      } = {
+        userId: user.id,
+        userName: 'Anonymous',
+        showOnLeaderboard: false,
+        rankings: [],
+        typeLabels: leaderboardTypeLabels,
+        periodLabels: leaderboardPeriodLabels,
+      }
+      return apiSuccess(hiddenResponse)
     }
 
     // Get all cached rankings for this user

@@ -78,6 +78,25 @@ export const createSubmissionSchema = z.object({
   notes: z.string().max(2000, 'Notes must be less than 2000 characters').transform(sanitizeHtml).optional(),
 })
 
+// Partial update for an existing submission (PATCH). All fields optional, but
+// the same validation rules apply as on create — e.g. githubUrl must still be
+// a real GitHub repository URL.
+export const updateSubmissionSchema = z.object({
+  githubUrl: z
+    .string()
+    .url('Invalid URL format')
+    .regex(githubUrlPattern, 'Must be a valid GitHub repository URL')
+    .transform(sanitizeHtml)
+    .optional(),
+  liveUrl: z.string().url('Invalid URL format').nullable().optional(),
+  notes: z
+    .string()
+    .max(2000, 'Notes must be less than 2000 characters')
+    .transform(sanitizeHtml)
+    .nullable()
+    .optional(),
+})
+
 // ============================================================================
 // Course & Learning Schemas
 // ============================================================================
@@ -449,14 +468,18 @@ export const xpUserParamsSchema = z.object({
 
 export const awardXpSchema = z.object({
   userId: z.string().uuid('Invalid user ID'),
-  amount: z.number().int().min(1, 'Amount must be at least 1').max(10000, 'Amount too large'),
+  // The XP amount is NOT trusted from the client — it is derived server-side
+  // from the canonical XP_VALUES table for the given source. This field is
+  // accepted for backward compatibility but ignored.
+  amount: z.number().int().min(1).max(10000).optional(),
   source: z.enum(xpSourceValues),
   sourceId: z.string().optional(),
   description: z
     .string()
-    .min(1, 'Description is required')
+    .min(1)
     .max(500, 'Description must be less than 500 characters')
-    .transform(sanitizeHtml),
+    .transform(sanitizeHtml)
+    .optional(),
 })
 
 export const xpHistoryQuerySchema = z.object({

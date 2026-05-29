@@ -285,7 +285,8 @@ Documentation files at the repository root include:
 - `README.md` - Project overview and setup
 - `CONTRIBUTING.md` - This file
 - `CLAUDE.md` - AI assistant guidance and architecture details
-- `PRODUCTION_CHECKLIST.md` - Deployment guide
+- `docs/PRODUCTION_CHECKLIST.md` - Deployment guide
+- `docs/COMPETITIVE_ANALYSIS.md`, `docs/LAYOUT_STYLE_GUIDE.md` - Supporting docs
 
 ---
 
