@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { POST as postDiscussion } from '../discussions/route'
 import { PATCH as patchDiscussion } from '../discussions/[id]/route'
 import { POST as postSubmission } from '../submissions/route'
+import { PATCH as patchSubmission } from '../submissions/[id]/route'
 import { PATCH as patchUserSettings } from '../user/settings/route'
 import { GET as getPointsUser } from '../points/user/[userId]/route'
 import { POST as awardXpRoute } from '../xp/award/route'
@@ -26,6 +27,7 @@ const prismaMock = prisma as unknown as {
   discussionReplyLike: { deleteMany: jest.Mock }
   projectSubmission: {
     findFirst: jest.Mock
+    findUnique: jest.Mock
     create: jest.Mock
     update: jest.Mock
   }
@@ -87,6 +89,7 @@ jest.mock('@/lib/db', () => ({
     },
     projectSubmission: {
       findFirst: jest.fn(),
+      findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
     },
@@ -132,7 +135,7 @@ jest.mock('@/lib/rate-limit', () => ({
   },
 }))
 
-import { requireAuth, getAuthUser } from '@/lib/auth'
+import { requireAuth, getAuthUser, getUserId } from '@/lib/auth'
 import { checkRateLimit } from '@/lib/rate-limit'
 
 describe('Protected API Routes', () => {
@@ -153,6 +156,7 @@ describe('Protected API Routes', () => {
       role: 'student',
       emailVerified: true,
     })
+    ;(getUserId as jest.Mock).mockReturnValue(TEST_USER_ID)
   })
 
   describe('POST /api/discussions', () => {
@@ -426,6 +430,58 @@ describe('Protected API Routes', () => {
 
       expect(response.status).toBe(200)
       expect(data.name).toBe('Updated Name')
+    })
+  })
+
+  describe('PATCH /api/submissions/[id]', () => {
+    const SUBMISSION_ID = 'sub-1'
+
+    it('should reject an invalid (non-GitHub) githubUrl', async () => {
+      prismaMock.projectSubmission.findUnique.mockResolvedValue({
+        id: SUBMISSION_ID,
+        userId: TEST_USER_ID,
+      })
+
+      const request = createRequest(
+        `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+        { method: 'PATCH', body: { githubUrl: 'https://evil.com/not-github' } }
+      )
+
+      const response = await patchSubmission(request, {
+        params: Promise.resolve({ id: SUBMISSION_ID }),
+      })
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.error).toContain('Validation')
+      // Must not persist an unvalidated value
+      expect(prismaMock.projectSubmission.update).not.toHaveBeenCalled()
+    })
+
+    it('should accept a valid update', async () => {
+      prismaMock.projectSubmission.findUnique.mockResolvedValue({
+        id: SUBMISSION_ID,
+        userId: TEST_USER_ID,
+      })
+      prismaMock.projectSubmission.update.mockResolvedValue({
+        id: SUBMISSION_ID,
+        userId: TEST_USER_ID,
+        githubUrl: 'https://github.com/user/repo',
+        status: 'pending',
+      })
+
+      const request = createRequest(
+        `http://localhost:3000/api/submissions/${SUBMISSION_ID}`,
+        { method: 'PATCH', body: { githubUrl: 'https://github.com/user/repo' } }
+      )
+
+      const response = await patchSubmission(request, {
+        params: Promise.resolve({ id: SUBMISSION_ID }),
+      })
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.githubUrl).toBe('https://github.com/user/repo')
     })
   })
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { getUserId } from '@/lib/auth'
+import { updateSubmissionSchema, validate, formatZodErrors } from '@/lib/validations'
 
 // GET - Get a specific submission
 export async function GET(
@@ -81,8 +82,15 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await request.json()
-    const { githubUrl, liveUrl, notes } = body
+    const rawBody = await request.json()
+    const result = validate(updateSubmissionSchema, rawBody)
+    if (!result.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: formatZodErrors(result.errors) },
+        { status: 400 }
+      )
+    }
+    const { githubUrl, liveUrl, notes } = result.data
 
     const updated = await prisma.projectSubmission.update({
       where: { id },

@@ -78,6 +78,25 @@ export const createSubmissionSchema = z.object({
   notes: z.string().max(2000, 'Notes must be less than 2000 characters').transform(sanitizeHtml).optional(),
 })
 
+// Partial update for an existing submission (PATCH). All fields optional, but
+// the same validation rules apply as on create — e.g. githubUrl must still be
+// a real GitHub repository URL.
+export const updateSubmissionSchema = z.object({
+  githubUrl: z
+    .string()
+    .url('Invalid URL format')
+    .regex(githubUrlPattern, 'Must be a valid GitHub repository URL')
+    .transform(sanitizeHtml)
+    .optional(),
+  liveUrl: z.string().url('Invalid URL format').nullable().optional(),
+  notes: z
+    .string()
+    .max(2000, 'Notes must be less than 2000 characters')
+    .transform(sanitizeHtml)
+    .nullable()
+    .optional(),
+})
+
 // ============================================================================
 // Course & Learning Schemas
 // ============================================================================
