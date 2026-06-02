@@ -14,6 +14,7 @@ import {
   awardStreakBonusXp,
 } from '@/lib/xp-service'
 import { recordActivityAndUpdateStreak } from '@/lib/streak-service'
+import { runAchievementsCheck } from '@/lib/achievements-service'
 import { serverAnalytics } from '@/lib/analytics-server'
 
 /**
@@ -177,6 +178,13 @@ export async function POST(request: NextRequest) {
           lesson_id: lessonId,
           course_id: courseId,
         })
+      }
+
+      // Evaluate achievements server-side on a new completion (non-fatal)
+      try {
+        await runAchievementsCheck(userId)
+      } catch (achError) {
+        void achError
       }
     }
 

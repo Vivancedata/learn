@@ -9,6 +9,7 @@ import {
 } from '@/lib/api-errors'
 import { givePointSchema } from '@/lib/validations'
 import { getAuthenticatedUserId } from '@/lib/authorization'
+import { awardHelpingOthersXp } from '@/lib/xp-service'
 
 /**
  * POST /api/points/give
@@ -149,6 +150,15 @@ export async function POST(request: NextRequest) {
         },
       }),
     ])
+
+    // Award the recipient "helping others" XP so community recognition also
+    // contributes to their level. The existing-point checks above ensure each
+    // point maps to at most one XP grant. Non-fatal.
+    try {
+      await awardHelpingOthersXp(recipientId, point.id)
+    } catch (xpError) {
+      void xpError
+    }
 
     // Get updated point total
     const updatedRecipient = await prisma.user.findUnique({

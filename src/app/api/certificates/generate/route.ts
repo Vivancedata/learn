@@ -3,6 +3,7 @@ import { z } from 'zod'
 import prisma from '@/lib/db'
 import { apiSuccess, handleApiError, parseRequestBody, NotFoundError, ValidationError, ForbiddenError, HTTP_STATUS } from '@/lib/api-errors'
 import { requireOwnership } from '@/lib/authorization'
+import { runAchievementsCheck } from '@/lib/achievements-service'
 import crypto from 'crypto'
 
 const generateCertificateSchema = z.object({
@@ -185,6 +186,14 @@ export async function POST(request: NextRequest) {
         },
       },
     })
+
+    // Earning a certificate can unlock achievements (certified, multi-certified).
+    // Evaluate them server-side; never block certificate issuance on failure.
+    try {
+      await runAchievementsCheck(body.userId)
+    } catch (achError) {
+      void achError
+    }
 
     return apiSuccess(
       {
