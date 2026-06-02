@@ -1,7 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import prisma from '@/lib/db'
 import { getUserId } from '@/lib/auth'
-import { updateSubmissionSchema, validate, formatZodErrors } from '@/lib/validations'
+import { updateSubmissionSchema } from '@/lib/validations'
+import {
+  apiSuccess,
+  handleApiError,
+  parseRequestBody,
+  UnauthorizedError,
+  NotFoundError,
+  ForbiddenError,
+} from '@/lib/api-errors'
 
 // GET - Get a specific submission
 export async function GET(
@@ -13,7 +21,7 @@ export async function GET(
     const userId = getUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new UnauthorizedError()
     }
 
     const submission = await prisma.projectSubmission.findUnique({
@@ -39,21 +47,17 @@ export async function GET(
     })
 
     if (!submission) {
-      return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
+      throw new NotFoundError('Submission')
     }
 
     // Only allow users to see their own submissions (unless they're a reviewer)
     if (submission.userId !== userId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      throw new ForbiddenError()
     }
 
-    return NextResponse.json(submission)
+    return apiSuccess(submission)
   } catch (error) {
-    void error // Error handled via response
-    return NextResponse.json(
-      { error: 'Failed to fetch submission' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }
 
@@ -67,7 +71,7 @@ export async function PATCH(
     const userId = getUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new UnauthorizedError()
     }
 
     const submission = await prisma.projectSubmission.findUnique({
@@ -75,22 +79,17 @@ export async function PATCH(
     })
 
     if (!submission) {
-      return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
+      throw new NotFoundError('Submission')
     }
 
     if (submission.userId !== userId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      throw new ForbiddenError()
     }
 
-    const rawBody = await request.json()
-    const result = validate(updateSubmissionSchema, rawBody)
-    if (!result.success) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: formatZodErrors(result.errors) },
-        { status: 400 }
-      )
-    }
-    const { githubUrl, liveUrl, notes } = result.data
+    const { githubUrl, liveUrl, notes } = await parseRequestBody(
+      request,
+      updateSubmissionSchema
+    )
 
     const updated = await prisma.projectSubmission.update({
       where: { id },
@@ -106,13 +105,9 @@ export async function PATCH(
       },
     })
 
-    return NextResponse.json(updated)
+    return apiSuccess(updated)
   } catch (error) {
-    void error // Error handled via response
-    return NextResponse.json(
-      { error: 'Failed to update submission' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }
 
@@ -126,7 +121,7 @@ export async function DELETE(
     const userId = getUserId(request)
 
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new UnauthorizedError()
     }
 
     const submission = await prisma.projectSubmission.findUnique({
@@ -134,23 +129,19 @@ export async function DELETE(
     })
 
     if (!submission) {
-      return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
+      throw new NotFoundError('Submission')
     }
 
     if (submission.userId !== userId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      throw new ForbiddenError()
     }
 
     await prisma.projectSubmission.delete({
       where: { id },
     })
 
-    return NextResponse.json({ message: 'Submission deleted' })
+    return apiSuccess({ message: 'Submission deleted' })
   } catch (error) {
-    void error // Error handled via response
-    return NextResponse.json(
-      { error: 'Failed to delete submission' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }

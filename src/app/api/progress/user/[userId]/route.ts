@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import prisma from '@/lib/db'
-import { handleApiError } from '@/lib/api-errors'
+import { apiSuccess, handleApiError } from '@/lib/api-errors'
 import { requireOwnership } from '@/lib/authorization'
 
 interface UserProgressResponse {
@@ -104,7 +104,7 @@ export async function GET(
       },
     }
 
-    return NextResponse.json(response)
+    return apiSuccess(response)
   } catch (error) {
     return handleApiError(error)
   }

@@ -346,7 +346,7 @@ describe('Protected API Routes', () => {
       const data = await response.json()
 
       expect(response.status).toBe(400)
-      expect(data.error).toContain('GitHub')
+      expect(data.message).toContain('GitHub')
     })
 
     it('should accept valid GitHub URLs', async () => {
@@ -375,7 +375,7 @@ describe('Protected API Routes', () => {
       const data = await response.json()
 
       expect(response.status).toBe(201)
-      expect(data.githubUrl).toBe('https://github.com/user/repo')
+      expect(data.data.githubUrl).toBe('https://github.com/user/repo')
     })
 
     it('should enforce rate limiting', async () => {
@@ -397,7 +397,7 @@ describe('Protected API Routes', () => {
       const data = await response.json()
 
       expect(response.status).toBe(429)
-      expect(data.error).toContain('Too many requests')
+      expect(data.message).toContain('Too many requests')
     })
   })
 
@@ -435,7 +435,7 @@ describe('Protected API Routes', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data.name).toBe('Updated Name')
+      expect(data.data.name).toBe('Updated Name')
     })
   })
 
@@ -485,7 +485,7 @@ describe('Protected API Routes', () => {
         const response = await getSubmission(request, paramsFor())
         const data = await response.json()
         expect(response.status).toBe(200)
-        expect(data.id).toBe(SUBMISSION_ID)
+        expect(data.data.id).toBe(SUBMISSION_ID)
       })
 
       it('should return 500 on an unexpected error', async () => {
@@ -539,7 +539,7 @@ describe('Protected API Routes', () => {
         const response = await patchSubmission(request, paramsFor())
         const data = await response.json()
         expect(response.status).toBe(400)
-        expect(data.error).toContain('Validation')
+        expect(data.error).toBe('Bad Request')
         expect(prismaMock.projectSubmission.update).not.toHaveBeenCalled()
       })
 
@@ -567,7 +567,7 @@ describe('Protected API Routes', () => {
         const response = await patchSubmission(request, paramsFor())
         const data = await response.json()
         expect(response.status).toBe(200)
-        expect(data.githubUrl).toBe('https://github.com/user/repo')
+        expect(data.data.githubUrl).toBe('https://github.com/user/repo')
       })
 
       it('should return 500 on an unexpected error', async () => {
@@ -623,7 +623,7 @@ describe('Protected API Routes', () => {
         const response = await deleteSubmission(request, paramsFor())
         const data = await response.json()
         expect(response.status).toBe(200)
-        expect(data.message).toContain('deleted')
+        expect(data.data.message).toContain('deleted')
       })
 
       it('should return 500 on an unexpected error', async () => {

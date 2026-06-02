@@ -606,15 +606,15 @@ describe('Progress API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data.userId).toBe(TEST_USER_ID)
-      expect(data.courses).toHaveLength(1)
-      expect(data.courses[0].courseId).toBe(TEST_COURSE_ID)
-      expect(data.courses[0].totalLessons).toBe(2)
-      expect(data.courses[0].completedLessons).toBe(1)
-      expect(data.courses[0].progress).toBe(50)
-      expect(data.overallStats).toBeDefined()
-      expect(data.overallStats.totalCourses).toBe(10)
-      expect(data.overallStats.coursesStarted).toBe(1)
+      expect(data.data.userId).toBe(TEST_USER_ID)
+      expect(data.data.courses).toHaveLength(1)
+      expect(data.data.courses[0].courseId).toBe(TEST_COURSE_ID)
+      expect(data.data.courses[0].totalLessons).toBe(2)
+      expect(data.data.courses[0].completedLessons).toBe(1)
+      expect(data.data.courses[0].progress).toBe(50)
+      expect(data.data.overallStats).toBeDefined()
+      expect(data.data.overallStats.totalCourses).toBe(10)
+      expect(data.data.overallStats.coursesStarted).toBe(1)
     })
 
     it('should correctly identify completed courses (100% progress)', async () => {
@@ -644,8 +644,8 @@ describe('Progress API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data.courses[0].progress).toBe(100)
-      expect(data.overallStats.coursesCompleted).toBe(1)
+      expect(data.data.courses[0].progress).toBe(100)
+      expect(data.data.overallStats.coursesCompleted).toBe(1)
     })
 
     it('should return empty progress for user with no enrolled courses', async () => {
@@ -657,11 +657,11 @@ describe('Progress API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data.courses).toHaveLength(0)
-      expect(data.overallStats.coursesStarted).toBe(0)
-      expect(data.overallStats.coursesCompleted).toBe(0)
-      expect(data.overallStats.totalCourses).toBe(8)
-      expect(data.overallStats.overallProgress).toBe(0)
+      expect(data.data.courses).toHaveLength(0)
+      expect(data.data.overallStats.coursesStarted).toBe(0)
+      expect(data.data.overallStats.coursesCompleted).toBe(0)
+      expect(data.data.overallStats.totalCourses).toBe(8)
+      expect(data.data.overallStats.overallProgress).toBe(0)
     })
 
     it('should return 403 when user tries to access another users overall progress', async () => {
@@ -730,12 +730,12 @@ describe('Progress API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data.courses).toHaveLength(2)
+      expect(data.data.courses).toHaveLength(2)
       // 2 total lessons completed out of 4 total = 50%
-      expect(data.overallStats.completedLessons).toBe(2)
-      expect(data.overallStats.totalLessons).toBe(4)
-      expect(data.overallStats.overallProgress).toBe(50)
-      expect(data.overallStats.coursesCompleted).toBe(1)
+      expect(data.data.overallStats.completedLessons).toBe(2)
+      expect(data.data.overallStats.totalLessons).toBe(4)
+      expect(data.data.overallStats.overallProgress).toBe(50)
+      expect(data.data.overallStats.coursesCompleted).toBe(1)
     })
   })
 })

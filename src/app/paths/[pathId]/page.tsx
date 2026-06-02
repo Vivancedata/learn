@@ -41,7 +41,7 @@ export default function PathPage() {
             })
 
             if (progressResponse.ok) {
-              const progressData = await progressResponse.json()
+              const progressData = (await progressResponse.json()).data ?? {}
               resolvedCourses = allCourses.map((course) => {
                 const courseProgress = progressData.courses?.find(
                   (progress: { courseId: string }) => progress.courseId === course.id

@@ -1,6 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import prisma from '@/lib/db'
 import { getUserId, requireAuth } from '@/lib/auth'
+import {
+  apiSuccess,
+  handleApiError,
+  UnauthorizedError,
+  NotFoundError,
+  ApiError,
+  HTTP_STATUS,
+} from '@/lib/api-errors'
 
 export async function POST(
   request: NextRequest,
@@ -24,10 +32,7 @@ export async function POST(
     })
 
     if (!lesson || lesson.section.course.id !== courseId) {
-      return NextResponse.json(
-        { error: 'Lesson not found in this course' },
-        { status: 404 }
-      )
+      throw new ApiError(HTTP_STATUS.NOT_FOUND, 'Lesson not found in this course')
     }
 
     // Get or create course progress
@@ -60,7 +65,7 @@ export async function POST(
     })
 
     if (existingCompletion) {
-      return NextResponse.json({
+      return apiSuccess({
         message: 'Lesson already completed',
         lessonId,
         courseId,
@@ -112,7 +117,7 @@ export async function POST(
       ? Math.round((completedCount / totalLessons) * 100)
       : 0
 
-    return NextResponse.json({
+    return apiSuccess({
       message: 'Lesson marked as complete',
       lessonId,
       courseId,
@@ -121,14 +126,7 @@ export async function POST(
       percentComplete,
     })
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    void error // Error handled via response
-    return NextResponse.json(
-      { error: 'Failed to mark lesson as complete' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }
 
@@ -141,10 +139,7 @@ export async function DELETE(
     const userId = getUserId(request)
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      throw new UnauthorizedError()
     }
 
     // Get course progress
@@ -156,10 +151,7 @@ export async function DELETE(
     })
 
     if (!progress) {
-      return NextResponse.json(
-        { error: 'No progress found' },
-        { status: 404 }
-      )
+      throw new NotFoundError('Progress')
     }
 
     // Remove lesson from completed
@@ -172,16 +164,12 @@ export async function DELETE(
       },
     })
 
-    return NextResponse.json({
+    return apiSuccess({
       message: 'Lesson marked as incomplete',
       lessonId,
       courseId,
     })
   } catch (error) {
-    void error // Error handled via response
-    return NextResponse.json(
-      { error: 'Failed to mark lesson as incomplete' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }

@@ -3,6 +3,7 @@ import { GET as getDiscussions, POST as createDiscussion } from '../discussions/
 import { PATCH as updateDiscussion, DELETE as deleteDiscussion } from '../discussions/[id]/route'
 import { GET as getSubmissions, POST as createSubmission } from '../submissions/route'
 import { GET as getUserSettings, PATCH as updateUserSettings } from '../user/settings/route'
+import { UnauthorizedError } from '@/lib/api-errors'
 import prisma from '@/lib/db'
 
 // Mock the Prisma client
@@ -499,7 +500,7 @@ describe('Submissions API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data).toHaveLength(1)
+      expect(data.data).toHaveLength(1)
     })
 
     it('should return 401 when not authenticated', async () => {
@@ -541,7 +542,7 @@ describe('Submissions API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(500)
-      expect(data.error).toContain('Failed to fetch submissions')
+      expect(data.error).toBe('Internal Server Error')
     })
 
     it('should filter by courseId', async () => {
@@ -571,8 +572,8 @@ describe('Submissions API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data).toHaveLength(1)
-      expect(data[0].id).toBe('sub-1')
+      expect(data.data).toHaveLength(1)
+      expect(data.data[0].id).toBe('sub-1')
     })
   })
 
@@ -614,7 +615,7 @@ describe('Submissions API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(201)
-      expect(data.id).toBe('sub-1')
+      expect(data.data.id).toBe('sub-1')
     })
 
     it('should update existing submission', async () => {
@@ -677,11 +678,11 @@ describe('Submissions API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(404)
-      expect(data.error).toContain('not found')
+      expect(data.message).toContain('not found')
     })
 
     it('should reject unauthorized request', async () => {
-      mockRequireAuth.mockRejectedValue(new Error('Unauthorized'))
+      mockRequireAuth.mockRejectedValue(new UnauthorizedError())
 
       const request = new NextRequest('http://localhost/api/submissions', {
         method: 'POST',
@@ -743,7 +744,7 @@ describe('Submissions API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(500)
-      expect(data.error).toBe('Failed to create submission')
+      expect(data.error).toBe('Internal Server Error')
     })
   })
 })
@@ -776,8 +777,8 @@ describe('User Settings API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data.email).toBe('test@example.com')
-      expect(data.name).toBe('Test User')
+      expect(data.data.email).toBe('test@example.com')
+      expect(data.data.name).toBe('Test User')
     })
 
     it('should return 404 for non-existent user', async () => {
@@ -792,11 +793,11 @@ describe('User Settings API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(404)
-      expect(data.error).toContain('not found')
+      expect(data.message).toContain('not found')
     })
 
     it('should return 401 when not authenticated', async () => {
-      mockRequireAuth.mockRejectedValue(new Error('Unauthorized'))
+      mockRequireAuth.mockRejectedValue(new UnauthorizedError())
 
       const request = new NextRequest('http://localhost/api/user/settings')
       const response = await getUserSettings(request)
@@ -818,7 +819,7 @@ describe('User Settings API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(500)
-      expect(data.error).toContain('Failed')
+      expect(data.error).toBe('Internal Server Error')
     })
   })
 
@@ -852,7 +853,7 @@ describe('User Settings API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data.name).toBe('Updated Name')
+      expect(data.data.name).toBe('Updated Name')
     })
 
     it('should reject duplicate email', async () => {
@@ -875,11 +876,11 @@ describe('User Settings API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(400)
-      expect(data.error).toContain('Email already in use')
+      expect(data.message).toContain('Email already in use')
     })
 
     it('should return 401 when not authenticated', async () => {
-      mockRequireAuth.mockRejectedValue(new Error('Unauthorized'))
+      mockRequireAuth.mockRejectedValue(new UnauthorizedError())
 
       const request = new NextRequest('http://localhost/api/user/settings', {
         method: 'PATCH',
@@ -914,7 +915,7 @@ describe('User Settings API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(500)
-      expect(data.error).toContain('Failed')
+      expect(data.error).toBe('Internal Server Error')
     })
   })
 })
