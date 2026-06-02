@@ -30,7 +30,7 @@ for (const filePath of walkFiles(uiDirectory)) {
 if (violations.length > 0) {
   console.error('UI boundary check failed for "learn".');
   console.error(
-    'Files in src/components/ui must either re-export from "@vivancedata/ui" or be explicitly allowlisted as app-specific.'
+    'Files in src/components/ui must either re-export from "@/components/vendor/ui" or be explicitly allowlisted as app-specific.'
   );
   console.error("");
   console.error("Violations:");
@@ -73,7 +73,7 @@ function isThinUiReExport(source) {
     return false;
   }
 
-  return /^(export\s+(type\s+)?\{[\s\S]*?\}\s+from\s+["']@vivancedata\/ui["'];?\s*)+$/.test(withoutUseClient);
+  return /^(export\s+(type\s+)?\{[\s\S]*?\}\s+from\s+["']@\/components\/vendor\/ui["'];?\s*)+$/.test(withoutUseClient);
 }
 
 function stripComments(source) {

@@ -4,4 +4,4 @@ export {
   ThemeToggle,
   type ThemeToggleProps,
   type ThemeToggleMode,
-} from "@vivancedata/ui"
+} from "@/components/vendor/ui"

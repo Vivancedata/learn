@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Suspense } from "react"
-import "@vivancedata/ui/styles"
+import "./vivance-ui.css"
 import "./globals.css"
 import { Navbar } from "@/components/ui/navbar"
 import { ThemeProvider } from "@/components/ui/theme-provider"

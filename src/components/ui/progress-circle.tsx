@@ -3,4 +3,4 @@ export {
   ProgressCircleSkeleton,
   type ProgressCircleProps,
   type ProgressCircleSize,
-} from "@vivancedata/ui"
+} from "@/components/vendor/ui"
