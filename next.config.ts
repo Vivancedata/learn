@@ -13,8 +13,6 @@ const nextConfig: NextConfig = {
     root: process.cwd(),
   },
 
-  transpilePackages: ['@vivancedata/ui'],
-
   /**
    * Static export configuration for Capacitor builds
    * When building for mobile, we export as static HTML/JS/CSS

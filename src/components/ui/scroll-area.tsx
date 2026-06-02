@@ -1,1 +1,1 @@
-export { ScrollArea, ScrollBar } from "@vivancedata/ui"
+export { ScrollArea, ScrollBar } from "@/components/vendor/ui"

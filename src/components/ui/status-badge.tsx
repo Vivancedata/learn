@@ -2,4 +2,4 @@ export {
   StatusBadge,
   type StatusBadgeProps,
   type StatusType,
-} from "@vivancedata/ui"
+} from "@/components/vendor/ui"
