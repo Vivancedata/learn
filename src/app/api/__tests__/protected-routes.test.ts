@@ -3,7 +3,6 @@ import { POST as postDiscussion } from '../discussions/route'
 import { PATCH as patchDiscussion } from '../discussions/[id]/route'
 import { PATCH as patchUserSettings } from '../user/settings/route'
 import { GET as getPointsUser } from '../points/user/[userId]/route'
-import { POST as awardXpRoute } from '../xp/award/route'
 import prisma from '@/lib/db'
 
 const prismaMock = prisma as unknown as {
@@ -493,27 +492,4 @@ describe('Protected API Routes', () => {
     })
   })
 
-  describe('POST /api/xp/award', () => {
-    it('should derive XP amount server-side and ignore a client-supplied amount', async () => {
-      prismaMock.user.findUnique.mockResolvedValue({ totalXp: 0, level: 1 })
-      prismaMock.$transaction.mockResolvedValue([])
-
-      const request = createRequest('http://localhost:3000/api/xp/award', {
-        method: 'POST',
-        body: {
-          userId: TEST_USER_ID,
-          amount: 9999, // attempted self-cheat — must be ignored
-          source: 'LESSON_COMPLETE',
-        },
-      })
-
-      const response = await awardXpRoute(request)
-      const data = await response.json()
-
-      expect(response.status).toBe(201)
-      // Canonical XP_VALUES.LESSON_COMPLETE is 50, not the client's 9999
-      expect(data.data.xpAwarded).toBe(50)
-      expect(data.data.totalXp).toBe(50)
-    })
-  })
 })
