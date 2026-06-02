@@ -107,6 +107,36 @@ npm start
 # Verify at http://localhost:3000
 ```
 
+## 🧪 Staging Validation (do this before trusting "production ready")
+
+The Jest suite tests API/lib logic against a **mocked** Prisma client — it does
+not prove the app works end-to-end against a real database, real auth cookies,
+or real third-party services. Run this once on a staging environment before
+go-live:
+
+```bash
+# 1. Point at a REAL (disposable) Postgres and set the core secrets
+export DATABASE_URL="postgresql://USER:PASS@HOST:5432/db?sslmode=require"
+export JWT_SECRET="$(openssl rand -base64 32)"
+
+# 2. Apply migrations + seed (creates the TEST_USER used by the e2e script)
+npx prisma migrate deploy && npm run db:seed
+
+# 3. Run the Playwright end-to-end flow against a freshly built server
+#    (not part of the default CI run — needs a live DB)
+npm run test:e2e
+
+# 4. Manually smoke-test the core learner journey in a browser:
+#    sign up → open a lesson → pass a quiz → confirm XP/streak update →
+#    complete a course → generate a certificate → (Pro) AI tutor responds
+```
+
+Minimum env to boot locally: `DATABASE_URL` + `JWT_SECRET`. Feature-gated
+extras (each only needed for that feature): `STRIPE_*` (billing),
+`RESEND_*` (email auth flows), `VAPID_*` (push), `UPSTASH_*` (rate limiting),
+`ANTHROPIC_API_KEY`/`OPENAI_API_KEY` (AI tutor), `SENTRY_*` / `POSTHOG_*`
+(observability). See `.env.example` for the full list.
+
 ## 🚀 Deployment Steps
 
 ### 1. Domain & SSL

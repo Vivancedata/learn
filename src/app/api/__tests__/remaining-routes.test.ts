@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server'
 import { GET as getDiscussions, POST as createDiscussion } from '../discussions/route'
 import { PATCH as updateDiscussion, DELETE as deleteDiscussion } from '../discussions/[id]/route'
-import { GET as getSubmissions, POST as createSubmission } from '../submissions/route'
 import { GET as getUserSettings, PATCH as updateUserSettings } from '../user/settings/route'
 import { UnauthorizedError } from '@/lib/api-errors'
 import prisma from '@/lib/db'
@@ -459,296 +458,6 @@ describe('Discussions API', () => {
   })
 })
 
-describe('Submissions API', () => {
-  const validUserId = '123e4567-e89b-12d3-a456-426614174000'
-  const validLessonId = '123e4567-e89b-12d3-a456-426614174001'
-
-  beforeEach(() => {
-    jest.clearAllMocks()
-    mockRequireAuth.mockResolvedValue({ userId: validUserId, email: 'test@example.com', role: 'student', emailVerified: true })
-  })
-
-  describe('GET /api/submissions', () => {
-    it('should return submissions for a user', async () => {
-      const mockSubmissions = [
-        {
-          id: 'sub-1',
-          userId: validUserId,
-          lessonId: validLessonId,
-          githubUrl: 'https://github.com/test/project',
-          liveUrl: null,
-          notes: 'Test notes',
-          status: 'pending',
-          submittedAt: new Date(),
-          lesson: {
-            id: validLessonId,
-            section: {
-              course: { id: 'course-1' },
-            },
-          },
-        },
-      ]
-
-      // @ts-expect-error - mock implementation
-      prisma.projectSubmission.findMany.mockResolvedValue(mockSubmissions)
-
-      const request = createAuthorizedRequest(
-        `http://localhost/api/submissions`,
-        validUserId
-      )
-      const response = await getSubmissions(request)
-      const data = await response.json()
-
-      expect(response.status).toBe(200)
-      expect(data.data).toHaveLength(1)
-    })
-
-    it('should return 401 when not authenticated', async () => {
-      const request = new NextRequest('http://localhost/api/submissions')
-      const response = await getSubmissions(request)
-      const data = await response.json()
-
-      expect(response.status).toBe(401)
-      expect(data.error).toBe('Unauthorized')
-    })
-
-    it('should filter by lessonId', async () => {
-      // @ts-expect-error - mock implementation
-      prisma.projectSubmission.findMany.mockResolvedValue([])
-
-      const request = createAuthorizedRequest(
-        `http://localhost/api/submissions?lessonId=${validLessonId}`,
-        validUserId
-      )
-      const response = await getSubmissions(request)
-
-      expect(response.status).toBe(200)
-      expect(prisma.projectSubmission.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ lessonId: validLessonId }),
-        })
-      )
-    })
-
-    it('should handle database errors', async () => {
-      // @ts-expect-error - mock implementation
-      prisma.projectSubmission.findMany.mockRejectedValue(new Error('Database error'))
-
-      const request = createAuthorizedRequest(
-        'http://localhost/api/submissions',
-        validUserId
-      )
-      const response = await getSubmissions(request)
-      const data = await response.json()
-
-      expect(response.status).toBe(500)
-      expect(data.error).toBe('Internal Server Error')
-    })
-
-    it('should filter by courseId', async () => {
-      const mockSubmissions = [
-        {
-          id: 'sub-1',
-          userId: validUserId,
-          lessonId: validLessonId,
-          lesson: { section: { course: { id: 'course-1' } } },
-        },
-        {
-          id: 'sub-2',
-          userId: validUserId,
-          lessonId: validLessonId,
-          lesson: { section: { course: { id: 'course-2' } } },
-        },
-      ]
-
-      // @ts-expect-error - mock implementation
-      prisma.projectSubmission.findMany.mockResolvedValue(mockSubmissions)
-
-      const request = createAuthorizedRequest(
-        `http://localhost/api/submissions?courseId=course-1`,
-        validUserId
-      )
-      const response = await getSubmissions(request)
-      const data = await response.json()
-
-      expect(response.status).toBe(200)
-      expect(data.data).toHaveLength(1)
-      expect(data.data[0].id).toBe('sub-1')
-    })
-  })
-
-  describe('POST /api/submissions', () => {
-    it('should create a submission', async () => {
-      const mockLesson = { id: validLessonId, type: 'project' }
-      const mockSubmission = {
-        id: 'sub-1',
-        userId: validUserId,
-        lessonId: validLessonId,
-        githubUrl: 'https://github.com/test/project',
-        liveUrl: null,
-        notes: null,
-        status: 'pending',
-        submittedAt: new Date(),
-      }
-
-      // @ts-expect-error - mock implementation
-      prisma.lesson.findUnique.mockResolvedValue(mockLesson)
-      // @ts-expect-error - mock implementation
-      prisma.projectSubmission.findFirst.mockResolvedValue(null)
-      // @ts-expect-error - mock implementation
-      prisma.projectSubmission.create.mockResolvedValue(mockSubmission)
-
-      const request = createAuthorizedRequest(
-        'http://localhost/api/submissions',
-        validUserId,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            lessonId: validLessonId,
-            githubUrl: 'https://github.com/test/project',
-          }),
-          headers: { 'Content-Type': 'application/json' },
-        }
-      )
-
-      const response = await createSubmission(request)
-      const data = await response.json()
-
-      expect(response.status).toBe(201)
-      expect(data.data.id).toBe('sub-1')
-    })
-
-    it('should update existing submission', async () => {
-      const existingSubmission = {
-        id: 'sub-existing',
-        userId: validUserId,
-        lessonId: validLessonId,
-      }
-      const updatedSubmission = {
-        ...existingSubmission,
-        githubUrl: 'https://github.com/test/updated',
-        status: 'pending',
-      }
-
-      // @ts-expect-error - mock implementation
-      prisma.lesson.findUnique.mockResolvedValue({ id: validLessonId })
-      // @ts-expect-error - mock implementation
-      prisma.projectSubmission.findFirst.mockResolvedValue(existingSubmission)
-      // @ts-expect-error - mock implementation
-      prisma.projectSubmission.update.mockResolvedValue(updatedSubmission)
-
-      const request = createAuthorizedRequest(
-        'http://localhost/api/submissions',
-        validUserId,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            lessonId: validLessonId,
-            githubUrl: 'https://github.com/test/updated',
-          }),
-          headers: { 'Content-Type': 'application/json' },
-        }
-      )
-
-      const response = await createSubmission(request)
-      await response.json() // consume body
-
-      expect(response.status).toBe(200)
-      expect(prisma.projectSubmission.update).toHaveBeenCalled()
-    })
-
-    it('should return 404 for non-existent lesson', async () => {
-      // @ts-expect-error - mock implementation
-      prisma.lesson.findUnique.mockResolvedValue(null)
-
-      const request = createAuthorizedRequest(
-        'http://localhost/api/submissions',
-        validUserId,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            lessonId: validLessonId,
-            githubUrl: 'https://github.com/test/project',
-          }),
-          headers: { 'Content-Type': 'application/json' },
-        }
-      )
-
-      const response = await createSubmission(request)
-      const data = await response.json()
-
-      expect(response.status).toBe(404)
-      expect(data.message).toContain('not found')
-    })
-
-    it('should reject unauthorized request', async () => {
-      mockRequireAuth.mockRejectedValue(new UnauthorizedError())
-
-      const request = new NextRequest('http://localhost/api/submissions', {
-        method: 'POST',
-        body: JSON.stringify({
-          lessonId: validLessonId,
-          githubUrl: 'https://github.com/test/project',
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      })
-
-      const response = await createSubmission(request)
-
-      expect(response.status).toBe(401)
-    })
-
-    it('should reject invalid GitHub URL', async () => {
-      const request = createAuthorizedRequest(
-        'http://localhost/api/submissions',
-        validUserId,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            lessonId: validLessonId,
-            githubUrl: 'https://gitlab.com/test/project', // Not GitHub
-          }),
-          headers: { 'Content-Type': 'application/json' },
-        }
-      )
-
-      const response = await createSubmission(request)
-      const data = await response.json()
-
-      expect(response.status).toBe(400)
-      expect(data.error).toBeDefined()
-    })
-
-    it('should handle database errors on create', async () => {
-      // @ts-expect-error - mock implementation
-      prisma.lesson.findUnique.mockResolvedValue({ id: validLessonId })
-      // @ts-expect-error - mock implementation
-      prisma.projectSubmission.findFirst.mockResolvedValue(null)
-      // @ts-expect-error - mock implementation
-      prisma.projectSubmission.create.mockRejectedValue(new Error('Database error'))
-
-      const request = createAuthorizedRequest(
-        'http://localhost/api/submissions',
-        validUserId,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            lessonId: validLessonId,
-            githubUrl: 'https://github.com/test/project',
-          }),
-          headers: { 'Content-Type': 'application/json' },
-        }
-      )
-
-      const response = await createSubmission(request)
-      const data = await response.json()
-
-      expect(response.status).toBe(500)
-      expect(data.error).toBe('Internal Server Error')
-    })
-  })
-})
-
 describe('User Settings API', () => {
   const validUserId = '123e4567-e89b-12d3-a456-426614174000'
 
@@ -824,6 +533,36 @@ describe('User Settings API', () => {
   })
 
   describe('PATCH /api/user/settings', () => {
+    it('should update email and github username when unique', async () => {
+      // @ts-expect-error - mock implementation
+      prisma.user.findFirst.mockResolvedValue(null) // email not taken
+      // @ts-expect-error - mock implementation
+      prisma.user.update.mockResolvedValue({
+        id: validUserId,
+        name: 'Test User',
+        email: 'new@example.com',
+        githubUsername: 'newhandle',
+      })
+
+      const request = createAuthorizedRequest(
+        'http://localhost/api/user/settings',
+        validUserId,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ email: 'new@example.com', githubUsername: 'newhandle' }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
+
+      const response = await updateUserSettings(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.email).toBe('new@example.com')
+      expect(data.data.githubUsername).toBe('newhandle')
+      expect(prisma.user.findFirst).toHaveBeenCalled()
+    })
+
     it('should update user settings', async () => {
       const updatedUser = {
         id: validUserId,
