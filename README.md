@@ -391,6 +391,26 @@ All API endpoints (except `/api/auth/*`) require authentication. Include the JWT
 - **Styling Consistency**: 9/10 (up from 7.5/10)
 - **Infrastructure**: Deployable when required production env vars are configured
 
+### Validation status (be honest with yourself before shipping)
+- **Tested**: backend API routes and `src/lib` utilities, via Jest with a mocked
+  Prisma client (CI gates unit + integration coverage at 85%). Lint, type-check,
+  production build, and Lighthouse all run in CI.
+- **Not yet validated end-to-end**: there are no UI/component tests, and the
+  Playwright e2e (`npm run test:e2e`) requires a real `DATABASE_URL` + running
+  server and is **not** part of the default CI run. Before claiming production
+  readiness, do one staging deploy against a real Postgres and exercise the core
+  flow (sign up → open a lesson → pass a quiz → see XP → earn a certificate).
+
+### Feature maturity
+- **Stable**: auth, courses/lessons/paths, quizzes, progress, projects,
+  discussions, gamification (XP/streaks/achievements/points), certificates,
+  Stripe billing.
+- **Beta / experimental** (work but are less battle-tested):
+  - **Mobile (Capacitor)** — the native bridge is real, but no `ios/`/`android/`
+    projects are generated; treat as a PWA + scaffold, not a shipped app.
+  - **AI Tutor** — functional but depends on external LLM keys and incurs cost;
+    gate behind a feature flag / quota before broad rollout.
+
 ## Production Deployment
 
 ### Environment Variables (Required)
