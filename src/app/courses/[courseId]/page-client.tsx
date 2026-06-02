@@ -69,7 +69,7 @@ export default function CoursePage() {
         ])
 
         if (progressResponse.ok) {
-          const progressData = await progressResponse.json()
+          const progressData = (await progressResponse.json()).data ?? {}
           const courseProgress = progressData.courses?.find(
             (progress: { courseId: string }) => progress.courseId === targetCourseId
           )

@@ -333,6 +333,7 @@ function getErrorName(status: number): string {
     404: 'Not Found',
     409: 'Conflict',
     422: 'Unprocessable Entity',
+    429: 'Too Many Requests',
     500: 'Internal Server Error',
   }
 

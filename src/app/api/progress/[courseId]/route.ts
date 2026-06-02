@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import prisma from '@/lib/db'
 import { getUserId } from '@/lib/auth'
+import { apiSuccess, handleApiError, UnauthorizedError } from '@/lib/api-errors'
 
 export async function GET(
   request: NextRequest,
@@ -11,10 +12,7 @@ export async function GET(
     const userId = getUserId(request)
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      throw new UnauthorizedError()
     }
 
     // Get or create course progress for this user
@@ -54,7 +52,7 @@ export async function GET(
         0
       ) || 0
 
-      return NextResponse.json({
+      return apiSuccess({
         courseId,
         completedLessonIds: [],
         completedCount: 0,
@@ -88,7 +86,7 @@ export async function GET(
       ? Math.round((completedCount / totalLessons) * 100)
       : 0
 
-    return NextResponse.json({
+    return apiSuccess({
       courseId,
       completedLessonIds: progress.completedLessons.map(l => l.id),
       completedCount,
@@ -98,10 +96,6 @@ export async function GET(
       lastAccessed: progress.lastAccessed,
     })
   } catch (error) {
-    void error // Error handled via response
-    return NextResponse.json(
-      { error: 'Failed to fetch progress' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }

@@ -72,7 +72,7 @@ function useDashboardContentView() {
           credentials: 'include',
         }).then(async (res) => {
           if (!res.ok) throw new Error('Failed to fetch progress')
-          return (await res.json()) as UserProgress
+          return ((await res.json()).data) as UserProgress
         }),
         fetch(`/api/points/user/${userId}`, {
           credentials: 'include',

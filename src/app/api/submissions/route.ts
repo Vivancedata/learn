@@ -1,15 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import prisma from '@/lib/db'
 import { getUserId, requireAuth } from '@/lib/auth'
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/lib/rate-limit'
 import { createSubmissionSchema, validateBody } from '@/lib/validations'
+import {
+  apiSuccess,
+  handleApiError,
+  UnauthorizedError,
+  NotFoundError,
+  ValidationError,
+  ApiError,
+  HTTP_STATUS,
+} from '@/lib/api-errors'
 
 // GET - List submissions for current user
 export async function GET(request: NextRequest) {
   try {
     const userId = getUserId(request)
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      throw new UnauthorizedError()
     }
 
     const { searchParams } = new URL(request.url)
@@ -40,13 +49,9 @@ export async function GET(request: NextRequest) {
       ? submissions.filter(s => s.lesson.section.course.id === courseId)
       : submissions
 
-    return NextResponse.json(filteredSubmissions)
+    return apiSuccess(filteredSubmissions)
   } catch (error) {
-    void error // Error handled via response
-    return NextResponse.json(
-      { error: 'Failed to fetch submissions' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }
 
@@ -60,22 +65,16 @@ export async function POST(request: NextRequest) {
     const identifier = getClientIdentifier(request)
     const rateLimitResult = await checkRateLimit(identifier, RATE_LIMITS.API)
     if (!rateLimitResult.success) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please try again later.' },
-        {
-          status: 429,
-          headers: {
-            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-            'X-RateLimit-Reset': rateLimitResult.resetTime.toString(),
-          },
-        }
+      throw new ApiError(
+        HTTP_STATUS.TOO_MANY_REQUESTS,
+        'Too many requests. Please try again later.'
       )
     }
 
     const body = await request.json()
     const validation = validateBody(createSubmissionSchema, body)
     if (!validation.success) {
-      return NextResponse.json({ error: validation.error }, { status: 400 })
+      throw new ValidationError(validation.error)
     }
 
     const { lessonId, githubUrl, liveUrl, notes } = validation.data
@@ -86,7 +85,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!lesson) {
-      return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
+      throw new NotFoundError('Lesson')
     }
 
     // Check for existing submission
@@ -109,7 +108,7 @@ export async function POST(request: NextRequest) {
           submittedAt: new Date(),
         },
       })
-      return NextResponse.json(updated)
+      return apiSuccess(updated)
     }
 
     // Create new submission
@@ -124,15 +123,8 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(submission, { status: 201 })
+    return apiSuccess(submission, HTTP_STATUS.CREATED)
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    void error // Error handled via response
-    return NextResponse.json(
-      { error: 'Failed to create submission' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }

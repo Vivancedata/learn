@@ -1,7 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import prisma from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
 import { updateUserSettingsSchema, validateBody } from '@/lib/validations'
+import {
+  apiSuccess,
+  handleApiError,
+  NotFoundError,
+  ValidationError,
+} from '@/lib/api-errors'
 
 // GET - Get current user settings
 export async function GET(request: NextRequest) {
@@ -20,19 +26,12 @@ export async function GET(request: NextRequest) {
     })
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      throw new NotFoundError('User')
     }
 
-    return NextResponse.json(user)
+    return apiSuccess(user)
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    void error // Error handled via response
-    return NextResponse.json(
-      { error: 'Failed to fetch user settings' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }
 
@@ -45,7 +44,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const validation = validateBody(updateUserSettingsSchema, body)
     if (!validation.success) {
-      return NextResponse.json({ error: validation.error }, { status: 400 })
+      throw new ValidationError(validation.error)
     }
 
     const { name, email, githubUsername } = validation.data
@@ -59,10 +58,7 @@ export async function PATCH(request: NextRequest) {
         },
       })
       if (existingUser) {
-        return NextResponse.json(
-          { error: 'Email already in use' },
-          { status: 400 }
-        )
+        throw new ValidationError('Email already in use')
       }
     }
 
@@ -81,15 +77,8 @@ export async function PATCH(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(updatedUser)
+    return apiSuccess(updatedUser)
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    void error // Error handled via response
-    return NextResponse.json(
-      { error: 'Failed to update user settings' },
-      { status: 500 }
-    )
+    return handleApiError(error)
   }
 }
