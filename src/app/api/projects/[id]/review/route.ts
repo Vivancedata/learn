@@ -8,6 +8,8 @@ import {
 } from '@/lib/api-errors'
 import { z } from 'zod'
 import { requireRole } from '@/lib/auth'
+import { awardProjectApprovedXp, hasReceivedXpFor } from '@/lib/xp-service'
+import { runAchievementsCheck } from '@/lib/achievements-service'
 
 // Updated schema without reviewedBy (gets it from auth)
 const reviewProjectSchema = z.object({
@@ -77,6 +79,25 @@ export async function POST(
         },
       },
     })
+
+    // On approval, award the submitter project-approval XP (deduplicated) and
+    // re-evaluate their achievements. Non-fatal — never block the review.
+    if (status === 'approved') {
+      try {
+        if (
+          !(await hasReceivedXpFor(
+            submission.userId,
+            'PROJECT_APPROVED',
+            submissionId
+          ))
+        ) {
+          await awardProjectApprovedXp(submission.userId, submissionId)
+        }
+        await runAchievementsCheck(submission.userId)
+      } catch (xpError) {
+        void xpError
+      }
+    }
 
     return apiSuccess({
       submissionId: updatedSubmission.id,

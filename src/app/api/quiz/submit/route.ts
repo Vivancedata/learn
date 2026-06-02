@@ -10,6 +10,9 @@ import {
 } from '@/lib/api-errors'
 import { submitQuizSchema } from '@/lib/validations'
 import { requireOwnership } from '@/lib/authorization'
+import { awardQuizXp, hasReceivedXpFor } from '@/lib/xp-service'
+import { recordActivityAndUpdateStreak } from '@/lib/streak-service'
+import { runAchievementsCheck } from '@/lib/achievements-service'
 import { serverAnalytics } from '@/lib/analytics-server'
 
 /**
@@ -108,6 +111,36 @@ export async function POST(request: NextRequest) {
 
     const passed = percentage >= 70
 
+    // Award XP + streak and evaluate achievements server-side. These are
+    // side effects of a real quiz completion and must never fail the
+    // submission, so they are best-effort. XP is deduplicated per lesson.
+    let xpAwarded = 0
+    let leveledUp = false
+    try {
+      if (passed) {
+        const alreadyAwarded =
+          (await hasReceivedXpFor(userId, 'QUIZ_PASS', lessonId)) ||
+          (await hasReceivedXpFor(userId, 'QUIZ_PERFECT', lessonId))
+
+        if (!alreadyAwarded) {
+          const xpResult = await awardQuizXp(userId, lessonId, percentage)
+          if (xpResult) {
+            xpAwarded = xpResult.xpAwarded
+            leveledUp = xpResult.leveledUp
+          }
+        }
+
+        await recordActivityAndUpdateStreak(userId, {
+          quizzesTaken: 1,
+          xpEarned: xpAwarded,
+        })
+      }
+
+      await runAchievementsCheck(userId)
+    } catch (gamificationError) {
+      void gamificationError
+    }
+
     // Track quiz completion with analytics
     serverAnalytics.trackQuizCompleted(userId, {
       lesson_id: lessonId,
@@ -125,6 +158,8 @@ export async function POST(request: NextRequest) {
         maxScore,
         percentage,
         passed, // 70% passing grade
+        xpAwarded,
+        leveledUp,
         results,
         message:
           passed

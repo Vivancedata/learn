@@ -10,6 +10,7 @@ jest.mock('@/lib/db', () => ({
   default: {
     user: {
       findUnique: jest.fn(),
+      update: jest.fn(),
     },
     userAchievement: {
       findMany: jest.fn(),
@@ -25,6 +26,11 @@ jest.mock('@/lib/db', () => ({
     course: {
       count: jest.fn(),
     },
+    xpTransaction: {
+      findFirst: jest.fn(),
+      create: jest.fn(),
+    },
+    $transaction: jest.fn(),
   },
 }))
 
@@ -59,6 +65,12 @@ describe('Achievements API', () => {
     ;(prisma.achievement.create as jest.Mock).mockImplementation(() => Promise.resolve({}))
     ;(prisma.path.findMany as jest.Mock).mockImplementation(() => Promise.resolve([]))
     ;(prisma.course.count as jest.Mock).mockImplementation(() => Promise.resolve(0))
+    // Default: achievement XP already granted, so the bonus-XP path is skipped
+    // and award tests keep their exact user.findUnique call sequence.
+    ;(prisma.xpTransaction.findFirst as jest.Mock).mockImplementation(() =>
+      Promise.resolve({ id: 'existing-xp' })
+    )
+    ;(prisma.$transaction as jest.Mock).mockImplementation(() => Promise.resolve([]))
   })
 
   describe('GET /api/achievements/all', () => {
@@ -391,6 +403,45 @@ describe('Achievements API', () => {
 
       expect(data.data.stats.totalCoursesAvailable).toBe(5)
       expect(data.data.newAchievements).not.toContain('completionist')
+    })
+
+    it('should grant bonus XP for a newly earned achievement', async () => {
+      // A consistent superset object: it satisfies the stats includes, the
+      // awardXp select (totalXp/level), and the final achievements lookup.
+      const userForXp = {
+        id: TEST_USER_ID,
+        name: 'XP Earner',
+        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+        totalXp: 0,
+        level: 1,
+        achievements: [],
+        courses: [
+          {
+            completedLessons: [{ id: 'lesson-1' }],
+            quizScores: [],
+            course: { pathId: null, durationHours: 1, sections: [{ lessons: [{ id: 'lesson-1' }] }] },
+          },
+        ],
+        projectSubmissions: [],
+        certificates: [],
+        discussions: [],
+        discussionReplies: [],
+      }
+      ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(userForXp)
+      // Not yet received achievement XP -> bonus-XP path executes
+      ;(prisma.xpTransaction.findFirst as jest.Mock).mockResolvedValue(null)
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/achievements/check', {
+        method: 'POST',
+        body: JSON.stringify({ userId: TEST_USER_ID }),
+      })
+      const response = await checkAchievements(request)
+      const data = await response.json()
+
+      expect([200, 201]).toContain(response.status)
+      expect(data.data.newAchievements).toContain('first-lesson')
+      // awardXp persists via a $transaction([create, update])
+      expect(prisma.$transaction).toHaveBeenCalled()
     })
 
     it('should award first-lesson achievement and return 201 when user completes first lesson', async () => {

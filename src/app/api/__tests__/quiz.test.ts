@@ -17,6 +17,32 @@ jest.mock('@/lib/db', () => ({
     quizScore: {
       create: jest.fn(),
     },
+    // Models touched by the server-side gamification side effects
+    user: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+    xpTransaction: {
+      findFirst: jest.fn(),
+      create: jest.fn(),
+    },
+    dailyActivity: {
+      upsert: jest.fn(),
+    },
+    course: {
+      count: jest.fn(),
+    },
+    path: {
+      findMany: jest.fn(),
+    },
+    achievement: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+    },
+    userAchievement: {
+      create: jest.fn(),
+    },
+    $transaction: jest.fn(),
   },
 }))
 
@@ -103,6 +129,97 @@ describe('Quiz API', () => {
       expect(data.data.percentage).toBe(100)
       expect(data.data.passed).toBe(true)
       expect(data.data.results).toHaveLength(2)
+    })
+
+    it('should award XP, record a streak, and check achievements on a passing quiz', async () => {
+      const mockProgress = { id: 'progress-1', userId: TEST_USER_ID, courseId: TEST_COURSE_ID }
+      ;(prisma.quizQuestion.findMany as jest.Mock).mockResolvedValue(mockQuizQuestions)
+      ;(prisma.courseProgress.findFirst as jest.Mock).mockResolvedValue(mockProgress)
+      ;(prisma.quizScore.create as jest.Mock).mockResolvedValue({
+        id: 'qs-1',
+        courseProgressId: 'progress-1',
+        lessonId: TEST_LESSON_ID,
+        score: 2,
+        maxScore: 2,
+      })
+      ;(prisma.courseProgress.update as jest.Mock).mockResolvedValue(mockProgress)
+
+      // A superset user satisfies every user.findUnique shape in the
+      // gamification helpers (awardXp select, streak select, stats include).
+      ;(prisma.user.findUnique as jest.Mock).mockResolvedValue({
+        id: TEST_USER_ID,
+        totalXp: 0,
+        level: 1,
+        currentStreak: 0,
+        longestStreak: 0,
+        lastActivityDate: null,
+        streakFreezes: 0,
+        createdAt: new Date(),
+        achievements: [],
+        courses: [],
+        projectSubmissions: [],
+        certificates: [],
+        discussions: [],
+        discussionReplies: [],
+      })
+      // Not yet awarded -> XP path executes
+      ;(prisma.xpTransaction.findFirst as jest.Mock).mockResolvedValue(null)
+      ;(prisma.$transaction as jest.Mock).mockResolvedValue([])
+      ;(prisma.dailyActivity.upsert as jest.Mock).mockResolvedValue({
+        date: new Date(),
+        xpEarned: 100,
+        lessonsCompleted: 0,
+        quizzesTaken: 1,
+        timeSpentMinutes: 0,
+      })
+      ;(prisma.user.update as jest.Mock).mockResolvedValue({
+        id: TEST_USER_ID,
+        currentStreak: 1,
+        longestStreak: 1,
+        lastActivityDate: new Date(),
+        streakFreezes: 0,
+      })
+      ;(prisma.course.count as jest.Mock).mockResolvedValue(0)
+      ;(prisma.path.findMany as jest.Mock).mockResolvedValue([])
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/quiz/submit', {
+        userId: TEST_USER_ID,
+        courseId: TEST_COURSE_ID,
+        lessonId: TEST_LESSON_ID,
+        answers: [2, 0], // perfect score -> QUIZ_PERFECT XP (100)
+      })
+      const response = await submitQuiz(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(201)
+      expect(data.data.passed).toBe(true)
+      // Perfect quiz awards QUIZ_PERFECT (100 XP) via awardXp -> $transaction
+      expect(data.data.xpAwarded).toBe(100)
+      expect(prisma.$transaction).toHaveBeenCalled()
+      expect(prisma.dailyActivity.upsert).toHaveBeenCalled()
+    })
+
+    it('should not fail the submission when gamification side effects throw', async () => {
+      const mockProgress = { id: 'progress-1', userId: TEST_USER_ID, courseId: TEST_COURSE_ID }
+      ;(prisma.quizQuestion.findMany as jest.Mock).mockResolvedValue(mockQuizQuestions)
+      ;(prisma.courseProgress.findFirst as jest.Mock).mockResolvedValue(mockProgress)
+      ;(prisma.quizScore.create as jest.Mock).mockResolvedValue({ id: 'qs-1', score: 2, maxScore: 2 })
+      ;(prisma.courseProgress.update as jest.Mock).mockResolvedValue(mockProgress)
+      // hasReceivedXpFor throws -> caught, submission still succeeds
+      ;(prisma.xpTransaction.findFirst as jest.Mock).mockRejectedValue(new Error('db down'))
+
+      const request = createAuthorizedRequest('http://localhost:3000/api/quiz/submit', {
+        userId: TEST_USER_ID,
+        courseId: TEST_COURSE_ID,
+        lessonId: TEST_LESSON_ID,
+        answers: [2, 0],
+      })
+      const response = await submitQuiz(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(201)
+      expect(data.data.passed).toBe(true)
+      expect(data.data.xpAwarded).toBe(0)
     })
 
     it('should return passed=false when score is below 70%', async () => {
