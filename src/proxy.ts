@@ -12,6 +12,7 @@ const PUBLIC_READONLY_API_PATTERNS = [
   /^\/api\/assessments\/?$/,
   /^\/api\/assessments\/[^/]+\/?$/,
   /^\/api\/leaderboards\/?$/,
+  /^\/api\/exercises\/[^/]+\/[^/]+\/?$/, // coding exercises are tryable pre-signup
 ]
 
 function isPublicReadonlyApi(request: NextRequest, pathname: string): boolean {

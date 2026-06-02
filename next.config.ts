@@ -38,11 +38,11 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // unsafe-inline needed for Next.js
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net", // unsafe-inline needed for Next.js; jsdelivr serves the Pyodide (in-browser Python) runtime
               "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for Tailwind
               "img-src 'self' data: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.sentry.io https://*.ingest.sentry.io", // Added Sentry domains
+              "connect-src 'self' https://*.sentry.io https://*.ingest.sentry.io https://cdn.jsdelivr.net", // Sentry + Pyodide CDN (wasm/package assets)
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
