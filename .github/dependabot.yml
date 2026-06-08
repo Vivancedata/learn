@@ -5,11 +5,22 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 2
+    # Major version bumps are handled deliberately, not via grouped auto-PRs
+    # (e.g. Tailwind v4, ESLint 10, and Capacitor 8 are breaking migrations).
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       development-dependencies:
         dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
       production-dependencies:
         dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "github-actions"
     directory: "/"
