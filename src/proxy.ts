@@ -12,6 +12,7 @@ const PUBLIC_READONLY_API_PATTERNS = [
   /^\/api\/assessments\/?$/,
   /^\/api\/assessments\/[^/]+\/?$/,
   /^\/api\/leaderboards\/?$/,
+  /^\/api\/exercises\/?$/, // exercise index is public
   /^\/api\/exercises\/[^/]+\/[^/]+\/?$/, // coding exercises are tryable pre-signup
 ]
 

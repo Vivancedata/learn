@@ -14,6 +14,7 @@ import {
   Sparkles,
   Trophy,
   Target,
+  Code2,
   Crown
 } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
@@ -77,6 +78,12 @@ export function Navbar() {
               <Link href="/assessments" className="flex items-center gap-2">
                 <Target className="h-4 w-4" />
                 <span>Assessments</span>
+              </Link>
+            </Button>
+            <Button variant="ghost" asChild className="text-muted-foreground hover:text-foreground">
+              <Link href="/exercises" className="flex items-center gap-2">
+                <Code2 className="h-4 w-4" />
+                <span>Exercises</span>
               </Link>
             </Button>
             <Button variant="ghost" asChild className="text-muted-foreground hover:text-foreground">
@@ -168,6 +175,14 @@ export function Navbar() {
             >
               <Target className="h-5 w-5 text-primary" />
               <span className="font-medium">Assessments</span>
+            </Link>
+            <Link
+              href="/exercises"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Code2 className="h-5 w-5 text-primary" />
+              <span className="font-medium">Exercises</span>
             </Link>
             <Link
               href="/leaderboard"
