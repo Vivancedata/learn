@@ -1,5 +1,9 @@
 # VivanceData Learning Platform
 
+<p align="center">
+  <img src="docs/assets/hero.png" alt="learn preview" width="640">
+</p>
+
 [![Security](https://img.shields.io/badge/Audit-0_high%2Fcritical-success)]() [![Tests](https://img.shields.io/badge/Test_Suites-26_Passing-success)]()
 
 VivanceData Learning is a comprehensive educational platform focused on AI and data science skills, providing structured courses, interactive content, and community-driven learning experiences.
