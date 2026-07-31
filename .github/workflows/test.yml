@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '22'
   BASE_BRANCH: ${{ github.base_ref || github.event.repository.default_branch }}
 
 concurrency:
