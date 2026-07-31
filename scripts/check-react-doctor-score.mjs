@@ -2,10 +2,14 @@ import { spawnSync } from "node:child_process";
 
 const REQUIRED_SCORE = 100;
 const diffBase = process.env.REACT_DOCTOR_DIFF_BASE?.trim();
-const commandArgs = ["-y", "react-doctor@latest", ".", "--score"];
+// Pinned deliberately. Running @latest means an upstream CLI change breaks
+// this gate with no code change on our side -- which is exactly what happened
+// when react-doctor deprecated `--diff` and started exiting non-zero.
+const REACT_DOCTOR_VERSION = "0.9.2";
+const commandArgs = ["-y", `react-doctor@${REACT_DOCTOR_VERSION}`, ".", "--score"];
 
 if (diffBase) {
-  commandArgs.push("--diff", diffBase);
+  commandArgs.push("--scope", "changed", "--base", diffBase);
 }
 
 const runReactDoctor = (args) =>
