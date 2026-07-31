@@ -45,7 +45,7 @@ export function LeaderboardUserCard({
 
   return (
     <Card className={cn(
-      'bg-gradient-to-br from-primary/10 via-accent/5 to-background border-primary/20',
+      'bg-gradient-to-br from-primary/10 via-accent/5 to-background border-brand/20',
       'overflow-hidden relative',
       className
     )}>
@@ -57,7 +57,7 @@ export function LeaderboardUserCard({
           {/* Avatar and rank */}
           <div className="flex flex-col items-center">
             <div className="relative">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xl font-bold shadow-lg">
+              <div className="w-20 h-20 rounded-full bg-brand flex items-center justify-center text-white text-xl font-bold shadow-lg">
                 {initials}
               </div>
               {userRank.rank <= 3 && (
@@ -80,7 +80,7 @@ export function LeaderboardUserCard({
           <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4">
             {/* Rank */}
             <div className="text-center p-3 rounded-lg bg-background/50">
-              <div className="flex items-center justify-center gap-1 text-3xl font-bold text-primary">
+              <div className="flex items-center justify-center gap-1 text-3xl font-bold text-brand">
                 <span>#{userRank.rank}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -108,7 +108,7 @@ export function LeaderboardUserCard({
         </div>
 
         {/* Rank change and next target */}
-        <div className="mt-4 pt-4 border-t border-primary/10 flex flex-wrap items-center justify-between gap-4">
+        <div className="mt-4 pt-4 border-t border-brand/10 flex flex-wrap items-center justify-between gap-4">
           {/* Rank change */}
           <div className="flex items-center gap-2">
             {change.direction === 'up' && (

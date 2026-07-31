@@ -130,7 +130,7 @@ function useDashboardContentView() {
   if (isLoading || !data) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand"></div>
       </div>
     )
   }
@@ -138,7 +138,7 @@ function useDashboardContentView() {
   if (displayError && courses.length === 0 && paths.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="text-destructive text-lg mb-4">{displayError}</div>
+        <div className="text-destructive text-body-lg mb-4">{displayError}</div>
         <Button onClick={() => void mutate()}>Try Again</Button>
       </div>
     )
@@ -177,14 +177,14 @@ function useDashboardContentView() {
       id: "first-lesson",
       title: "First Steps",
       description: "Completed your first lesson",
-      icon: <BookOpen className="h-8 w-8 text-primary" />,
+      icon: <BookOpen className="h-8 w-8 text-brand" />,
       earned: completedLessons > 0
     },
     {
       id: "first-course",
       title: "Course Graduate",
       description: "Completed your first course",
-      icon: <Award className="h-8 w-8 text-primary" />,
+      icon: <Award className="h-8 w-8 text-brand" />,
       earned: inProgressCourses.some(course =>
         course.progress?.completed === course.progress?.total
       )
@@ -193,14 +193,14 @@ function useDashboardContentView() {
       id: "streak-7",
       title: "Consistency Champion",
       description: "Studied for 7 days in a row",
-      icon: <Calendar className="h-8 w-8 text-primary" />,
+      icon: <Calendar className="h-8 w-8 text-brand" />,
       earned: false
     },
     {
       id: "hours-10",
       title: "Dedicated Learner",
       description: "Spent 10+ hours learning",
-      icon: <Clock className="h-8 w-8 text-primary" />,
+      icon: <Clock className="h-8 w-8 text-brand" />,
       earned: completedLessons >= 10
     }
   ]
@@ -210,7 +210,7 @@ function useDashboardContentView() {
       {/* Header with welcome and progress */}
       <div className="flex flex-col md:flex-row gap-6 md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-heading-1 font-bold tracking-tight">
             Welcome back{user?.name ? `, ${user.name}` : ''}!
           </h1>
           <p className="text-muted-foreground">
@@ -245,7 +245,7 @@ function useDashboardContentView() {
       )}
 
       {showGettingStarted && (
-        <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-background to-secondary/20">
+        <Card className="border-brand/30 bg-gradient-to-br from-primary/10 via-background to-secondary/20">
           <CardHeader>
             <CardTitle>Start Here: Your First 30 Minutes</CardTitle>
             <CardDescription>
@@ -253,13 +253,13 @@ function useDashboardContentView() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-lg border border-border/60 bg-background/70 p-3 text-sm">
+            <div className="rounded-lg border border-border/60 bg-background/70 p-3 text-body-sm">
               1. Open your first guided lesson
             </div>
-            <div className="rounded-lg border border-border/60 bg-background/70 p-3 text-sm">
+            <div className="rounded-lg border border-border/60 bg-background/70 p-3 text-body-sm">
               2. Complete one knowledge check
             </div>
-            <div className="rounded-lg border border-border/60 bg-background/70 p-3 text-sm">
+            <div className="rounded-lg border border-border/60 bg-background/70 p-3 text-body-sm">
               3. Take a baseline skill assessment
             </div>
           </CardContent>
@@ -283,8 +283,8 @@ function useDashboardContentView() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-semibold flex items-center gap-2">
-              <Target className="h-6 w-6 text-primary" />
+            <h2 className="text-heading-2 font-semibold flex items-center gap-2">
+              <Target className="h-6 w-6 text-brand" />
               Test Your Skills
             </h2>
             <p className="text-muted-foreground">
@@ -299,19 +299,19 @@ function useDashboardContentView() {
           </Button>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="group hover:border-primary/50 transition-colors">
+          <Card className="group hover:border-brand/50 transition-colors">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                  <FileQuestion className="h-5 w-5 text-primary" />
+                  <FileQuestion className="h-5 w-5 text-brand" />
                 </div>
                 <div>
-                  <CardTitle className="text-base">Skill Assessments</CardTitle>
+                  <CardTitle className="text-body">Skill Assessments</CardTitle>
                   <CardDescription>Test your knowledge</CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
+            <CardContent className="text-body-sm text-muted-foreground">
               Take timed assessments to validate your skills and earn badges for Python, SQL, Data Science, and more.
             </CardContent>
             <CardFooter>
@@ -330,12 +330,12 @@ function useDashboardContentView() {
                   <Trophy className="h-5 w-5 text-success" />
                 </div>
                 <div>
-                  <CardTitle className="text-base">Earn Skill Badges</CardTitle>
+                  <CardTitle className="text-body">Earn Skill Badges</CardTitle>
                   <CardDescription>Prove your expertise</CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
+            <CardContent className="text-body-sm text-muted-foreground">
               Score above the passing threshold to earn skill badges that showcase your proficiency level.
             </CardContent>
             <CardFooter>
@@ -354,12 +354,12 @@ function useDashboardContentView() {
                   <Award className="h-5 w-5 text-accent" />
                 </div>
                 <div>
-                  <CardTitle className="text-base">Track Progress</CardTitle>
+                  <CardTitle className="text-body">Track Progress</CardTitle>
                   <CardDescription>Improve over time</CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
+            <CardContent className="text-body-sm text-muted-foreground">
               Review your attempt history, see your best scores, and retake assessments to improve your rankings.
             </CardContent>
             <CardFooter>
@@ -414,7 +414,7 @@ function useDashboardContentView() {
                     >
                       {course.title}
                     </Link>
-                    <div className="flex items-center text-sm text-muted-foreground">
+                    <div className="flex items-center text-body-sm text-muted-foreground">
                       <Badge variant="outline" className="mr-2">
                         {course.difficulty}
                       </Badge>
@@ -461,10 +461,10 @@ function useDashboardContentView() {
           <CardContent>
             <div className="space-y-4">
               <div className="text-center">
-                <div className="text-4xl font-bold text-primary">
+                <div className="text-display font-bold text-brand">
                   {userPoints?.user.totalPoints || 0}
                 </div>
-                <p className="text-sm text-muted-foreground">points received</p>
+                <p className="text-body-sm text-muted-foreground">points received</p>
               </div>
               {userPoints?.user.badge && (
                 <div className="flex justify-center">
@@ -474,12 +474,12 @@ function useDashboardContentView() {
                   />
                 </div>
               )}
-              <div className="text-center text-sm text-muted-foreground">
+              <div className="text-center text-body-sm text-muted-foreground">
                 You have given {userPoints?.user.pointsGiven || 0} points to others
               </div>
             </div>
           </CardContent>
-          <CardFooter className="text-xs text-muted-foreground">
+          <CardFooter className="text-caption text-muted-foreground">
             Help others in discussions to earn points
           </CardFooter>
         </Card>
@@ -487,7 +487,7 @@ function useDashboardContentView() {
 
       {/* Learning Paths Section */}
       <div className="space-y-6">
-        <h2 className="text-2xl font-semibold">Your Learning Paths</h2>
+        <h2 className="text-heading-2 font-semibold">Your Learning Paths</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {paths.slice(0, 3).map(path => {
             // Get courses for this path
@@ -513,7 +513,7 @@ function useDashboardContentView() {
                   </div>
                   <CardTitle className="flex items-center gap-2">
                     {path.icon && (
-                      <span className="text-2xl">
+                      <span className="text-heading-2">
                         {path.icon === 'globe' && '(globe)'}
                         {path.icon === 'file' && '(file)'}
                         {path.icon === 'window' && '(window)'}
@@ -525,7 +525,7 @@ function useDashboardContentView() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-body-sm text-muted-foreground">
                       {completedPathCourses}/{totalPathCourses} courses completed
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -558,7 +558,7 @@ function useDashboardContentView() {
 
       {/* Community Helper Section */}
       <div className="space-y-6">
-        <h2 className="text-2xl font-semibold">Community Contributions</h2>
+        <h2 className="text-heading-2 font-semibold">Community Contributions</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader>
@@ -575,8 +575,8 @@ function useDashboardContentView() {
                 <div className="flex items-center gap-2">
                   <HelperBadge points={10} showPoints={false} />
                   <div>
-                    <div className="text-sm font-medium">Community Helper</div>
-                    <div className="text-xs text-muted-foreground">Earn 10+ points</div>
+                    <div className="text-body-sm font-medium">Community Helper</div>
+                    <div className="text-caption text-muted-foreground">Earn 10+ points</div>
                   </div>
                 </div>
               </div>
@@ -584,8 +584,8 @@ function useDashboardContentView() {
                 <div className="flex items-center gap-2">
                   <HelperBadge points={40} showPoints={false} />
                   <div>
-                    <div className="text-sm font-medium">Super Helper</div>
-                    <div className="text-xs text-muted-foreground">Earn 40+ points</div>
+                    <div className="text-body-sm font-medium">Super Helper</div>
+                    <div className="text-caption text-muted-foreground">Earn 40+ points</div>
                   </div>
                 </div>
               </div>
@@ -600,7 +600,7 @@ function useDashboardContentView() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ul className="space-y-2 text-sm">
+              <ul className="space-y-2 text-body-sm">
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
                   <span>Answer questions in course discussions</span>
@@ -630,7 +630,7 @@ function useDashboardContentView() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground text-center py-4">
+                <p className="text-body-sm text-muted-foreground text-center py-4">
                   Start helping others to appear on the leaderboard!
                 </p>
                 <Button asChild variant="outline" className="w-full">
@@ -647,25 +647,25 @@ function useDashboardContentView() {
 
       {/* Achievements Section */}
       <div className="space-y-6">
-        <h2 className="text-2xl font-semibold">Your Achievements</h2>
+        <h2 className="text-heading-2 font-semibold">Your Achievements</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {achievements.map(achievement => (
             <Card key={achievement.id} className={achievement.earned ? "" : "opacity-50"}>
               <CardHeader className="flex flex-row items-center gap-4 space-y-0">
                 {achievement.icon}
                 <div>
-                  <CardTitle className="text-lg">{achievement.title}</CardTitle>
+                  <CardTitle className="text-body-lg">{achievement.title}</CardTitle>
                   <CardDescription>{achievement.description}</CardDescription>
                 </div>
               </CardHeader>
               <CardFooter>
                 {achievement.earned ? (
-                  <div className="flex items-center text-sm text-success">
+                  <div className="flex items-center text-body-sm text-success">
                     <CheckCircle2 className="mr-1 h-4 w-4" />
                     Earned
                   </div>
                 ) : (
-                  <div className="text-sm text-muted-foreground">Not yet earned</div>
+                  <div className="text-body-sm text-muted-foreground">Not yet earned</div>
                 )}
               </CardFooter>
             </Card>

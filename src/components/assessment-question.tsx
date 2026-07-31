@@ -33,7 +33,7 @@ export function AssessmentQuestion({
     <div className="space-y-6">
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>Question {questionNumber} of {totalQuestions}</span>
-        <span className="font-medium text-primary">{question.points} points</span>
+        <span className="font-medium text-brand">{question.points} points</span>
       </div>
 
       <div className="space-y-4">
@@ -165,8 +165,8 @@ function SingleChoiceInput({
             disabled={disabled}
             className={cn(
               'w-full flex items-start gap-3 p-4 rounded-lg border text-left transition-all',
-              'hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20',
-              isSelected && !showResult && 'border-primary bg-primary/5',
+              'hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-brand/20',
+              isSelected && !showResult && 'border-brand bg-primary/5',
               isCorrectAnswer && 'border-success bg-success/10',
               isWrongSelected && 'border-destructive bg-destructive/10',
               disabled && 'cursor-not-allowed opacity-60',
@@ -179,7 +179,7 @@ function SingleChoiceInput({
               ) : isWrongSelected ? (
                 <Circle className="h-5 w-5 text-destructive fill-destructive" />
               ) : isSelected ? (
-                <Circle className="h-5 w-5 text-primary fill-primary" />
+                <Circle className="h-5 w-5 text-brand fill-primary" />
               ) : (
                 <Circle className="h-5 w-5 text-muted-foreground" />
               )}
@@ -242,8 +242,8 @@ function MultipleChoiceInput({
             disabled={disabled}
             className={cn(
               'w-full flex items-start gap-3 p-4 rounded-lg border text-left transition-all',
-              'hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20',
-              isSelected && !showResult && 'border-primary bg-primary/5',
+              'hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-brand/20',
+              isSelected && !showResult && 'border-brand bg-primary/5',
               isCorrectAnswer && isSelected && 'border-success bg-success/10',
               isWrongSelected && 'border-destructive bg-destructive/10',
               isMissed && 'border-warning bg-warning/10',
@@ -259,7 +259,7 @@ function MultipleChoiceInput({
               ) : isMissed ? (
                 <Square className="h-5 w-5 text-warning" />
               ) : isSelected ? (
-                <CheckSquare className="h-5 w-5 text-primary" />
+                <CheckSquare className="h-5 w-5 text-brand" />
               ) : (
                 <Square className="h-5 w-5 text-muted-foreground" />
               )}
@@ -309,7 +309,7 @@ function TextInput({
         disabled={disabled}
         className={cn(
           'w-full px-4 py-3 rounded-lg border bg-background transition-colors',
-          'focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary',
+          'focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand',
           showResult && isCorrect && 'border-success bg-success/10',
           showResult && !isCorrect && 'border-destructive bg-destructive/10',
           disabled && 'cursor-not-allowed opacity-60'

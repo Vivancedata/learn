@@ -46,7 +46,7 @@ function getCategoryClasses(category: SuggestedQuestion['category']): string {
     case 'navigation':
       return 'border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/5'
     default:
-      return 'border-border hover:border-primary/40 hover:bg-primary/5'
+      return 'border-border hover:border-brand/40 hover:bg-primary/5'
   }
 }
 
@@ -151,7 +151,7 @@ function SuggestedQuestionsComponent({
                 <Icon className={cn('w-4 h-4', iconClasses)} aria-hidden="true" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                <p className="text-sm font-medium text-foreground group-hover:text-brand transition-colors">
                   {question.text}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5 capitalize">
@@ -223,7 +223,7 @@ export function WelcomeMessage({
 
   return (
     <div className="flex flex-col items-center justify-center text-center p-6 space-y-4">
-      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-glow">
+      <div className="w-16 h-16 rounded-full border border-border bg-muted flex items-center justify-center">
         <MessageSquare className="w-8 h-8 text-primary-foreground" />
       </div>
       <div className="space-y-1">

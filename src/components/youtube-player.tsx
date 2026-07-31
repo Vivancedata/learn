@@ -328,7 +328,7 @@ export function YouTubePlayer({
           <p className="text-destructive mb-2">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-brand hover:underline"
           >
             Reload page
           </button>

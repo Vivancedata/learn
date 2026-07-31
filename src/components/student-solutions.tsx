@@ -285,13 +285,13 @@ export function StudentSolutions({ lessonId, courseId }: StudentSolutionsProps) 
           {solutions.map((solution) => (
             <div
               key={solution.id}
-              className="border rounded-lg p-4 space-y-3 hover:border-primary/50 transition-colors"
+              className="border rounded-lg p-4 space-y-3 hover:border-brand/50 transition-colors"
             >
               {/* User info */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-medium text-primary">
+                    <span className="text-sm font-medium text-brand">
                       {solution.user.name.charAt(0).toUpperCase()}
                     </span>
                   </div>

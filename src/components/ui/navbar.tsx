@@ -39,16 +39,16 @@ export function Navbar() {
   return (
     <nav className={`sticky top-0 z-50 transition-all duration-300 ${
       scrolled
-        ? 'glass border-b shadow-elevation-1'
-        : 'bg-background/50 backdrop-blur-sm border-b border-transparent'
+        ? 'bg-background/95 backdrop-blur-sm border-b border-border'
+        : 'bg-background border-b border-transparent'
     }`}>
       <div className="container flex h-16 items-center px-4">
         <Link href="/" className="flex items-center space-x-2 group">
           <div className="relative">
-            <Sparkles className="h-6 w-6 text-primary transition-transform group-hover:scale-110" />
+            <Sparkles className="h-6 w-6 text-brand transition-transform group-hover:scale-110" />
             <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <span className="text-2xl font-bold text-foreground">
             Eureka
           </span>
         </Link>
@@ -103,7 +103,7 @@ export function Navbar() {
                   Pro
                 </Badge>
               ) : (
-                <Button size="sm" variant="default" asChild className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90">
+                <Button size="sm" variant="default" asChild className="bg-brand ">
                   <Link href="/pricing" className="flex items-center gap-1">
                     <Crown className="h-3 w-3" />
                     <span>Upgrade</span>
@@ -142,14 +142,14 @@ export function Navbar() {
       <div className={`sm:hidden overflow-hidden transition-all duration-300 ease-in-out ${
         mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
       }`}>
-        <div className="glass border-t">
+        <div className="bg-background border-t border-border">
           <div className="container px-4 py-4 space-y-1">
             <Link
               href="/dashboard"
               className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              <LayoutDashboard className="h-5 w-5 text-primary" />
+              <LayoutDashboard className="h-5 w-5 text-brand" />
               <span className="font-medium">Dashboard</span>
             </Link>
             <Link
@@ -157,7 +157,7 @@ export function Navbar() {
               className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              <BookOpen className="h-5 w-5 text-primary" />
+              <BookOpen className="h-5 w-5 text-brand" />
               <span className="font-medium">Courses</span>
             </Link>
             <Link
@@ -165,7 +165,7 @@ export function Navbar() {
               className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              <Map className="h-5 w-5 text-primary" />
+              <Map className="h-5 w-5 text-brand" />
               <span className="font-medium">Learning Paths</span>
             </Link>
             <Link
@@ -173,7 +173,7 @@ export function Navbar() {
               className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              <Target className="h-5 w-5 text-primary" />
+              <Target className="h-5 w-5 text-brand" />
               <span className="font-medium">Assessments</span>
             </Link>
             <Link
@@ -181,7 +181,7 @@ export function Navbar() {
               className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              <Code2 className="h-5 w-5 text-primary" />
+              <Code2 className="h-5 w-5 text-brand" />
               <span className="font-medium">Exercises</span>
             </Link>
             <Link
@@ -189,7 +189,7 @@ export function Navbar() {
               className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              <Trophy className="h-5 w-5 text-primary" />
+              <Trophy className="h-5 w-5 text-brand" />
               <span className="font-medium">Leaderboard</span>
             </Link>
             <Link
@@ -197,14 +197,14 @@ export function Navbar() {
               className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              <Settings className="h-5 w-5 text-primary" />
+              <Settings className="h-5 w-5 text-brand" />
               <span className="font-medium">Settings</span>
             </Link>
             {/* Upgrade Button for Mobile */}
             {isAuthenticated && !subscriptionLoading && !isPro && (
               <Link
                 href="/pricing"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gradient-to-r from-primary to-accent text-primary-foreground"
+                className="flex items-center gap-3 px-4 py-3 rounded-lg bg-brand text-primary-foreground"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Crown className="h-5 w-5" />

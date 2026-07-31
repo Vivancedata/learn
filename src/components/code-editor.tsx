@@ -75,7 +75,7 @@ function highlightPython(code: string): string {
   const keywordPattern = new RegExp(`\\b(${PYTHON_KEYWORDS.join('|')})\\b`, 'g')
   highlighted = highlighted.replace(
     keywordPattern,
-    '<span class="text-primary font-semibold">$1</span>'
+    '<span class="text-brand font-semibold">$1</span>'
   )
 
   // Builtins
@@ -88,7 +88,7 @@ function highlightPython(code: string): string {
   // Function definitions
   highlighted = highlighted.replace(
     /\b(def|class)\s+(\w+)/g,
-    '<span class="text-primary font-semibold">$1</span> <span class="text-warning">$2</span>'
+    '<span class="text-brand font-semibold">$1</span> <span class="text-warning">$2</span>'
   )
 
   return highlighted

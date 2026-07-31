@@ -57,7 +57,7 @@ export function ProgressSummary({
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">Course Progress</CardTitle>
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10">
-            <BookOpen className="h-5 w-5 text-primary" />
+            <BookOpen className="h-5 w-5 text-brand" />
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -85,7 +85,6 @@ export function ProgressSummary({
       {/* Lesson Progress or Active Courses */}
       {totalLessons !== undefined && completedLessons !== undefined ? (
         <Card className="relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-accent/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Lesson Progress</CardTitle>
             <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10">
@@ -99,7 +98,7 @@ export function ProgressSummary({
             {/* Progress bar */}
             <div className="relative h-2 w-full rounded-full bg-muted overflow-hidden">
               <div
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-500"
+                className="absolute inset-y-0 left-0 bg-brand rounded-full transition-all duration-500"
                 style={{ width: `${lessonProgress}%` }}
               />
             </div>
@@ -154,18 +153,17 @@ export function ProgressSummary({
 
       {/* Continue Learning */}
       {lastAccessedCourse && (
-        <Card className="relative overflow-hidden group border-primary/20 hover:border-primary/40 transition-colors">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <Card className="relative overflow-hidden group border-brand/20 hover:border-brand/40 transition-colors">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
             <CardTitle className="text-sm font-medium text-muted-foreground">Continue Learning</CardTitle>
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-brand">
               <ArrowRight className="h-5 w-5 text-white group-hover:translate-x-0.5 transition-transform" />
             </div>
           </CardHeader>
           <CardContent className="relative space-y-2">
             <Link
               href={`/courses/${lastAccessedCourse.id}`}
-              className="text-base font-semibold hover:text-primary transition-colors line-clamp-1"
+              className="text-base font-semibold hover:text-brand transition-colors line-clamp-1"
             >
               {lastAccessedCourse.title}
             </Link>
@@ -176,7 +174,7 @@ export function ProgressSummary({
               <div className="pt-2">
                 <div className="relative h-1.5 w-full rounded-full bg-muted overflow-hidden">
                   <div
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-accent rounded-full"
+                    className="absolute inset-y-0 left-0 bg-brand rounded-full"
                     style={{
                       width: `${lastAccessedCourse.progress.total > 0
                         ? (lastAccessedCourse.progress.completed / lastAccessedCourse.progress.total) * 100

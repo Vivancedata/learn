@@ -79,7 +79,7 @@ export function StreakDisplay({
       onClick={onClick}
       className={cn(
         'inline-flex items-center rounded-full border transition-all duration-200',
-        'hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50',
+        'hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand/50',
         colors.container,
         config.container,
         onClick ? 'cursor-pointer' : 'cursor-default',

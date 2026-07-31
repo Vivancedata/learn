@@ -183,7 +183,7 @@ export function StreakCalendar({
               className={cn(
                 'relative aspect-square rounded-lg border transition-all duration-200',
                 'flex items-center justify-center cursor-default',
-                'focus:outline-none focus:ring-2 focus:ring-primary/50',
+                'focus:outline-none focus:ring-2 focus:ring-brand/50',
                 dayClassName
               )}
               tabIndex={0}

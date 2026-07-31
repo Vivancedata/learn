@@ -97,7 +97,7 @@ export default function ForgotPasswordPage() {
                     setSuccess(false)
                     setEmail('')
                   }}
-                  className="text-primary hover:underline font-medium"
+                  className="text-brand hover:underline font-medium"
                 >
                   try again
                 </button>
@@ -166,7 +166,7 @@ export default function ForgotPasswordPage() {
 
             <Link
               href="/sign-in"
-              className="text-sm text-muted-foreground hover:text-primary flex items-center"
+              className="text-sm text-muted-foreground hover:text-brand flex items-center"
             >
               <ArrowLeft className="mr-1 h-4 w-4" />
               Back to Sign In

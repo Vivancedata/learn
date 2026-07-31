@@ -154,7 +154,7 @@ export function XpLevelDisplay({
         <CardContent className="space-y-4">
           {/* XP Total */}
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary">
+            <div className="text-3xl font-bold text-brand">
               {xpData.totalXp.toLocaleString()}
             </div>
             <p className="text-sm text-muted-foreground">Total XP</p>

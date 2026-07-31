@@ -1,1 +1,1 @@
-export { ThemeProvider, type ThemeProviderProps } from "@/components/vendor/ui"
+export { ThemeProvider, type ThemeProviderProps } from "@vivancedata/ui"

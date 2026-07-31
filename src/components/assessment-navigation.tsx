@@ -45,7 +45,7 @@ export function AssessmentNavigation({
               onClick={() => onQuestionClick(index)}
               className={cn(
                 'relative w-10 h-10 rounded-lg font-medium text-sm transition-all duration-200',
-                'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2',
+                'focus:outline-none focus:ring-2 focus:ring-brand/50 focus:ring-offset-2',
                 'hover:scale-105 active:scale-95',
                 // Default unanswered state
                 !isCurrent && !isAnswered && !isFlagged && 'bg-muted text-muted-foreground hover:bg-muted/80',
@@ -54,7 +54,7 @@ export function AssessmentNavigation({
                 // Flagged state
                 isFlagged && !isCurrent && 'bg-warning/20 text-warning border border-warning/50',
                 // Current state
-                isCurrent && 'bg-primary text-primary-foreground shadow-lg ring-2 ring-primary/30'
+                isCurrent && 'bg-primary text-primary-foreground shadow-lg ring-2 ring-brand/30'
               )}
               aria-label={`Question ${index + 1}${isCurrent ? ', current' : ''}${isAnswered ? ', answered' : ''}${isFlagged ? ', flagged for review' : ''}`}
               aria-current={isCurrent ? 'true' : undefined}
@@ -135,7 +135,7 @@ export function AssessmentNavigationCompact({
 
       <div className="h-2 bg-muted rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-300"
+          className="h-full bg-brand transition-all duration-300"
           style={{ width: `${progress}%` }}
           role="progressbar"
           aria-valuenow={answeredCount}

@@ -47,7 +47,7 @@ export default function CheckoutCancelPage() {
       <Card className="mb-8">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <HelpCircle className="h-5 w-5 text-primary" />
+            <HelpCircle className="h-5 w-5 text-brand" />
             <CardTitle>Need Help Deciding?</CardTitle>
           </div>
         </CardHeader>
@@ -111,7 +111,7 @@ export default function CheckoutCancelPage() {
 
       <p className="text-center text-sm text-muted-foreground mt-8">
         Questions about Pro?{' '}
-        <a href="mailto:support@vivancedata.com" className="text-primary hover:underline">
+        <a href="mailto:support@vivancedata.com" className="text-brand hover:underline">
           Contact our team
         </a>
         {' '}for a personalized recommendation.

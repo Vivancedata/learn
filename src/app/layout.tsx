@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { Suspense } from "react"
-import "./vivance-ui.css"
+import { Geist, Geist_Mono } from "next/font/google"
+import "@vivancedata/ui/styles"
 import "./globals.css"
 import { Navbar } from "@/components/ui/navbar"
 import { ThemeProvider } from "@/components/ui/theme-provider"
@@ -10,6 +11,20 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext"
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
 import { PostHogProvider } from "@/components/providers/posthog-provider"
 import { MobileProvider } from "@/components/mobile/mobile-provider"
+
+// Geist Sans sets all UI and prose; Geist Mono sets code and the uppercase
+// section eyebrows. Exposed as CSS variables that tailwind.preset.ts reads.
+const geistSans = Geist({
+  subsets: ['latin'],
+  variable: '--font-geist-sans',
+  display: 'swap',
+})
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: "VivanceData Learning Platform",
@@ -50,7 +65,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      // The design system sets scroll-behavior: smooth; this opts out of it for
+      // route transitions, which is what Next.js asks for.
+      data-scroll-behavior="smooth"
+      className={`antialiased ${geistSans.variable} ${geistMono.variable}`}
+    >
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

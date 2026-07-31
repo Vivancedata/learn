@@ -154,7 +154,7 @@ export function CourseCertificate({ course, progress }: CourseCertificateProps) 
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-lg" />
             
             <div className="relative space-y-6 flex flex-col items-center text-center">
-              <Award className="h-16 w-16 text-primary" />
+              <Award className="h-16 w-16 text-brand" />
               
               <div>
                 <h3 className="text-xl font-bold">Certificate of Completion</h3>

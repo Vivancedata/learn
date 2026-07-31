@@ -136,7 +136,7 @@ function AssessmentsHeader({
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Target className="h-8 w-8 text-primary" />
+            <Target className="h-8 w-8 text-brand" />
             Skill Assessments
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -146,7 +146,7 @@ function AssessmentsHeader({
       </div>
 
       {!authLoading && !user && (
-        <Card className="border-primary/30 bg-primary/5">
+        <Card className="border-brand/30 bg-primary/5">
           <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               Preview all assessments now. Sign in when you&apos;re ready to start attempts and
@@ -163,7 +163,7 @@ function AssessmentsHeader({
         <Card>
           <CardContent className="flex items-center gap-4 p-4">
             <div className="p-3 bg-primary/10 rounded-lg">
-              <BookOpen className="h-6 w-6 text-primary" />
+              <BookOpen className="h-6 w-6 text-brand" />
             </div>
             <div>
               <p className="text-2xl font-bold">{user ? userStats.totalAssessments : '—'}</p>

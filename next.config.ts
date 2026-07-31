@@ -1,5 +1,20 @@
 import type { NextConfig } from 'next'
+import path from 'node:path'
+import { createRequire } from 'node:module'
 import { withSentryConfig } from '@sentry/nextjs'
+
+/**
+ * Turbopack refuses to compile files outside its root, so the root has to
+ * contain the resolved `next` package. In the npm workspace `next` is hoisted
+ * to the repo root; in a standalone deploy it sits in this project. Deriving
+ * the root from where `next` actually resolves is correct in both cases --
+ * process.cwd() only works standalone.
+ */
+const turbopackRoot = path.resolve(
+  path.dirname(createRequire(import.meta.url).resolve('next/package.json')),
+  '..',
+  '..'
+)
 
 /**
  * Determine if we're building for mobile (Capacitor)
@@ -8,10 +23,13 @@ import { withSentryConfig } from '@sentry/nextjs'
 const isCapacitorBuild = process.env.CAPACITOR_BUILD === 'true'
 
 const nextConfig: NextConfig = {
-  // Avoid incorrect monorepo root inference when multiple lockfiles exist.
   turbopack: {
-    root: process.cwd(),
+    root: turbopackRoot,
   },
+
+  // @vivancedata/ui ships TypeScript source from its `exports.import` entry, so
+  // Next has to compile it rather than treat it as a prebuilt dependency.
+  transpilePackages: ['@vivancedata/ui'],
 
   /**
    * Static export configuration for Capacitor builds

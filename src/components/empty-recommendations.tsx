@@ -53,7 +53,7 @@ export function EmptyRecommendations({
         <div className="relative mb-6">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full blur-2xl" />
           <svg
-            className="relative w-24 h-24 text-primary"
+            className="relative w-24 h-24 text-brand"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -127,7 +127,7 @@ export function EmptyRecommendations({
           <ul className="text-sm text-muted-foreground space-y-2">
             <li className="flex items-start gap-2">
               <svg
-                className="w-4 h-4 mt-0.5 text-primary flex-shrink-0"
+                className="w-4 h-4 mt-0.5 text-brand flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -144,7 +144,7 @@ export function EmptyRecommendations({
             </li>
             <li className="flex items-start gap-2">
               <svg
-                className="w-4 h-4 mt-0.5 text-primary flex-shrink-0"
+                className="w-4 h-4 mt-0.5 text-brand flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -161,7 +161,7 @@ export function EmptyRecommendations({
             </li>
             <li className="flex items-start gap-2">
               <svg
-                className="w-4 h-4 mt-0.5 text-primary flex-shrink-0"
+                className="w-4 h-4 mt-0.5 text-brand flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

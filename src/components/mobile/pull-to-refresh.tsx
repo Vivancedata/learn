@@ -189,7 +189,7 @@ export function PullToRefresh({
     >
       <RefreshCw
         className={cn(
-          'h-5 w-5 text-primary',
+          'h-5 w-5 text-brand',
           state === 'refreshing' && 'animate-spin'
         )}
       />
@@ -205,7 +205,7 @@ export function PullToRefresh({
         'bg-background border border-border shadow-md'
       )}
     >
-      <RefreshCw className="h-5 w-5 text-primary animate-spin" />
+      <RefreshCw className="h-5 w-5 text-brand animate-spin" />
     </div>
   )
 

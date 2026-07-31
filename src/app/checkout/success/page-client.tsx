@@ -58,7 +58,7 @@ function CheckoutSuccessContent() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand mx-auto mb-4"></div>
           <p className="text-muted-foreground">Setting up your Pro account...</p>
         </div>
       </div>
@@ -87,7 +87,7 @@ function CheckoutSuccessContent() {
       <Card className="mb-8 border-success/50">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Crown className="h-5 w-5 text-primary" />
+            <Crown className="h-5 w-5 text-brand" />
             <CardTitle>Pro Features Unlocked</CardTitle>
           </div>
           <CardDescription>
@@ -118,7 +118,7 @@ function CheckoutSuccessContent() {
       <Card className="mb-8">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
+            <Sparkles className="h-5 w-5 text-brand" />
             <CardTitle>Recommended Next Steps</CardTitle>
           </div>
         </CardHeader>
@@ -182,7 +182,7 @@ function CheckoutSuccessContent() {
 
       <p className="text-center text-sm text-muted-foreground mt-8">
         Need help? Contact us at{' '}
-        <a href="mailto:support@vivancedata.com" className="text-primary hover:underline">
+        <a href="mailto:support@vivancedata.com" className="text-brand hover:underline">
           support@vivancedata.com
         </a>
       </p>

@@ -141,7 +141,7 @@ export function MobileLesson({
       case 'quiz':
         return { icon: Play, label: 'Quiz', color: 'text-info' }
       default:
-        return { icon: BookOpen, label: 'Lesson', color: 'text-primary' }
+        return { icon: BookOpen, label: 'Lesson', color: 'text-brand' }
     }
   }
 

@@ -137,7 +137,7 @@ export function AssessmentResults({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center justify-center gap-1 text-2xl font-bold">
-                <Trophy className="h-5 w-5 text-primary" />
+                <Trophy className="h-5 w-5 text-brand" />
                 {score}%
               </div>
               <p className="text-sm text-muted-foreground">Your Score</p>
@@ -145,7 +145,7 @@ export function AssessmentResults({
 
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center justify-center gap-1 text-2xl font-bold">
-                <Target className="h-5 w-5 text-primary" />
+                <Target className="h-5 w-5 text-brand" />
                 {passingScore}%
               </div>
               <p className="text-sm text-muted-foreground">Passing Score</p>
@@ -161,7 +161,7 @@ export function AssessmentResults({
 
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center justify-center gap-1 text-2xl font-bold">
-                <Clock className="h-5 w-5 text-primary" />
+                <Clock className="h-5 w-5 text-brand" />
                 {formatTime(timeSpent)}
               </div>
               <p className="text-sm text-muted-foreground">
@@ -173,7 +173,7 @@ export function AssessmentResults({
           {/* XP Awarded */}
           {xpAwarded > 0 && (
             <div className="flex justify-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-brand rounded-full">
                 <Sparkles className="h-4 w-4" />
                 <span className="font-semibold">+{xpAwarded} XP earned!</span>
               </div>
