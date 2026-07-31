@@ -197,7 +197,7 @@ function LeaderboardContent() {
       )}
 
       {!user && (
-        <Card className="border-primary/30 bg-primary/5">
+        <Card className="border-brand/30 bg-primary/5">
           <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               The leaderboard is public. Sign in to highlight your rank and track your movement.
@@ -268,7 +268,7 @@ function LeaderboardContent() {
       {loading && (
         <div className="flex items-center justify-center min-h-[40vh]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand mx-auto"></div>
             <p className="mt-4 text-muted-foreground">Loading leaderboard...</p>
           </div>
         </div>
@@ -352,14 +352,14 @@ function LeaderboardContent() {
           {/* Show current user if not in top 50 */}
           {leaderboardData.currentUserRank &&
             !leaderboardData.entries.some(e => e.isCurrentUser) && (
-              <Card className="border-primary/30 bg-primary/5">
+              <Card className="border-brand/30 bg-primary/5">
                 <CardHeader>
                   <CardTitle className="text-lg">Your Position</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <span className="text-2xl font-bold text-primary">
+                      <span className="text-2xl font-bold text-brand">
                         #{leaderboardData.currentUserRank.rank}
                       </span>
                       <span className="font-medium">

@@ -181,7 +181,7 @@ function ResetPasswordForm() {
   if (!tokenReady) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-brand" />
       </div>
     )
   }
@@ -388,7 +388,7 @@ function ResetPasswordForm() {
 
             <Link
               href="/sign-in"
-              className="text-sm text-muted-foreground hover:text-primary flex items-center"
+              className="text-sm text-muted-foreground hover:text-brand flex items-center"
             >
               <ArrowLeft className="mr-1 h-4 w-4" />
               Back to Sign In

@@ -210,7 +210,7 @@ function LessonPrimaryContent({
       </Card>
 
       {!user && (
-        <Card className="border-primary/30 bg-primary/5">
+        <Card className="border-brand/30 bg-primary/5">
           <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               Keep exploring lessons freely. Sign in to save progress, quiz scores, and streaks.
@@ -315,7 +315,7 @@ function LessonSidebar({ tableOfContents }: { tableOfContents: TableOfContentsIt
         </div>
         <div className="mt-6 p-4 rounded-lg border border-border bg-card/50">
           <div className="flex items-center gap-2 mb-2">
-            <MessageSquare className="h-4 w-4 text-primary" />
+            <MessageSquare className="h-4 w-4 text-brand" />
             <h4 className="font-medium text-sm">Need Help?</h4>
           </div>
           <p className="text-xs text-muted-foreground mb-3">

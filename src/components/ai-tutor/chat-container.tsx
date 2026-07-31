@@ -34,8 +34,8 @@ function FloatingButton({
       className={cn(
         'fixed bottom-6 right-6 z-50',
         'w-14 h-14 rounded-full shadow-lg',
-        'bg-gradient-to-br from-primary to-accent hover:from-primary/90 hover:to-accent/90',
-        'transition-all duration-300 hover:scale-105 hover:shadow-glow',
+        'bg-brand ',
+        'transition-colors duration-default hover:bg-accent',
         'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
       )}
       aria-label="Open AI Tutor chat"
@@ -70,7 +70,7 @@ function ChatHeader({
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/80 backdrop-blur-sm rounded-t-xl">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full bg-brand flex items-center justify-center">
           <Bot className="w-4 h-4 text-primary-foreground" aria-hidden="true" />
         </div>
         <div>
@@ -204,7 +204,7 @@ function MessagesContainer({
             ))}
             {isLoading && (
               <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-brand flex items-center justify-center flex-shrink-0">
                   <Bot className="w-4 h-4 text-primary-foreground" />
                 </div>
                 <div className="bg-card border border-border rounded-2xl rounded-tl-md px-4 py-2.5 shadow-sm">

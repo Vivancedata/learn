@@ -216,7 +216,7 @@ export function InstallPrompt({
             {/* Icon */}
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Download className="h-8 w-8 text-primary" />
+                <Download className="h-8 w-8 text-brand" />
               </div>
             </div>
 
@@ -335,7 +335,7 @@ function IOSInstallInstructions({ onClose }: { onClose: () => void }) {
           <div>
             <p className="font-medium">Scroll down and tap</p>
             <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-muted rounded-lg">
-              <Plus className="h-5 w-5 text-primary" />
+              <Plus className="h-5 w-5 text-brand" />
               <span className="font-medium">Add to Home Screen</span>
             </div>
           </div>

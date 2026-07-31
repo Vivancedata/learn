@@ -139,7 +139,7 @@ export function RecommendationCard({
           className={cn(
             'absolute top-3 left-3 z-10',
             'px-2 py-0.5 rounded-full',
-            'bg-primary/10 text-primary',
+            'bg-primary/10 text-brand',
             'text-xs font-semibold'
           )}
           role="status"
@@ -175,7 +175,7 @@ export function RecommendationCard({
           </div>
 
           {/* Course title */}
-          <h3 className="text-lg font-semibold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+          <h3 className="text-lg font-semibold leading-tight line-clamp-2 group-hover:text-brand transition-colors">
             {courseTitle}
           </h3>
         </CardHeader>

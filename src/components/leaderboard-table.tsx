@@ -65,7 +65,7 @@ function LeaderboardRow({ entry, index }: { entry: LeaderboardEntry; index: numb
       className={cn(
         'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
         'hover:bg-accent/50',
-        entry.isCurrentUser && 'bg-primary/10 hover:bg-primary/15 ring-1 ring-primary/30',
+        entry.isCurrentUser && 'bg-primary/10 hover:bg-primary/15 ring-1 ring-brand/30',
         index % 2 === 0 ? 'bg-muted/30' : ''
       )}
     >
@@ -74,7 +74,7 @@ function LeaderboardRow({ entry, index }: { entry: LeaderboardEntry; index: numb
         <span
           className={cn(
             'font-bold',
-            isTopTen ? 'text-primary' : 'text-muted-foreground',
+            isTopTen ? 'text-brand' : 'text-muted-foreground',
             entry.rank <= 3 && 'text-lg'
           )}
         >
@@ -91,8 +91,8 @@ function LeaderboardRow({ entry, index }: { entry: LeaderboardEntry; index: numb
       <div
         className={cn(
           'w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold',
-          'bg-gradient-to-br from-primary/20 to-accent/20 text-foreground',
-          entry.isCurrentUser && 'from-primary/40 to-accent/40'
+          'bg-muted text-foreground',
+          entry.isCurrentUser && 'bg-brand/15 ring-1 ring-brand/30'
         )}
       >
         {initials}
@@ -102,7 +102,7 @@ function LeaderboardRow({ entry, index }: { entry: LeaderboardEntry; index: numb
       <div className="flex-1 min-w-0">
         <p className={cn(
           'font-medium truncate',
-          entry.isCurrentUser && 'text-primary font-semibold'
+          entry.isCurrentUser && 'text-brand font-semibold'
         )}>
           {entry.userName || 'Anonymous'}
           {entry.isCurrentUser && <span className="ml-2 text-xs text-muted-foreground">(You)</span>}
@@ -121,7 +121,7 @@ function LeaderboardRow({ entry, index }: { entry: LeaderboardEntry; index: numb
       <div className="text-right">
         <span className={cn(
           'font-semibold tabular-nums',
-          isTopTen ? 'text-primary' : 'text-foreground'
+          isTopTen ? 'text-brand' : 'text-foreground'
         )}>
           {entry.score.toLocaleString()}
         </span>

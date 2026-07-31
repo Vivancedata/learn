@@ -1,1 +1,1 @@
-export { Button, buttonVariants, type ButtonProps } from "@/components/vendor/ui"
+export { Button, buttonVariants, type ButtonProps } from "@vivancedata/ui"

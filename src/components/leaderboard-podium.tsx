@@ -122,7 +122,7 @@ function PodiumPlace({
             'ring-4 shadow-lg transition-transform hover:scale-105',
             colors[position],
             borderColors[position],
-            isCurrentUser && 'ring-primary'
+            isCurrentUser && 'ring-brand'
           )}
         >
           <span className="text-lg">{initials}</span>
@@ -145,7 +145,7 @@ function PodiumPlace({
       <div className="mt-3 text-center">
         <p className={cn(
           'font-semibold text-sm truncate max-w-20',
-          isCurrentUser && 'text-primary'
+          isCurrentUser && 'text-brand'
         )}>
           {entry.userName || 'Anonymous'}
         </p>

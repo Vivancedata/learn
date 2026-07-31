@@ -142,7 +142,7 @@ function AssessmentBackButton({
 function AssessmentLoadingState() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
-      <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-primary" />
+      <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-brand" />
     </div>
   )
 }
@@ -186,7 +186,7 @@ function AssessmentInfoTile({
 }) {
   return (
     <div className="rounded-lg bg-muted/50 p-4 text-center">
-      <Icon className="mx-auto mb-2 h-6 w-6 text-primary" />
+      <Icon className="mx-auto mb-2 h-6 w-6 text-brand" />
       <p className="text-2xl font-bold">{value}</p>
       <p className="text-sm text-muted-foreground">{label}</p>
     </div>
@@ -202,7 +202,7 @@ function RelatedCourseCallout({ relatedCourse }: { relatedCourse: RelatedCourse 
     <div className="mb-6 rounded-lg border p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <BookOpen className="h-5 w-5 text-primary" />
+          <BookOpen className="h-5 w-5 text-brand" />
           <div>
             <p className="text-sm text-muted-foreground">Related Course</p>
             <p className="font-medium">{relatedCourse.title}</p>
@@ -218,9 +218,9 @@ function RelatedCourseCallout({ relatedCourse }: { relatedCourse: RelatedCourse 
 
 function AssessmentTips({ assessment }: { assessment: SkillAssessment }) {
   return (
-    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+    <div className="rounded-lg border border-brand/20 bg-primary/5 p-4">
       <h3 className="mb-2 flex items-center gap-2 font-semibold">
-        <Award className="h-5 w-5 text-primary" />
+        <Award className="h-5 w-5 text-brand" />
         Tips for Success
       </h3>
       <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
@@ -325,7 +325,6 @@ function AssessmentOverviewCard({
           disabled={isStarting}
           size="lg"
           className="w-full gap-2"
-          variant={isSignedIn ? 'gradient' : 'default'}
         >
           {isStarting ? (
             <span className="h-5 w-5 animate-spin rounded-full border-t-2 border-b-2 border-white" />

@@ -120,7 +120,7 @@ export function GivePointButton({
       <Button
         variant="ghost"
         size={size}
-        className="flex items-center gap-1 h-auto py-1 text-muted-foreground hover:text-primary"
+        className="flex items-center gap-1 h-auto py-1 text-muted-foreground hover:text-brand"
         onClick={() => setShowConfirm(true)}
         title={`Give thanks to ${recipientName} for their helpful response`}
         aria-label={`Give thanks to ${recipientName}`}

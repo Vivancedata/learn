@@ -114,7 +114,7 @@ export default function SignInPage() {
                 </Label>
                 <Link
                   href="/forgot-password"
-                  className="text-sm text-primary hover:underline"
+                  className="text-sm text-brand hover:underline"
                 >
                   Forgot password?
                 </Link>
@@ -150,7 +150,7 @@ export default function SignInPage() {
                 href={redirectPath === '/dashboard'
                   ? '/sign-up'
                   : `/sign-up?redirect=${encodeURIComponent(redirectPath)}`}
-                className="text-primary hover:underline"
+                className="text-brand hover:underline"
               >
                 Sign Up
               </Link>

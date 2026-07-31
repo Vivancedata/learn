@@ -3,4 +3,4 @@ export {
   PageSpinner,
   BorderSpinner,
   type SpinnerProps,
-} from "@/components/vendor/ui"
+} from "@vivancedata/ui"

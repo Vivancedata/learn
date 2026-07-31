@@ -81,7 +81,7 @@ const markdownComponents: Components = {
   h3: ({ children }) => <h3 className="text-sm font-bold mt-2 mb-1">{children}</h3>,
   // Styled blockquotes
   blockquote: ({ children }) => (
-    <blockquote className="border-l-4 border-primary/50 pl-3 my-2 italic text-muted-foreground">
+    <blockquote className="border-l-4 border-brand/50 pl-3 my-2 italic text-muted-foreground">
       {children}
     </blockquote>
   ),
@@ -93,7 +93,7 @@ const markdownComponents: Components = {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+      className="text-brand underline underline-offset-2 hover:text-brand/80 transition-colors"
     >
       {children}
     </a>
@@ -119,7 +119,7 @@ function TypingIndicator() {
 function AiAvatar() {
   return (
     <div
-      className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0 shadow-sm"
+      className="w-8 h-8 rounded-full bg-brand flex items-center justify-center flex-shrink-0 shadow-sm"
       aria-hidden="true"
     >
       <Bot className="w-4 h-4 text-primary-foreground" />
@@ -183,7 +183,7 @@ function ChatMessageComponent({
             isUser
               ? 'bg-primary text-primary-foreground rounded-tr-md'
               : 'bg-card border border-border rounded-tl-md shadow-sm',
-            isLatest && !isUser && 'ring-1 ring-primary/20'
+            isLatest && !isUser && 'ring-1 ring-brand/20'
           )}
         >
           {isStreaming ? (

@@ -192,7 +192,7 @@ export function MobileHeader({
                   'h-10 w-10 rounded-full',
                   '-ml-2',
                   'touch-manipulation',
-                  'focus-visible:ring-2 focus-visible:ring-primary'
+                  'focus-visible:ring-2 focus-visible:ring-brand'
                 )}
                 aria-label="Go back"
               >

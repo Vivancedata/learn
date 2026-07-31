@@ -156,7 +156,7 @@ function VerifyEmailContent() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Mail className="h-6 w-6 text-primary" />
+            <Mail className="h-6 w-6 text-brand" />
           </div>
           <CardTitle>Verify Your Email</CardTitle>
           <CardDescription>
@@ -227,7 +227,7 @@ function VerifyEmailContent() {
                 type="button"
                 onClick={handleResendCode}
                 disabled={isResending}
-                className="text-primary hover:underline font-medium flex items-center"
+                className="text-brand hover:underline font-medium flex items-center"
               >
                 {isResending ? (
                   <>
@@ -244,7 +244,7 @@ function VerifyEmailContent() {
             </div>
 
             <div className="text-center text-sm text-muted-foreground">
-              <Link href="/dashboard" className="hover:text-primary">
+              <Link href="/dashboard" className="hover:text-brand">
                 Skip for now
               </Link>
             </div>
@@ -260,7 +260,7 @@ export default function VerifyEmailPage() {
     <Suspense
       fallback={
         <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-brand" />
         </div>
       }
     >

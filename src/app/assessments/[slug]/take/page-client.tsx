@@ -228,7 +228,7 @@ function getQuestionStatuses(
 function LoadingState() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center">
-      <Loader2 className="mb-4 h-12 w-12 animate-spin text-primary" />
+      <Loader2 className="mb-4 h-12 w-12 animate-spin text-brand" />
       <p className="text-muted-foreground">Loading assessment...</p>
     </div>
   )
@@ -575,7 +575,7 @@ function SubmittingOverlay({ isSubmitting }: { isSubmitting: boolean }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
       <div className="text-center">
-        <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-primary" />
+        <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-brand" />
         <p className="text-lg font-medium">Submitting your assessment...</p>
         <p className="text-muted-foreground">Please wait</p>
       </div>

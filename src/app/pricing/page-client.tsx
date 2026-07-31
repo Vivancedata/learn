@@ -112,7 +112,7 @@ export default function PricingPageClient() {
           </CardFooter>
         </Card>
 
-        <Card className="relative border-primary shadow-lg">
+        <Card className="relative border-brand shadow-lg">
           {currentPlan.popular && (
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
@@ -120,7 +120,7 @@ export default function PricingPageClient() {
           )}
           <CardHeader>
             <div className="mb-2 flex items-center gap-2">
-              <Crown className="h-5 w-5 text-primary" />
+              <Crown className="h-5 w-5 text-brand" />
               <CardTitle as="h2">Pro</CardTitle>
             </div>
             <CardDescription>{currentPlan.description}</CardDescription>

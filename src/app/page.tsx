@@ -123,7 +123,7 @@ export default async function page() {
         <div className="container relative px-4 py-24 md:py-32 lg:py-40">
           <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-8 animate-fade-in-down">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-brand text-sm font-medium mb-8 animate-fade-in-down">
               <Sparkles className="h-4 w-4" />
               <span>New: AI Agents Development Course</span>
             </div>
@@ -131,7 +131,7 @@ export default async function page() {
             {/* Main heading */}
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 animate-fade-in-up">
               Master{" "}
-              <span className="bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_auto] bg-clip-text text-transparent animate-gradient-shift">
+              <span className="text-brand">
                 AI & Tech Skills
               </span>
               <br />
@@ -146,7 +146,7 @@ export default async function page() {
 
             {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up [animation-delay:200ms]">
-              <Button variant="gradient" size="xl" asChild>
+              <Button shape="pill" size="xl" asChild>
                 <Link href="/courses" className="gap-2">
                   Explore Courses
                   <ArrowRight className="h-5 w-5" />
@@ -172,7 +172,7 @@ export default async function page() {
                 className="flex flex-col items-center text-center animate-fade-in-up"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-3">
+                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-brand mb-3">
                   <stat.icon className="h-6 w-6" />
                 </div>
                 <div className="text-3xl md:text-4xl font-bold text-foreground">{stat.value}</div>
@@ -204,7 +204,7 @@ export default async function page() {
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <CardHeader>
-                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent text-white mb-4 group-hover:scale-110 transition-transform">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-brand text-white mb-4 group-hover:scale-110 transition-transform">
                     <feature.icon className="h-6 w-6" />
                   </div>
                   <CardTitle className="text-lg">{feature.title}</CardTitle>
@@ -226,7 +226,7 @@ export default async function page() {
           <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-8 items-stretch">
             <Card className="overflow-hidden border-border/60 bg-card/70 backdrop-blur-sm">
               <CardHeader className="pb-4">
-                <div className="inline-flex items-center gap-2 w-fit rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
+                <div className="inline-flex items-center gap-2 w-fit rounded-full bg-primary/10 text-brand px-3 py-1 text-xs font-semibold">
                   <TrendingUp className="h-3.5 w-3.5" />
                   Learning Momentum Engine
                 </div>
@@ -269,13 +269,13 @@ export default async function page() {
                   </CardContent>
                 </Card>
               ))}
-              <Card className="border-primary/25 bg-gradient-to-br from-primary/10 via-accent/20 to-background">
+              <Card className="border-brand/25 bg-gradient-to-br from-primary/10 via-accent/20 to-background">
                 <CardContent className="pt-6">
-                  <p className="text-sm font-medium text-primary mb-2">Ready for your next milestone?</p>
+                  <p className="text-sm font-medium text-brand mb-2">Ready for your next milestone?</p>
                   <p className="text-sm text-muted-foreground mb-5">
                     Move from course completion to real-world confidence with project-driven progression.
                   </p>
-                  <Button variant="gradient" asChild className="w-full">
+                  <Button shape="pill" asChild className="w-full">
                     <Link href="/paths" className="gap-2">
                       Start a Learning Path
                       <ArrowRight className="h-4 w-4" />
@@ -319,7 +319,7 @@ export default async function page() {
                 <Card className="h-full overflow-hidden">
                   {/* Course image placeholder with gradient */}
                   <div className="h-40 bg-gradient-to-br from-primary/20 via-accent/20 to-primary/10 flex items-center justify-center">
-                    <BookOpen className="h-12 w-12 text-primary/50 group-hover:scale-110 transition-transform" />
+                    <BookOpen className="h-12 w-12 text-brand/50 group-hover:scale-110 transition-transform" />
                   </div>
                   <CardHeader>
                     <div className="flex items-center gap-2 mb-2">
@@ -336,7 +336,7 @@ export default async function page() {
                         {course.durationHours}h
                       </span>
                     </div>
-                    <CardTitle className="group-hover:text-primary transition-colors">
+                    <CardTitle className="group-hover:text-brand transition-colors">
                       {course.title}
                     </CardTitle>
                   </CardHeader>
@@ -344,7 +344,7 @@ export default async function page() {
                     <CardDescription className="line-clamp-2">
                       {course.description}
                     </CardDescription>
-                    <div className="mt-4 flex items-center text-sm text-primary font-medium">
+                    <div className="mt-4 flex items-center text-sm text-brand font-medium">
                       Start Learning
                       <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </div>
@@ -359,7 +359,7 @@ export default async function page() {
       {/* CTA Section */}
       <section className="py-20 md:py-28">
         <div className="container px-4">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-accent p-8 md:p-16 text-center">
+          <div className="relative overflow-hidden rounded-3xl bg-brand p-8 md:p-16 text-center">
             {/* Background decoration */}
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIi8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
 
@@ -372,7 +372,7 @@ export default async function page() {
                 and assessments you can apply immediately.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="xl" variant="secondary" asChild className="bg-white text-primary hover:bg-white/90">
+                <Button size="xl" variant="secondary" asChild className="bg-white text-brand hover:bg-white/90">
                   <Link href="/courses" className="gap-2">
                     Browse All Courses
                     <ArrowRight className="h-5 w-5" />

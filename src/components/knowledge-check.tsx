@@ -101,7 +101,7 @@ export function KnowledgeCheck({ questions, onComplete }: KnowledgeCheckProps) {
                     key={index}
                     className={`
                       p-3 rounded-md border cursor-pointer transition-colors
-                      ${selectedAnswer === index ? 'border-primary' : 'border-border'}
+                      ${selectedAnswer === index ? 'border-brand' : 'border-border'}
                       ${showExplanation && index === question.correctAnswer ? 'bg-success/10 border-success' : ''}
                       ${showExplanation && selectedAnswer === index && !isCorrect ? 'bg-destructive/10 border-destructive' : ''}
                       ${!showExplanation && selectedAnswer !== index ? 'hover:bg-muted' : ''}
@@ -115,7 +115,7 @@ export function KnowledgeCheck({ questions, onComplete }: KnowledgeCheckProps) {
                         ) : showExplanation && selectedAnswer === index && !isCorrect ? (
                           <XCircle className="h-5 w-5 text-destructive" />
                         ) : (
-                          <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${selectedAnswer === index ? 'border-primary bg-primary/10' : 'border-muted-foreground'}`}>
+                          <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${selectedAnswer === index ? 'border-brand bg-primary/10' : 'border-muted-foreground'}`}>
                             {selectedAnswer === index && (
                               <div className="h-2.5 w-2.5 rounded-full bg-primary" />
                             )}

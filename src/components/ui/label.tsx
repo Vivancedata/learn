@@ -1,3 +1,3 @@
 "use client"
 
-export { Label, labelVariants } from "@/components/vendor/ui"
+export { Label, labelVariants } from "@vivancedata/ui"
