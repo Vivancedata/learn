@@ -11,7 +11,11 @@ import { spawnSync } from "node:child_process";
 // demanding an unmet 100 kept the check permanently red and therefore ignored.
 // Raise a floor whenever the real score improves.
 const SCORE_FLOORS = {
-  performance: 100,
+  // 99 rather than 100: the performance score oscillates between 99 and 100
+  // across attempts on shared CI runners even with no code change. A required
+  // check that fails on noise gets bypassed, and a bypassed check is no check
+  // at all. A genuine regression lands well below 99.
+  performance: 99,
   accessibility: 96,
   bestPractices: 100,
   seo: 100,
