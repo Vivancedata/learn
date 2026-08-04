@@ -31,6 +31,13 @@ const nextConfig: NextConfig = {
   // Next has to compile it rather than treat it as a prebuilt dependency.
   transpilePackages: ['@vivancedata/ui'],
 
+  // The design system is a barrel of ~40 components; without this hint its
+  // unused members ride into every client bundle via the layout's imports.
+  // Partial mitigation only -- see Vivancedata/ui#6 for the RSC caveat.
+  experimental: {
+    optimizePackageImports: ['@vivancedata/ui'],
+  },
+
   /**
    * Static export configuration for Capacitor builds
    * When building for mobile, we export as static HTML/JS/CSS
