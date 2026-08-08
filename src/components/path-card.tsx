@@ -4,7 +4,15 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ProgressCircle } from "@/components/ui/progress-circle"
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { AppWindow, ArrowRight, FileText, Globe, Map, type LucideIcon } from "lucide-react"
+
+// path.icon arrives from the database as a lucide-style name; rendering the
+// raw string put literal "file" / "globe" text inside the card titles.
+const pathIcons: Record<string, LucideIcon> = {
+  file: FileText,
+  window: AppWindow,
+  globe: Globe,
+}
 
 interface PathCardProps {
   path: Path
@@ -22,25 +30,26 @@ export function PathCard({ path, courses }: PathCardProps) {
   ).length
 
   const progress = totalCourses > 0 ? (completedCourses / totalCourses) * 100 : 0
-  const hasStarted = pathCourses.some(course => 
-    course.progress?.completed !== undefined && 
+  const hasStarted = pathCourses.some(course =>
+    course.progress?.completed !== undefined &&
     course.progress.completed > 0
   )
+
+  const PathIcon = path.icon ? pathIcons[path.icon] ?? Map : Map
 
   return (
     <Card className="relative">
       <div className="absolute right-4 top-4">
-        <ProgressCircle 
+        <ProgressCircle
           progress={progress}
           size="md"
           showPercentage
         />
       </div>
-      <CardHeader>
+      {/* pr-16 keeps long titles clear of the absolutely-positioned ring. */}
+      <CardHeader className="pr-16">
         <CardTitle className="flex items-center gap-2">
-          {path.icon && (
-            <span className="text-2xl">{path.icon}</span>
-          )}
+          <PathIcon className="h-6 w-6 shrink-0 text-brand" aria-hidden="true" />
           {path.title}
         </CardTitle>
         <CardDescription>{path.description}</CardDescription>
