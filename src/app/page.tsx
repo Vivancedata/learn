@@ -18,6 +18,7 @@ import {
   TrendingUp
 } from "lucide-react"
 import { getAllCourses, getAllPaths } from "@/lib/content"
+import { DIFFICULTY_BADGE_CLASSES } from "@/lib/difficulty"
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
@@ -323,13 +324,7 @@ export default async function page() {
                   </div>
                   <CardHeader>
                     <div className="flex items-center gap-2 mb-2">
-                      <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${
-                        course.difficulty === 'Beginner'
-                          ? 'bg-success/10 text-success'
-                          : course.difficulty === 'Intermediate'
-                          ? 'bg-warning/10 text-warning'
-                          : 'bg-destructive/10 text-destructive'
-                      }`}>
+                      <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full border ${DIFFICULTY_BADGE_CLASSES[course.difficulty]}`}>
                         {course.difficulty}
                       </span>
                       <span className="text-xs text-muted-foreground">
@@ -364,21 +359,29 @@ export default async function page() {
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIi8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
 
             <div className="relative">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">
+              {/* brand-foreground, not white: it flips with the theme (the dark
+                  palette lightens the green, so its foreground goes dark). And
+                  never variant="outline" on this band -- its base bg-background
+                  turned the second button white-on-white in light mode. */}
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-brand-foreground mb-6">
                 Ready to Start Your Learning Journey?
               </h2>
-              <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto mb-10">
+              <p className="text-lg md:text-xl text-brand-foreground/80 max-w-2xl mx-auto mb-10">
                 Build practical AI and data skills with structured paths, hands-on lessons,
                 and assessments you can apply immediately.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="xl" variant="secondary" asChild className="bg-white text-brand hover:bg-white/90">
+                <Button size="xl" asChild className="bg-brand-foreground text-brand hover:bg-brand-foreground/90">
                   <Link href="/courses" className="gap-2">
                     Browse All Courses
                     <ArrowRight className="h-5 w-5" />
                   </Link>
                 </Button>
-                <Button size="xl" variant="outline" asChild className="border-white/30 text-white hover:bg-white/10">
+                <Button
+                  size="xl"
+                  asChild
+                  className="border border-brand-foreground/40 bg-transparent text-brand-foreground hover:bg-brand-foreground/10"
+                >
                   <Link href="/paths">
                     Explore Learning Paths
                   </Link>

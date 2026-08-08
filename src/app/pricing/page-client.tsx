@@ -167,7 +167,7 @@ export default function PricingPageClient() {
       <div className="rounded-2xl bg-primary/5 p-12 text-center">
         <h2 className="mb-4 text-3xl font-bold">Ready to Accelerate Your Career?</h2>
         <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
-          Join over 10,000 professionals who have transformed their careers with VivanceData.
+          Build practical AI and data skills with structured paths and hands-on projects.
           Start your 7-day free trial today.
         </p>
         <div className="flex flex-col justify-center gap-4 sm:flex-row">

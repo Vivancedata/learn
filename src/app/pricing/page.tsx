@@ -49,24 +49,6 @@ const comparisonRows = [
   { feature: 'Early Access to Content', free: false, pro: true },
 ] as const
 
-const testimonials = [
-  {
-    quote: 'The skill assessments helped me identify gaps in my knowledge. Landed a data scientist role within 3 months!',
-    name: 'Sarah Chen',
-    role: 'Data Scientist at Google',
-  },
-  {
-    quote: 'Worth every penny. The certificates are recognized by employers and the project feedback is invaluable.',
-    name: 'Marcus Johnson',
-    role: 'ML Engineer at Meta',
-  },
-  {
-    quote: 'Switching from monthly to yearly was a no-brainer. The savings plus the quality of content is unmatched.',
-    name: 'Emily Rodriguez',
-    role: 'AI Researcher',
-  },
-] as const
-
 function PlanValue({
   highlighted = false,
   value,
@@ -94,7 +76,7 @@ export default function PricingPage() {
           Invest in Your Future
         </h1>
         <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
-          Join thousands of learners mastering AI and data science.
+          Structured paths for mastering AI and data science.
           Start free, upgrade when you&apos;re ready.
         </p>
       </div>
@@ -126,23 +108,6 @@ export default function PricingPage() {
               ))}
             </tbody>
           </table>
-        </div>
-      </div>
-
-      <div className="mb-20">
-        <h2 className="mb-8 text-center text-2xl font-bold">What Pro Members Say</h2>
-        <div className="grid gap-6 md:grid-cols-3">
-          {testimonials.map((testimonial) => (
-            <Card key={testimonial.name} className="bg-muted/50">
-              <CardContent className="pt-6">
-                <p className="mb-4 italic">&ldquo;{testimonial.quote}&rdquo;</p>
-                <div>
-                  <p className="font-semibold">{testimonial.name}</p>
-                  <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
         </div>
       </div>
 

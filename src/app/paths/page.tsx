@@ -87,13 +87,17 @@ export default function PathsPage() {
         </p>
       </div>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {paths.map((path) => (
-          <PathCard 
-            key={path.id} 
-            path={path} 
-            courses={courses}
-          />
-        ))}
+        {paths
+          // A path with no courses has nothing to view; listing it as a
+          // "0 courses" card only advertises missing content.
+          .filter((path) => courses.some((course) => course.pathId === path.id))
+          .map((path) => (
+            <PathCard
+              key={path.id}
+              path={path}
+              courses={courses}
+            />
+          ))}
       </div>
     </div>
   )
