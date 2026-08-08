@@ -59,7 +59,7 @@ describe('Leaderboards API', () => {
           user: {
             id: TEST_USER_ID,
             name: 'Test User',
-            email: 'test@example.com',
+            email: 'test@vivancedata.com',
             showOnLeaderboard: true,
           },
         },
@@ -93,6 +93,58 @@ describe('Leaderboards API', () => {
       expect(data.data.period).toBe('all_time')
     })
 
+    it('should filter out seeded example.com accounts from cache', async () => {
+      // The database seed creates "Admin User"/"Regular User" with reserved
+      // example.com addresses; they once sat on the public production podium.
+      const mockCacheEntries = [
+        {
+          id: 'cache-seed',
+          rank: 1,
+          previousRank: null,
+          userId: 'seed-admin',
+          score: 0,
+          calculatedAt: new Date(),
+          metadata: null,
+          type: 'XP',
+          period: 'ALL_TIME',
+          user: {
+            id: 'seed-admin',
+            name: 'Admin User',
+            email: 'admin@example.com',
+            showOnLeaderboard: true,
+          },
+        },
+        {
+          id: 'cache-real',
+          rank: 2,
+          previousRank: null,
+          userId: TEST_USER_ID,
+          score: 100,
+          calculatedAt: new Date(),
+          metadata: null,
+          type: 'XP',
+          period: 'ALL_TIME',
+          user: {
+            id: TEST_USER_ID,
+            name: 'Real Learner',
+            email: 'learner@vivancedata.com',
+            showOnLeaderboard: true,
+          },
+        },
+      ]
+
+      ;(prisma.leaderboardCache.findMany as jest.Mock).mockResolvedValue(mockCacheEntries)
+      ;(prisma.leaderboardCache.findUnique as jest.Mock).mockResolvedValue(null)
+
+      const request = new NextRequest('http://localhost:3000/api/leaderboards?type=xp&period=all_time')
+      const response = await getLeaderboards(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.entries).toHaveLength(1)
+      expect(data.data.entries[0].userName).toBe('Real Learner')
+    })
+
     it('should filter out users who have showOnLeaderboard=false from cache', async () => {
       const mockCacheEntries = [
         {
@@ -108,7 +160,7 @@ describe('Leaderboards API', () => {
           user: {
             id: TEST_USER_ID,
             name: 'Private User',
-            email: 'private@example.com',
+            email: 'private@vivancedata.com',
             showOnLeaderboard: false,
           },
         },
@@ -141,7 +193,7 @@ describe('Leaderboards API', () => {
         {
           id: TEST_USER_ID,
           name: 'Test User',
-          email: 'test@example.com',
+          email: 'test@vivancedata.com',
           points: 500,
         },
       ])
@@ -161,7 +213,7 @@ describe('Leaderboards API', () => {
         {
           id: TEST_USER_ID,
           name: 'Period User',
-          email: 'period@example.com',
+          email: 'period@vivancedata.com',
           points: 999,
           dailyActivities: [{ xpEarned: 20 }, { xpEarned: 30 }],
         },
@@ -181,7 +233,7 @@ describe('Leaderboards API', () => {
         {
           id: TEST_USER_ID,
           name: 'Streak User',
-          email: 'streak@example.com',
+          email: 'streak@vivancedata.com',
           currentStreak: 15,
           longestStreak: 30,
         },
@@ -210,7 +262,7 @@ describe('Leaderboards API', () => {
           user: {
             id: TEST_USER_ID,
             name: null,
-            email: 'fallbackname@example.com',
+            email: 'fallbackname@vivancedata.com',
             showOnLeaderboard: true,
           },
         },
@@ -237,7 +289,7 @@ describe('Leaderboards API', () => {
         {
           id: TEST_USER_ID,
           name: 'Course Finisher',
-          email: 'courses@example.com',
+          email: 'courses@vivancedata.com',
         },
       ])
 
@@ -256,7 +308,7 @@ describe('Leaderboards API', () => {
         { userId: TEST_USER_ID, _sum: { lessonsCompleted: 9 } },
       ])
       ;(prisma.user.findMany as jest.Mock).mockResolvedValue([
-        { id: TEST_USER_ID, name: 'Learner', email: 'learner@example.com' },
+        { id: TEST_USER_ID, name: 'Learner', email: 'learner@vivancedata.com' },
       ])
 
       const request = new NextRequest('http://localhost:3000/api/leaderboards?type=lessons&period=daily')
@@ -275,11 +327,11 @@ describe('Leaderboards API', () => {
         { userId: '660e8400-e29b-41d4-a716-446655440001', completedLessons: [{ id: 'l3' }] },
       ])
       ;(prisma.user.findMany as jest.Mock).mockResolvedValue([
-        { id: TEST_USER_ID, name: null, email: 'lessons@example.com' },
+        { id: TEST_USER_ID, name: null, email: 'lessons@vivancedata.com' },
         {
           id: '660e8400-e29b-41d4-a716-446655440001',
           name: 'Second User',
-          email: 'second@example.com',
+          email: 'second@vivancedata.com',
         },
       ])
 
@@ -300,7 +352,7 @@ describe('Leaderboards API', () => {
         { recipientId: TEST_USER_ID, _count: { id: 12 } },
       ])
       ;(prisma.user.findMany as jest.Mock).mockResolvedValue([
-        { id: TEST_USER_ID, name: 'Helper', email: 'helper@example.com' },
+        { id: TEST_USER_ID, name: 'Helper', email: 'helper@vivancedata.com' },
       ])
 
       const request = new NextRequest('http://localhost:3000/api/leaderboards?type=helping&period=weekly')
@@ -327,7 +379,7 @@ describe('Leaderboards API', () => {
         user: {
           id: TEST_USER_ID,
           name: 'Top User',
-          email: 'top@example.com',
+          email: 'top@vivancedata.com',
           showOnLeaderboard: true,
         },
       }
@@ -344,7 +396,7 @@ describe('Leaderboards API', () => {
         user: {
           id: currentUserId,
           name: 'Current User',
-          email: 'current@example.com',
+          email: 'current@vivancedata.com',
           showOnLeaderboard: true,
         },
       }
@@ -355,7 +407,7 @@ describe('Leaderboards API', () => {
       const request = new NextRequest('http://localhost:3000/api/leaderboards?type=xp&period=all_time', {
         headers: {
           'x-user-id': currentUserId,
-          'x-user-email': 'current@example.com',
+          'x-user-email': 'current@vivancedata.com',
         },
       })
       const response = await getLeaderboards(request)
@@ -381,7 +433,7 @@ describe('Leaderboards API', () => {
         user: {
           id: TEST_USER_ID,
           name: 'Top User',
-          email: 'top@example.com',
+          email: 'top@vivancedata.com',
           showOnLeaderboard: true,
         },
       }
@@ -398,7 +450,7 @@ describe('Leaderboards API', () => {
         user: {
           id: currentUserId,
           name: 'Current User',
-          email: 'current@example.com',
+          email: 'current@vivancedata.com',
           showOnLeaderboard: false,
         },
       }
@@ -409,7 +461,7 @@ describe('Leaderboards API', () => {
       const request = new NextRequest('http://localhost:3000/api/leaderboards?type=xp&period=all_time', {
         headers: {
           'x-user-id': currentUserId,
-          'x-user-email': 'current@example.com',
+          'x-user-email': 'current@vivancedata.com',
         },
       })
       const response = await getLeaderboards(request)
@@ -436,7 +488,7 @@ describe('Leaderboards API', () => {
       const mockUser = {
         id: TEST_USER_ID,
         name: 'Test User',
-        email: 'test@example.com',
+        email: 'test@vivancedata.com',
         showOnLeaderboard: true,
       }
       const mockCachedRankings = [
@@ -477,7 +529,7 @@ describe('Leaderboards API', () => {
       const mockUser = {
         id: TEST_USER_ID,
         name: 'Private User',
-        email: 'private@example.com',
+        email: 'private@vivancedata.com',
         showOnLeaderboard: false,
       }
       ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser)
@@ -501,7 +553,7 @@ describe('Leaderboards API', () => {
       const mockUser = {
         id: TEST_USER_ID,
         name: 'Private User',
-        email: 'private@example.com',
+        email: 'private@vivancedata.com',
         showOnLeaderboard: false,
       }
       ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser)
@@ -526,7 +578,7 @@ describe('Leaderboards API', () => {
       const mockUser = {
         id: TEST_USER_ID,
         name: 'New User',
-        email: 'new@example.com',
+        email: 'new@vivancedata.com',
         showOnLeaderboard: true,
       }
 
@@ -546,7 +598,7 @@ describe('Leaderboards API', () => {
       const mockUser = {
         id: TEST_USER_ID,
         name: null,
-        email: 'testuser@example.com',
+        email: 'testuser@vivancedata.com',
         showOnLeaderboard: true,
       }
 
@@ -566,7 +618,7 @@ describe('Leaderboards API', () => {
       const mockUser = {
         id: TEST_USER_ID,
         name: 'Test User',
-        email: 'test@example.com',
+        email: 'test@vivancedata.com',
         showOnLeaderboard: true,
       }
       const mockCachedRankings = [
