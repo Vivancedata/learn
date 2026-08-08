@@ -46,7 +46,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@capacitor/android": "^7.0.0",
+    "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^7.0.0",
     "@capacitor/browser": "^7.0.0",
     "@capacitor/cli": "^7.0.0",
