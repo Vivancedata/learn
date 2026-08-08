@@ -7,6 +7,7 @@ import {
 } from '@/lib/api-errors'
 import { getLeaderboardSchema } from '@/lib/validations'
 import { getAuthenticatedUserId } from '@/lib/authorization'
+import { PUBLIC_LEADERBOARD_USER_WHERE, isPubliclyRankable } from '@/lib/leaderboardVisibility'
 import {
   LeaderboardType,
   LeaderboardPeriod,
@@ -81,7 +82,7 @@ export async function GET(request: NextRequest) {
       // Use cached data
       calculatedAt = cachedEntries[0].calculatedAt
       entries = cachedEntries
-        .filter(entry => entry.user.showOnLeaderboard)
+        .filter(entry => isPubliclyRankable(entry.user))
         .map(entry => ({
           id: entry.id,
           rank: entry.rank,
@@ -211,7 +212,7 @@ async function calculateXPLeaderboard(
   // Get users with XP from daily activities
   const users = await prisma.user.findMany({
     where: {
-      showOnLeaderboard: true,
+      ...PUBLIC_LEADERBOARD_USER_WHERE,
     },
     select: {
       id: true,
@@ -268,7 +269,7 @@ async function calculateStreaksLeaderboard(
 ): Promise<LeaderboardEntry[]> {
   const users = await prisma.user.findMany({
     where: {
-      showOnLeaderboard: true,
+      ...PUBLIC_LEADERBOARD_USER_WHERE,
       currentStreak: { gt: 0 },
     },
     select: {
@@ -331,7 +332,7 @@ async function calculateCoursesLeaderboard(
   const users = await prisma.user.findMany({
     where: {
       id: { in: userIds },
-      showOnLeaderboard: true,
+      ...PUBLIC_LEADERBOARD_USER_WHERE,
     },
     select: {
       id: true,
@@ -388,7 +389,7 @@ async function calculateLessonsLeaderboard(
     const users = await prisma.user.findMany({
       where: {
         id: { in: userIds },
-        showOnLeaderboard: true,
+        ...PUBLIC_LEADERBOARD_USER_WHERE,
       },
       select: {
         id: true,
@@ -441,7 +442,7 @@ async function calculateLessonsLeaderboard(
   const users = await prisma.user.findMany({
     where: {
       id: { in: userIds },
-      showOnLeaderboard: true,
+      ...PUBLIC_LEADERBOARD_USER_WHERE,
     },
     select: {
       id: true,
@@ -498,7 +499,7 @@ async function calculateHelpingLeaderboard(
   const users = await prisma.user.findMany({
     where: {
       id: { in: userIds },
-      showOnLeaderboard: true,
+      ...PUBLIC_LEADERBOARD_USER_WHERE,
     },
     select: {
       id: true,
