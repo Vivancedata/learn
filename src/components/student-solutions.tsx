@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Button } from "./ui/button"
 import {
-  Github,
   Globe,
   Heart,
   Loader2,
@@ -13,6 +12,7 @@ import {
   Share2,
   AlertCircle
 } from "lucide-react"
+import { GithubIcon } from "@/components/github-icon"
 import { useAuth } from "@/hooks/useAuth"
 
 interface Solution {
@@ -349,7 +349,7 @@ export function StudentSolutions({ lessonId, courseId }: StudentSolutionsProps) 
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Github className="h-3.5 w-3.5 mr-1" />
+                    <GithubIcon className="h-3.5 w-3.5 mr-1" />
                     {extractRepoName(solution.githubUrl)}
                     <ExternalLink className="h-3 w-3 ml-1" />
                   </a>
