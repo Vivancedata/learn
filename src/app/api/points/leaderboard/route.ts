@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/db'
+import { PUBLIC_LEADERBOARD_USER_WHERE } from '@/lib/leaderboardVisibility'
 import {
   apiSuccess,
   handleApiError,
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     // Get top users who have opted into the leaderboard
     const topHelpers = await prisma.user.findMany({
       where: {
-        showOnLeaderboard: true,
+        ...PUBLIC_LEADERBOARD_USER_WHERE,
         points: {
           gt: 0,
         },
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
     // Get total count of users with points
     const totalHelpersCount = await prisma.user.count({
       where: {
-        showOnLeaderboard: true,
+        ...PUBLIC_LEADERBOARD_USER_WHERE,
         points: {
           gt: 0,
         },
