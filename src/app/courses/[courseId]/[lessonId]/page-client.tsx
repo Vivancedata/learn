@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Github, Flag, ArrowLeft, ArrowRight, CheckCircle, Loader2, MessageSquare } from "lucide-react"
+import { Flag, ArrowLeft, ArrowRight, CheckCircle, Loader2, MessageSquare } from "lucide-react"
+import { GithubIcon } from "@/components/github-icon"
 import Link from "next/link"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
@@ -252,7 +253,7 @@ function LessonPrimaryContent({
               rel="noopener noreferrer"
               className="inline-flex items-center"
             >
-              <Github className="mr-2 h-4 w-4" />
+              <GithubIcon className="mr-2 h-4 w-4" />
               Improve this lesson
             </Link>
           </Button>
