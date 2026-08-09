@@ -18,6 +18,21 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 5
     groups:
+      # Capacitor is the one exception to "majors arrive individually", because
+      # its packages peer-depend on each other's exact major. Split up, the
+      # majors are not merely inconvenient -- they are individually impossible:
+      # #61 bumped @capacitor/push-notifications to 8, which needs
+      # @capacitor/core >=8, while @capacitor/android stayed at 7.5 pinning
+      # core ^7.5. #62 bumped android to 8 with the same conflict in reverse.
+      # Neither could ever go green alone, and both sat failing `npm ci`.
+      #
+      # Grouping majors here does not recreate the hostage problem the note
+      # above describes: this is one library versioning in lockstep, not four
+      # unrelated migrations sharing a branch.
+      capacitor:
+        patterns:
+          - "@capacitor/*"
+        update-types: ["major", "minor", "patch"]
       development-dependencies:
         dependency-type: "development"
         update-types: ["minor", "patch"]
