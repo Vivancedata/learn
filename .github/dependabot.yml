@@ -33,12 +33,55 @@ updates:
         patterns:
           - "@capacitor/*"
         update-types: ["major", "minor", "patch"]
+      # Packages still on 0.x, kept out of the two groups below and given a
+      # PATCH-ONLY group of their own.
+      #
+      # Semver gives 0.x no stability guarantee, so the merge gate classifies a
+      # 0.x MINOR as breaking (ZERO_MAJOR_MINOR_IS_BREAKING in
+      # orchestrator/scripts/classify_pr.py). A group is as risky as its
+      # riskiest member, so a single 0.x minor makes the whole group `major`
+      # and nothing in it can auto-merge.
+      #
+      # That is not hypothetical. PR #70 carried ten dev dependencies, of which
+      # exactly one -- markdownlint-cli2 0.21.0 -> 0.23.2 -- was 0.x. It took
+      # @eslint/eslintrc, @tailwindcss/typography, @types/pg, @types/react,
+      # @types/react-dom, eslint-config-next, jest, jest-environment-jsdom and
+      # prisma down with it. Left alone this recurs every week, because a 0.x
+      # package can never produce a bump the group is allowed to merge.
+      #
+      # Patch bumps of a 0.x package ARE safe under the same rule, so they still
+      # group and still flow. Minors arrive individually, as the real review
+      # they are -- the same shape as the majors policy above.
+      #
+      # The list is by name because Dependabot cannot match on version range.
+      # A NEW 0.x dependency will silently rejoin the groups and poison them
+      # again; add it here when that happens.
+      zerover-patch:
+        patterns:
+          - "class-variance-authority"
+          - "lucide-react"
+          - "next-themes"
+          - "@tailwindcss/typography"
+          - "markdownlint-cli2"
+        update-types: ["patch"]
       development-dependencies:
         dependency-type: "development"
         update-types: ["minor", "patch"]
+        exclude-patterns:
+          - "class-variance-authority"
+          - "lucide-react"
+          - "next-themes"
+          - "@tailwindcss/typography"
+          - "markdownlint-cli2"
       production-dependencies:
         dependency-type: "production"
         update-types: ["minor", "patch"]
+        exclude-patterns:
+          - "class-variance-authority"
+          - "lucide-react"
+          - "next-themes"
+          - "@tailwindcss/typography"
+          - "markdownlint-cli2"
 
   - package-ecosystem: "github-actions"
     directory: "/"
