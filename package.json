@@ -55,7 +55,7 @@
     "@capacitor/ios": "^7.0.0",
     "@capacitor/keyboard": "^7.0.0",
     "@capacitor/push-notifications": "^7.0.0",
-    "@capacitor/splash-screen": "^7.0.0",
+    "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^7.0.0",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
