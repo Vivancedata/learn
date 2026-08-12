@@ -3,7 +3,7 @@ id: ai-foundations
 title: AI Foundations for Professionals
 description: Build practical AI literacy from fundamentals to real-world applications. Learn how AI works, how to use it effectively, and how to integrate AI into your workflows.
 difficulty: Beginner
-durationHours: 25
+durationHours: 9
 pathId: data-science
 ---
 
@@ -55,9 +55,7 @@ Develop strategic thinking about AI adoption and prepare for what's next.
 
 ## Time Commitment
 
-- **Total Duration**: 25 hours
-- **Recommended Pace**: 3-4 hours per week
-- **Course Length**: 6-8 weeks at recommended pace
+- **Total Duration**: ~9 hours of lessons
 - **Format**: Self-paced with suggested milestones
 
 ## What You'll Build

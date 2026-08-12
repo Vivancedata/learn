@@ -3,7 +3,7 @@ id: python-data-science
 title: Python for Data Science
 description: Master Python programming for data analysis. Learn NumPy, Pandas, data visualization, and practical data science workflows from scratch.
 difficulty: Beginner
-durationHours: 30
+durationHours: 6
 pathId: data-science
 ---
 
@@ -62,9 +62,7 @@ Apply everything you've learned to actual datasets and business problems.
 
 ## Time Commitment
 
-- **Total Duration**: 30 hours
-- **Recommended Pace**: 5-6 hours per week
-- **Course Length**: 5-6 weeks at recommended pace
+- **Total Duration**: ~6 hours of lessons
 - **Format**: Self-paced with hands-on coding exercises
 
 ## What You'll Build

@@ -1,26 +1,21 @@
 ---
 id: mlops-model-deployment
 title: MLOps and Model Deployment
-description: Learn to productionize machine learning models. Master containerization, CI/CD for ML, model serving, monitoring, and building robust ML pipelines that scale.
+description: Start productionizing machine learning models. Covers the MLOps lifecycle, packaging models with Docker, and serving them as REST APIs with FastAPI.
 difficulty: Advanced
-durationHours: 40
+durationHours: 3
 pathId: data-science
 ---
 
 # MLOps and Model Deployment
 
-MLOps bridges the gap between ML experimentation and production systems. This course teaches you to deploy, monitor, and maintain ML models at scale.
+MLOps bridges the gap between ML experimentation and production systems. This course covers why production ML is hard, then gets your models out of notebooks: containerized with Docker and served as real APIs.
 
 ## Learning Outcomes
 
 - Understand the MLOps lifecycle and key principles
 - Package ML models with Docker for consistent deployment
-- Build CI/CD pipelines for ML with GitHub Actions
-- Serve models as REST APIs using FastAPI and TorchServe
-- Implement model versioning and experiment tracking with MLflow
-- Set up model monitoring and alerting for drift detection
-- Deploy models to cloud platforms (AWS, GCP, Azure)
-- Build automated ML pipelines with orchestration tools
+- Serve models as REST APIs using FastAPI
 
 ## Prerequisites
 
@@ -34,62 +29,26 @@ MLOps bridges the gap between ML experimentation and production systems. This co
 ### Section 1: MLOps Fundamentals
 Understand the ML lifecycle, technical debt, and why production ML is hard.
 
-### Section 2: Environment and Dependency Management
-Master virtual environments, dependency pinning, and reproducible setups.
+### Section 2: Deployment
+Package models and dependencies into portable containers with Docker, then deploy them as APIs with FastAPI.
 
-### Section 3: Containerization with Docker
-Package models and dependencies into portable containers.
-
-### Section 4: Model Serving
-Deploy models as APIs with FastAPI, Flask, TorchServe, and TensorFlow Serving.
-
-### Section 5: Experiment Tracking and Model Registry
-Track experiments and manage model versions with MLflow.
-
-### Section 6: CI/CD for Machine Learning
-Automate testing, training, and deployment pipelines.
-
-### Section 7: Model Monitoring and Maintenance
-Detect data drift, monitor performance, and trigger retraining.
-
-### Section 8: Cloud Deployment
-Deploy to AWS SageMaker, GCP Vertex AI, and Azure ML.
+More sections — experiment tracking, CI/CD for ML, monitoring, and cloud deployment — are in development and will be added as they are finished.
 
 ## Why Learn MLOps?
 
-**Production Reality**: 87% of ML projects never make it to production
-
-**High Demand**: MLOps engineers are among the most sought-after roles ($160k-$250k+)
+**Production Reality**: Most ML projects never make it to production
 
 **Bridge the Gap**: Connect data science with software engineering best practices
-
-**Career Growth**: Essential skill for senior ML roles and ML platform teams
 
 **Real Impact**: Turn models from notebooks into business value
 
 ## Time Commitment
 
-- **Total Duration**: 40 hours
-- **Recommended Pace**: 6-8 hours per week
-- **Course Length**: 5-7 weeks at recommended pace
-- **Format**: Self-paced with hands-on projects
-
-## What You'll Build
-
-Throughout this course, you'll create production-ready ML systems:
-- Dockerized ML API with FastAPI
-- CI/CD pipeline with automated testing and deployment
-- MLflow tracking server and model registry
-- Real-time model monitoring dashboard
-- Automated retraining pipeline
-- Multi-model A/B testing system
+- **Total Duration**: ~3 hours of lessons
+- **Format**: Self-paced
 
 ## Tools You'll Use
 
 **Python** (v3.10+): Primary programming language
 **Docker**: Containerization
 **FastAPI**: API framework
-**MLflow**: Experiment tracking and registry
-**GitHub Actions**: CI/CD
-**Prometheus/Grafana**: Monitoring
-**AWS/GCP**: Cloud deployment
