@@ -131,18 +131,18 @@ export default async function page() {
 
             {/* Main heading */}
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 animate-fade-in-up">
-              Master{" "}
+              Learn to build{" "}
               <span className="text-brand">
-                AI & Tech Skills
+                working AI systems
               </span>
               <br />
-              for the Future
+              not just prompts
             </h1>
 
             {/* Subtitle */}
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mb-10 animate-fade-in-up [animation-delay:100ms]">
-              Discover cutting-edge courses on AI, automation, and modern development.
-              Learn from practical, hands-on content designed for real-world impact.
+              Courses on AI, automation and modern development where every
+              lesson ends with something you built and can show.
             </p>
 
             {/* CTA buttons */}
@@ -189,8 +189,7 @@ export default async function page() {
         <div className="container px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Why Choose{" "}
-              <span className="text-gradient">Eureka</span>?
+              Why learn here?
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Our platform is designed to help you succeed with practical, project-based learning.
@@ -235,7 +234,7 @@ export default async function page() {
                   A Structured Loop That Keeps Learners Moving
                 </CardTitle>
                 <CardDescription className="text-base">
-                  Eureka blends guided direction, bite-sized execution, and immediate feedback to turn effort into measurable progress.
+                  VivanceData Learn blends guided direction, bite-sized execution, and immediate feedback to turn effort into measurable progress.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -298,7 +297,7 @@ export default async function page() {
                 Featured Courses
               </h2>
               <p className="text-lg text-muted-foreground max-w-xl">
-                Start learning with our most popular courses designed by experts.
+                Pick a course and finish it with a project in your portfolio.
               </p>
             </div>
             <Button variant="outline" asChild className="mt-6 md:mt-0">
