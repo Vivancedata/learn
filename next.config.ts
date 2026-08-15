@@ -64,6 +64,7 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net", // unsafe-inline needed for Next.js; jsdelivr serves the Pyodide (in-browser Python) runtime
+              "worker-src 'self' blob:", // unset means falling back to script-src, which has no blob: -- that blocked Sentry Session Replay's compression worker for every visitor
               "style-src 'self' 'unsafe-inline'", // unsafe-inline needed for Tailwind
               "img-src 'self' data: https:",
               "font-src 'self' data:",
