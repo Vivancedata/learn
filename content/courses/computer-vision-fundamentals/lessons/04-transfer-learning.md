@@ -224,7 +224,7 @@ vit = models.vit_b_16(pretrained=True)  # 86M params
 ### Model Selection Guide
 
 | Model | Params | Speed | Accuracy | Use Case |
-|-------|--------|-------|----------|----------|
+| ------- | -------- | ------- | ---------- | ---------- |
 | MobileNetV3 | 5M | Fast | Good | Mobile, edge |
 | EfficientNet-B0 | 5M | Medium | Great | Balanced |
 | ResNet-50 | 25M | Medium | Great | General |

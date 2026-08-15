@@ -116,7 +116,7 @@ trainer.train()
 ### BERT Variants
 
 | Model | Size | Use Case |
-|-------|------|----------|
+| ------- | ------ | ---------- |
 | BERT-base | 110M params | General purpose |
 | BERT-large | 340M params | Higher accuracy |
 | DistilBERT | 66M params | Faster, 97% of BERT accuracy |
@@ -166,7 +166,7 @@ Causal mask ensures each position only attends to previous positions.
 ### GPT Versions
 
 | Model | Parameters | Training Data |
-|-------|------------|---------------|
+| ------- | ------------ | --------------- |
 | GPT-1 | 117M | BookCorpus |
 | GPT-2 | 1.5B | WebText (40GB) |
 | GPT-3 | 175B | Common Crawl + books |
@@ -253,7 +253,7 @@ input_text = "question: What is the capital? context: France is a country. Paris
 ## Choosing the Right Model
 
 | Task | Best Model Type |
-|------|-----------------|
+| ------ | ----------------- |
 | Classification | BERT, RoBERTa, DistilBERT |
 | Named Entity Recognition | BERT, SpanBERT |
 | Question Answering | BERT, RoBERTa, ALBERT |

@@ -200,7 +200,7 @@ LLMs can generate plausible-sounding but incorrect information:
 ## How LLMs Are Different From Search Engines
 
 | Feature | Search Engine | Large Language Model |
-|---------|--------------|---------------------|
+| --------- | -------------- | --------------------- |
 | **Purpose** | Find existing web pages | Generate new text |
 | **Output** | Links to sources | Original prose |
 | **Recency** | Up-to-date results | Fixed knowledge cutoff |

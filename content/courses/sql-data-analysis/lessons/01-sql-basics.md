@@ -62,7 +62,7 @@ WHERE stock_quantity > 0;
 ## Comparison Operators
 
 | Operator | Meaning | Example |
-|----------|---------|---------|
+| ---------- | --------- | --------- |
 | `=` | Equal to | `state = 'CA'` |
 | `<>` or `!=` | Not equal | `status <> 'cancelled'` |
 | `>` | Greater than | `price > 50` |

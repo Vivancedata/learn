@@ -132,7 +132,7 @@ The **ImageNet competition (2012)** marked a watershed moment:
 ### Why Machine Learning Succeeded Where Expert Systems Failed
 
 | Expert Systems | Machine Learning |
-|----------------|------------------|
+| ---------------- | ------------------ |
 | Manually programmed rules | Learn patterns from data |
 | Brittle, narrow scope | More flexible, generalizable |
 | Can't improve | Get better with more data |

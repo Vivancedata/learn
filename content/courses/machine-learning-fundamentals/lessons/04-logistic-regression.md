@@ -205,7 +205,7 @@ print(f"F1 Score: {f1:.2%}")          # Harmonic mean of precision and recall
 ```
 
 | Metric | Formula | Interpretation |
-|--------|---------|----------------|
+| -------- | --------- | ---------------- |
 | Accuracy | (TP + TN) / Total | Overall correctness |
 | Precision | TP / (TP + FP) | Quality of positive predictions |
 | Recall | TP / (TP + FN) | Coverage of actual positives |

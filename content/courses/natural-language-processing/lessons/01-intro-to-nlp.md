@@ -252,7 +252,7 @@ stems = [stemmer.stem(t) for t in tokens]
 ## Real-World NLP Applications
 
 | Application | NLP Tasks Used |
-|-------------|----------------|
+| ------------- | ---------------- |
 | Search Engines | Query understanding, document ranking, entity extraction |
 | Virtual Assistants | Intent detection, slot filling, response generation |
 | Email Filters | Spam classification, priority detection |

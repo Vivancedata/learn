@@ -16,7 +16,7 @@ Aggregations summarize data—turning many rows into meaningful insights like to
 ## Aggregate Functions
 
 | Function | Purpose | Example |
-|----------|---------|---------|
+| ---------- | --------- | --------- |
 | `COUNT()` | Count rows | Number of orders |
 | `SUM()` | Add values | Total revenue |
 | `AVG()` | Calculate average | Average order value |

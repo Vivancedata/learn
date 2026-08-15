@@ -253,7 +253,7 @@ The AI landscape is evolving rapidly with new tools launching weekly. This lesso
 ### By Task Type
 
 | Task | Recommended Tool | Alternative |
-|------|-----------------|-------------|
+| ------ | ----------------- | ------------- |
 | General Q&A | ChatGPT | Claude, Gemini |
 | Long documents | Claude | ChatPDF |
 | Current events | Perplexity, Gemini | ChatGPT with browsing |

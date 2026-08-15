@@ -189,7 +189,7 @@ glove_model.most_similar("python")
 ### Key Differences from Word2Vec
 
 | Aspect | Word2Vec | GloVe |
-|--------|----------|-------|
+| -------- | ---------- | ------- |
 | Training | Predictive (neural net) | Count-based + factorization |
 | Global info | No | Yes (co-occurrence matrix) |
 | Speed | Slower | Faster |
