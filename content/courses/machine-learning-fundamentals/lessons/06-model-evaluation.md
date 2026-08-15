@@ -79,7 +79,7 @@ Error
 ```
 
 | Condition | Training Score | Test Score | Fix |
-|-----------|---------------|------------|-----|
+| ----------- | --------------- | ------------ | ----- |
 | Underfitting | Low | Low | More complex model, more features |
 | Good Fit | High | High (similar) | - |
 | Overfitting | Very High | Low | Simpler model, regularization |

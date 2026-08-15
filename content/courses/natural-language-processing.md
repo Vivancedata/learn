@@ -3,7 +3,7 @@ id: natural-language-processing
 title: Natural Language Processing
 description: Master the art of processing and understanding human language with NLP. Learn text preprocessing, word embeddings, transformers, sentiment analysis, and build real-world NLP applications.
 difficulty: Advanced
-durationHours: 45
+durationHours: 6
 pathId: data-science
 ---
 
@@ -18,9 +18,7 @@ Natural Language Processing (NLP) enables machines to understand, interpret, and
 - Work with word embeddings (Word2Vec, GloVe, FastText)
 - Build sentiment analysis and text classification models
 - Understand the transformer architecture and attention mechanisms
-- Fine-tune pre-trained language models (BERT, GPT)
-- Implement named entity recognition (NER) and question answering
-- Deploy NLP models to production
+- Understand how pre-trained models like BERT and GPT are used and adapted
 
 ## Prerequisites
 
@@ -40,23 +38,17 @@ Understand how to represent words as vectors using traditional and neural approa
 ### Section 3: Text Classification
 Build classifiers for sentiment analysis, spam detection, and topic categorization.
 
-### Section 4: Sequence Models for NLP
-Apply RNNs, LSTMs, and GRUs to language modeling and sequence labeling tasks.
-
-### Section 5: Transformers and Attention
+### Section 4: Transformers and Attention
 Deep dive into the transformer architecture that powers modern NLP.
 
-### Section 6: Pre-trained Language Models
-Learn to use and fine-tune BERT, GPT, and other foundation models.
+### Section 5: Pre-trained Language Models
+Learn how BERT, GPT, and other foundation models work and how they are used.
 
-### Section 7: Advanced NLP Applications
-Build NER systems, question answering, text summarization, and chatbots.
+More sections — sequence models and advanced applications like NER and question answering — are in development and will be added as they are finished.
 
 ## Why Learn NLP?
 
 **Explosive Growth**: NLP is the fastest-growing area of AI with ChatGPT, Claude, and other LLMs
-
-**High Demand**: NLP engineers command salaries of $150k-$250k+
 
 **Universal Applications**: Search engines, chatbots, translation, content moderation
 
@@ -66,20 +58,15 @@ Build NER systems, question answering, text summarization, and chatbots.
 
 ## Time Commitment
 
-- **Total Duration**: 45 hours
-- **Recommended Pace**: 8-10 hours per week
-- **Course Length**: 5-6 weeks at recommended pace
-- **Format**: Self-paced with hands-on coding projects
+- **Total Duration**: ~6 hours of lessons
+- **Format**: Self-paced
 
 ## What You'll Build
 
-Throughout this course, you'll create practical NLP applications:
-- Sentiment analyzer for product reviews
-- Spam classifier with custom embeddings
-- Named entity recognition system
-- Question answering chatbot
-- Text summarization tool
-- Language translation model
+Throughout this course, you'll work on practical exercises:
+- Text preprocessing pipelines
+- Word embedding explorations
+- Sentiment and text classifiers
 
 ## Tools You'll Use
 

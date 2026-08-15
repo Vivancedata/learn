@@ -284,7 +284,7 @@ lemmas = [token.lemma_ for token in doc]
 ## Stemming vs Lemmatization
 
 | Aspect | Stemming | Lemmatization |
-|--------|----------|---------------|
+| -------- | ---------- | --------------- |
 | Speed | Fast | Slower |
 | Accuracy | Lower | Higher |
 | Output | May not be real words | Always real words |

@@ -3,7 +3,7 @@ id: data-science
 title: Data Science
 description: Master the skills needed to analyze data, build machine learning models, and extract insights from complex datasets.
 icon: file
-estimatedHours: 350
+estimatedHours: 45
 difficulty: Intermediate to Advanced
 ---
 

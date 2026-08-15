@@ -3,7 +3,7 @@ id: web-dev-101
 title: Introduction to Web Development
 description: Learn the fundamentals of web development including HTML, CSS, and JavaScript.
 difficulty: Beginner
-durationHours: 20
+durationHours: 8
 pathId: web-dev
 ---
 

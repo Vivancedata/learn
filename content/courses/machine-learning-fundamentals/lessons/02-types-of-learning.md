@@ -52,7 +52,7 @@ data = [
 Predict a category or class.
 
 | Problem | Classes |
-|---------|---------|
+| --------- | --------- |
 | Email spam detection | Spam / Not Spam |
 | Disease diagnosis | Disease A / B / C |
 | Customer churn | Will Churn / Won't Churn |
@@ -77,7 +77,7 @@ model.predict([[35, 75000, 2]])  # Output: [0] (Won't churn)
 Predict a continuous number.
 
 | Problem | Output |
-|---------|--------|
+| --------- | -------- |
 | House prices | $350,000 |
 | Sales forecast | 1,234 units |
 | Temperature prediction | 72.5°F |
@@ -101,7 +101,7 @@ model.predict([[2000, 3, 2]])  # Output: [425000]
 ### Popular Supervised Learning Algorithms
 
 | Algorithm | Type | Use Case |
-|-----------|------|----------|
+| ----------- | ------ | ---------- |
 | Linear Regression | Regression | Price prediction |
 | Logistic Regression | Classification | Binary outcomes |
 | Decision Trees | Both | Interpretable models |
@@ -195,7 +195,7 @@ predictions = model.predict(new_transactions)
 ### Popular Unsupervised Algorithms
 
 | Algorithm | Type | Use Case |
-|-----------|------|----------|
+| ----------- | ------ | ---------- |
 | K-Means | Clustering | Customer segmentation |
 | DBSCAN | Clustering | Arbitrary shaped clusters |
 | PCA | Dimensionality Reduction | Feature compression |
@@ -241,7 +241,7 @@ for episode in range(1000):
 ### Real-World RL Applications
 
 | Application | Agent | Actions | Rewards |
-|-------------|-------|---------|---------|
+| ------------- | ------- | --------- | --------- |
 | Game AI | Game player | Move, attack, defend | Score, win |
 | Robotics | Robot arm | Move joints | Task completion |
 | Self-driving | Vehicle | Steer, accelerate, brake | Safety, efficiency |
@@ -251,7 +251,7 @@ for episode in range(1000):
 ### RL vs Other Types
 
 | Aspect | Supervised | Unsupervised | Reinforcement |
-|--------|------------|--------------|---------------|
+| -------- | ------------ | -------------- | --------------- |
 | Data | Labeled examples | No labels | Environment feedback |
 | Learning | From correct answers | Find patterns | From rewards |
 | Goal | Predict accurately | Discover structure | Maximize rewards |
@@ -279,7 +279,7 @@ Do you have labeled data?
 ### Quick Reference
 
 | I want to... | Type | Example Algorithm |
-|--------------|------|-------------------|
+| -------------- | ------ | ------------------- |
 | Predict categories | Supervised (Classification) | Random Forest |
 | Predict numbers | Supervised (Regression) | Linear Regression |
 | Group similar items | Unsupervised (Clustering) | K-Means |

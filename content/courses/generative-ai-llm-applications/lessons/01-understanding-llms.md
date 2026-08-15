@@ -50,7 +50,7 @@ Tokens matter because:
 The maximum tokens the model can process at once:
 
 | Model | Context Window |
-|-------|---------------|
+| ------- | --------------- |
 | GPT-3.5 | 4K - 16K tokens |
 | GPT-4 | 8K - 128K tokens |
 | Claude 3 | 200K tokens |
@@ -152,7 +152,7 @@ print(response['message']['content'])
 ## Choosing the Right Model
 
 | Use Case | Recommended | Why |
-|----------|-------------|-----|
+| ---------- | ------------- | ----- |
 | Simple tasks | GPT-3.5, Claude Haiku | Fast, cheap |
 | Complex reasoning | GPT-4, Claude Opus | Higher capability |
 | Code generation | GPT-4, Claude Sonnet | Strong coding |

@@ -139,7 +139,7 @@ tree = DecisionTreeClassifier(
 ```
 
 | Parameter | Effect | Lower Value | Higher Value |
-|-----------|--------|-------------|--------------|
+| ----------- | -------- | ------------- | -------------- |
 | max_depth | Tree depth limit | Less overfitting | More complex |
 | min_samples_split | Samples needed to split | Less overfitting | More splits |
 | min_samples_leaf | Minimum leaf size | Less overfitting | Larger leaves |
@@ -253,7 +253,7 @@ print(f"XGBoost Accuracy: {xgb.score(X_test, y_test):.2%}")
 ## When to Use Each
 
 | Algorithm | Pros | Cons | Best For |
-|-----------|------|------|----------|
+| ----------- | ------ | ------ | ---------- |
 | Decision Tree | Interpretable, fast | Overfits easily | Simple problems, explanations |
 | Random Forest | Robust, handles noise | Slower, less interpretable | General purpose |
 | Gradient Boosting | Often best accuracy | Can overfit, slower | Competitions, structured data |

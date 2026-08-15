@@ -27,7 +27,7 @@ At its core, **Artificial Intelligence** refers to computer systems that can per
 It's crucial to understand that AI intelligence is fundamentally different from human intelligence:
 
 | Aspect | Human Intelligence | Artificial Intelligence |
-|--------|-------------------|------------------------|
+| -------- | ------------------- | ------------------------ |
 | **Learning** | Few examples, context, intuition | Massive datasets, patterns, statistics |
 | **Reasoning** | Abstract, creative, emotional | Logical, mathematical, pattern-based |
 | **Adaptation** | Flexible, generalizes easily | Narrow, task-specific (usually) |

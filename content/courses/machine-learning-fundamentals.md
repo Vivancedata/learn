@@ -3,7 +3,7 @@ id: machine-learning-fundamentals
 title: Machine Learning Fundamentals
 description: Learn the core concepts and algorithms of machine learning. Build predictive models, understand supervised and unsupervised learning, and apply ML to real-world problems.
 difficulty: Intermediate
-durationHours: 40
+durationHours: 6
 pathId: data-science
 ---
 
@@ -63,9 +63,7 @@ Apply your skills to real-world datasets and deploy models.
 
 ## Time Commitment
 
-- **Total Duration**: 40 hours
-- **Recommended Pace**: 6-8 hours per week
-- **Course Length**: 5-7 weeks at recommended pace
+- **Total Duration**: ~6 hours of lessons
 - **Format**: Self-paced with hands-on coding exercises
 
 ## What You'll Build

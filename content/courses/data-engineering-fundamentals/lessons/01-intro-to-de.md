@@ -27,7 +27,7 @@ Raw Data Sources          Data Engineering           Analytics Ready
 ### Data Engineer vs Data Scientist
 
 | Aspect | Data Engineer | Data Scientist |
-|--------|---------------|----------------|
+| -------- | --------------- | ---------------- |
 | Focus | Data infrastructure | Analysis & modeling |
 | Output | Pipelines, APIs | Models, insights |
 | Tools | Spark, Airflow, SQL | Python, R, notebooks |
@@ -224,7 +224,7 @@ for message in consumer:
 ### Comparison
 
 | Aspect | Batch | Streaming |
-|--------|-------|-----------|
+| -------- | ------- | ----------- |
 | Latency | Minutes to hours | Milliseconds to seconds |
 | Complexity | Lower | Higher |
 | Cost | Lower | Higher |

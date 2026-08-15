@@ -1,26 +1,21 @@
 ---
 id: deep-learning-neural-networks
 title: Deep Learning & Neural Networks
-description: Dive into deep learning with neural networks. Build and train models for image recognition, NLP, and more using TensorFlow and PyTorch.
+description: Understand how neural networks learn and build your first models with TensorFlow/Keras. Covers perceptrons, activation functions, backpropagation, and training real networks.
 difficulty: Advanced
-durationHours: 45
+durationHours: 2
 pathId: data-science
 ---
 
 # Deep Learning & Neural Networks
 
-Deep learning powers modern AI—from image recognition to language models. This course teaches you to build, train, and deploy neural networks for real-world applications.
+Deep learning powers modern AI—from image recognition to language models. This course covers how neural networks actually learn, then gets you building and training models with TensorFlow/Keras.
 
 ## Learning Outcomes
 
-- Understand neural network architecture and how they learn
-- Build neural networks from scratch in Python
-- Use TensorFlow and PyTorch for deep learning
-- Train convolutional neural networks (CNNs) for image tasks
-- Apply recurrent neural networks (RNNs) and transformers for sequences
-- Implement regularization and optimization techniques
-- Use transfer learning to leverage pre-trained models
-- Deploy models for inference
+- Understand neural network architecture and how networks learn
+- Explain perceptrons, activation functions, forward propagation, and backpropagation
+- Build, train, and evaluate neural networks with TensorFlow/Keras
 
 ## Prerequisites
 
@@ -33,22 +28,9 @@ Deep learning powers modern AI—from image recognition to language models. This
 ## Course Structure
 
 ### Section 1: Neural Network Fundamentals
-Perceptrons, activation functions, forward propagation, and backpropagation.
+Perceptrons, activation functions, forward propagation, and backpropagation. Building networks with TensorFlow/Keras: create, train, and evaluate models.
 
-### Section 2: Building Networks with TensorFlow/Keras
-Create, train, and evaluate neural networks using modern frameworks.
-
-### Section 3: Convolutional Neural Networks (CNNs)
-Image classification, object detection, and computer vision.
-
-### Section 4: Sequence Models
-RNNs, LSTMs, and attention mechanisms for text and time series.
-
-### Section 5: Advanced Topics
-Regularization, optimization, hyperparameter tuning, and deployment.
-
-### Section 6: Capstone Projects
-End-to-end deep learning projects for your portfolio.
+More sections — CNNs, sequence models, and advanced training topics — are in development and will be added as they are finished.
 
 ## Why Deep Learning?
 
@@ -58,32 +40,13 @@ End-to-end deep learning projects for your portfolio.
 
 **Versatility**: Same architectures work across domains
 
-**Career Demand**: Deep learning skills command top salaries
-
-**Research Frontier**: New breakthroughs every month
-
 ## Time Commitment
 
-- **Total Duration**: 45 hours
-- **Recommended Pace**: 6-8 hours per week
-- **Course Length**: 6-8 weeks at recommended pace
-- **Format**: Self-paced with hands-on coding projects
-
-## What You'll Build
-
-Throughout this course, you'll work on practical projects:
-- Handwritten digit classifier (MNIST)
-- Image classifier with CNNs (CIFAR-10)
-- Sentiment analysis model
-- Text generation with RNNs
-- Style transfer application
-- Custom image classifier using transfer learning
+- **Total Duration**: ~2 hours of lessons
+- **Format**: Self-paced
 
 ## Tools You'll Use
 
 **Python** (v3.10+): Programming language
-**TensorFlow/Keras**: Google's deep learning framework
-**PyTorch**: Facebook's deep learning framework
+**TensorFlow/Keras**: Deep learning framework
 **NumPy**: Numerical computing
-**Matplotlib**: Visualization
-**Google Colab**: Free GPU access

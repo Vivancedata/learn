@@ -86,7 +86,7 @@ model.fit(new_emails, new_labels)
 ### You Use ML Every Day
 
 | Application | ML Task |
-|-------------|---------|
+| ------------- | --------- |
 | Netflix recommendations | Predict what you'll enjoy |
 | Gmail spam filter | Classify spam vs. legitimate |
 | Google Search | Rank relevant results |
@@ -175,7 +175,7 @@ print(f"RMSE: ${rmse:,.0f}")
 ## Key ML Terminology
 
 | Term | Definition | Example |
-|------|------------|---------|
+| ------ | ------------ | --------- |
 | **Feature** | Input variable | House size, bedrooms |
 | **Target/Label** | What we predict | House price |
 | **Training** | Learning from data | Fitting a model |

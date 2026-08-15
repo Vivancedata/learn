@@ -1,9 +1,9 @@
 ---
 id: web-dev
 title: Web Development
-description: Learn everything you need to become a full-stack web developer, from HTML and CSS to advanced JavaScript frameworks and backend development.
+description: Start your path to web development with the fundamentals: how the web works, HTML, CSS, JavaScript, and the tools developers use daily. Further courses are in development.
 icon: globe
-estimatedHours: 300
+estimatedHours: 8
 difficulty: Beginner to Advanced
 ---
 
