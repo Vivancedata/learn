@@ -102,7 +102,7 @@
     "@types/react-dom": "^19.2.4",
     "@types/web-push": "^3.6.4",
     "eslint": "^9.39.2",
-    "eslint-config-next": "^16.3.0",
+    "eslint-config-next": "^16.3.1",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "markdownlint-cli2": "^0.21.0",
