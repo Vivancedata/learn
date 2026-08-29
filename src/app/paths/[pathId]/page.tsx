@@ -6,7 +6,7 @@ import Link from "next/link"
 import { CourseList } from "@/components/course-list"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ProgressCircle } from "@/components/ui/progress-circle"
-import { Course, Path } from "@/types/course"
+import { CourseCatalogEntry, Path } from "@/types/course"
 import { useAuth } from "@/hooks/useAuth"
 
 export default function PathPage() {
@@ -15,7 +15,7 @@ export default function PathPage() {
   const { user } = useAuth()
   
   const [path, setPath] = useState<Path | null>(null)
-  const [courses, setCourses] = useState<Course[]>([])
+  const [courses, setCourses] = useState<CourseCatalogEntry[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function PathPage() {
         const pathsData = pathRes.ok ? await pathRes.json() : { data: [] }
         const coursesData = coursesRes.ok ? await coursesRes.json() : { data: [] }
         const allPaths: Path[] = pathsData.data || []
-        const allCourses: Course[] = coursesData.data || []
+        const allCourses: CourseCatalogEntry[] = coursesData.data || []
         const loadedPath = allPaths.find((p: Path) => p.id === pathId) || null
 
         if (loadedPath) {

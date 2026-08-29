@@ -1,3 +1,54 @@
+export interface CourseProgressSummary {
+  completed: number
+  total: number
+  lastAccessed: string
+}
+
+/**
+ * The subset of a course a catalog card actually renders. Both the full
+ * `Course` (course detail) and the lighter `CourseCatalogEntry` (list
+ * endpoint) satisfy this, so `CourseList` can be fed by either.
+ */
+export interface CourseCardData {
+  id: string
+  title: string
+  description: string
+  difficulty: "Beginner" | "Intermediate" | "Advanced"
+  durationHours: number
+  prerequisites?: string[]
+  lessonCount?: number
+  progress?: CourseProgressSummary
+}
+
+/** A lesson as it appears in the catalog listing: no body, just the label. */
+export interface CourseCatalogLesson {
+  id: string
+  title: string
+  type: "lesson" | "project" | "quiz"
+  duration?: string
+}
+
+export interface CourseCatalogSection {
+  id: string
+  title: string
+  description?: string
+  order: number
+  lessons: CourseCatalogLesson[]
+}
+
+/**
+ * What `GET /api/courses` returns. Deliberately excludes lesson bodies,
+ * transcripts and video metadata: the catalog never renders them, and
+ * shipping them made the response half a megabyte.
+ */
+export interface CourseCatalogEntry extends CourseCardData {
+  pathId: string
+  learningOutcomes?: string[]
+  sectionCount: number
+  lessonCount: number
+  sections: CourseCatalogSection[]
+}
+
 export interface Course {
   id: string
   title: string
@@ -8,11 +59,7 @@ export interface Course {
   sections: CourseSection[]
   prerequisites?: string[]
   learningOutcomes?: string[]
-  progress?: {
-    completed: number
-    total: number
-    lastAccessed: string
-  }
+  progress?: CourseProgressSummary
   certificate?: {
     title: string
     description: string
