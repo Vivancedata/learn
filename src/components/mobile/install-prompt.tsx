@@ -225,7 +225,7 @@ export function InstallPrompt({
               id="install-prompt-title"
               className="text-xl font-bold text-center mb-2"
             >
-              Install VivanceData
+              Install Vivancedata
             </h2>
             <p
               id="install-prompt-description"

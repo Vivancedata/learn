@@ -89,13 +89,6 @@ export interface Path {
   prerequisites?: string[]
   estimatedHours?: number
   difficulty?: string
-  successStories?: {
-    name: string
-    role: string
-    company: string
-    testimonial: string
-    imageUrl?: string
-  }[]
   certificate?: {
     title: string
     description: string
