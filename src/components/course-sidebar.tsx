@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { CheckCircle, ChevronDown, ChevronRight, BookOpen, Code, FileQuestion } from "lucide-react"
 import { Course, Lesson } from "@/types/course"
+import { courseDurationLabel } from "@/lib/course-duration"
 
 interface CourseSidebarProps {
   course: Course
@@ -60,8 +61,12 @@ export function CourseSidebar({ course, completedLessonIds = [] }: CourseSidebar
         <h2 className="text-lg font-semibold">{course.title}</h2>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>{course.difficulty}</span>
-          <span>•</span>
-          <span>{course.durationHours} hours</span>
+          {courseDurationLabel(course) && (
+            <>
+              <span>•</span>
+              <span>{courseDurationLabel(course)}</span>
+            </>
+          )}
         </div>
       </div>
       
