@@ -160,13 +160,68 @@ class InMemoryRateLimiter {
 }
 
 /**
+ * How long a single Redis rate-limit check may take before the request gives
+ * up on it and falls back. Upstash's REST call is one network round trip; if it
+ * has not answered in this long, it is not going to answer usefully.
+ */
+export const REDIS_CHECK_TIMEOUT_MS = Number(
+  process.env.RATE_LIMIT_REDIS_TIMEOUT_MS || 750
+)
+
+/** Consecutive failures before the circuit opens. */
+export const REDIS_FAILURE_THRESHOLD = 3
+
+/** How long the circuit stays open before another attempt is allowed. */
+export const REDIS_CIRCUIT_COOLDOWN_MS = 30_000
+
+class RedisUnavailableError extends Error {
+  constructor(cause: string) {
+    super(`Redis rate limiter unavailable: ${cause}`)
+    this.name = 'RedisUnavailableError'
+  }
+}
+
+/**
  * Redis-based rate limiter using Upstash
  *
  * Uses sliding window algorithm for smooth rate limiting.
  * Each rate limit type (auth, api, general) has its own limiter instance.
+ *
+ * Every call is bounded by REDIS_CHECK_TIMEOUT_MS and guarded by a circuit
+ * breaker. Without those, an unreachable Redis host costs the full client
+ * retry budget on *every* API request -- measured at ~4.3s per request against
+ * a KV_REST_API_URL whose DNS no longer resolves, which is what put a five
+ * second floor under /api/paths, /api/lessons/[id] and /api/discussions.
  */
 class RedisRateLimiter {
   private limiters: Map<string, Ratelimit> = new Map()
+  private consecutiveFailures = 0
+  private circuitOpenUntil = 0
+
+  /** True while the breaker is open and Redis should not be called. */
+  isCircuitOpen(): boolean {
+    return Date.now() < this.circuitOpenUntil
+  }
+
+  private recordSuccess(): void {
+    if (this.consecutiveFailures > 0) {
+      console.info('[RateLimit] Redis reachable again; resuming distributed limiting')
+    }
+    this.consecutiveFailures = 0
+    this.circuitOpenUntil = 0
+  }
+
+  private recordFailure(reason: string): void {
+    this.consecutiveFailures += 1
+
+    if (this.consecutiveFailures >= REDIS_FAILURE_THRESHOLD && !this.isCircuitOpen()) {
+      this.circuitOpenUntil = Date.now() + REDIS_CIRCUIT_COOLDOWN_MS
+      console.warn(
+        `[RateLimit] Redis failed ${this.consecutiveFailures} times (${reason}); ` +
+        `falling back to in-memory limiting for ${REDIS_CIRCUIT_COOLDOWN_MS / 1000}s`
+      )
+    }
+  }
 
   private getLimiter(limit: number, windowSeconds: number): Ratelimit {
     const key = `${limit}:${windowSeconds}`
@@ -191,14 +246,38 @@ class RedisRateLimiter {
     return this.limiters.get(key)!
   }
 
+  /**
+   * Run one bounded rate-limit check.
+   *
+   * @throws RedisUnavailableError when the circuit is open, the call fails, or
+   *         it exceeds REDIS_CHECK_TIMEOUT_MS. The caller decides what to do
+   *         instead; it never returns a silent "allowed".
+   */
   async check(
     identifier: string,
     limit: number,
     windowSeconds: number
   ): Promise<RateLimitResult> {
+    if (this.isCircuitOpen()) {
+      throw new RedisUnavailableError('circuit open')
+    }
+
+    let timer: ReturnType<typeof setTimeout> | undefined
+
     try {
       const limiter = this.getLimiter(limit, windowSeconds)
-      const result = await limiter.limit(identifier)
+
+      const result = await Promise.race([
+        limiter.limit(identifier),
+        new Promise<never>((_resolve, reject) => {
+          timer = setTimeout(
+            () => reject(new RedisUnavailableError(`timed out after ${REDIS_CHECK_TIMEOUT_MS}ms`)),
+            REDIS_CHECK_TIMEOUT_MS
+          )
+        }),
+      ])
+
+      this.recordSuccess()
 
       return {
         success: result.success,
@@ -206,14 +285,12 @@ class RedisRateLimiter {
         resetTime: result.reset,
         limit: result.limit,
       }
-    } catch (_error) {
-      // Fail open to prevent blocking requests on Redis errors
-      return {
-        success: true,
-        remaining: limit,
-        resetTime: Date.now() + windowSeconds * 1000,
-        limit,
-      }
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : 'unknown error'
+      this.recordFailure(reason)
+      throw new RedisUnavailableError(reason)
+    } finally {
+      if (timer) clearTimeout(timer)
     }
   }
 }
@@ -238,6 +315,9 @@ class RateLimiter {
     if (redisConfigured) {
       this.redis = new RedisRateLimiter()
       this.useRedis = true
+      // Always available, so a Redis outage degrades to per-instance limiting
+      // rather than to no limiting at all.
+      this.inMemory = new InMemoryRateLimiter()
     } else if (isProduction) {
       // In production, Redis MUST be configured
       throw new Error(
@@ -273,7 +353,14 @@ class RateLimiter {
     const windowSeconds = Math.ceil(windowMs / 1000)
 
     if (this.useRedis && this.redis) {
-      return this.redis.check(identifier, limit, windowSeconds)
+      try {
+        return await this.redis.check(identifier, limit, windowSeconds)
+      } catch {
+        // Degrade to the in-memory limiter rather than failing open entirely.
+        if (this.inMemory) {
+          return this.inMemory.check(identifier, limit, windowMs)
+        }
+      }
     }
 
     if (this.inMemory) {
