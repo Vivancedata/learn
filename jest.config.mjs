@@ -9,6 +9,13 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'jest-environment-jsdom',
+  // jsdom resolves the "browser" export condition, which for lucide-react (and
+  // therefore for every @vivancedata/ui component that imports an icon) is an
+  // ESM bundle that next/jest never transforms, so any component test failed
+  // to parse. Preferring "node" picks the published CJS build instead.
+  testEnvironmentOptions: {
+    customExportConditions: ['node', 'require', 'default'],
+  },
   coverageThreshold: {
     global: {
       statements: 85,
