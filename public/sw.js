@@ -1,5 +1,5 @@
 /**
- * VivanceData Learning Platform Service Worker
+ * Vivancedata Learning Platform Service Worker
  * Handles caching, push notifications, background sync, and offline support
  * @version 2.0.0
  */
@@ -439,7 +439,7 @@ function createOfflinePageResponse() {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Offline - VivanceData</title>
+      <title>Offline - Vivancedata</title>
       <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -564,7 +564,7 @@ self.addEventListener('push', (event) => {
   console.log('[SW] Push notification received')
 
   let data = {
-    title: 'VivanceData',
+    title: 'Vivancedata',
     body: 'You have a new notification',
     icon: '/icons/icon-192.png',
     badge: '/icons/badge-72.png',

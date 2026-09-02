@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   BookOpen,
-  Sparkles,
   Rocket,
   Trophy,
   ArrowRight,
@@ -18,22 +17,12 @@ import {
   TrendingUp
 } from "lucide-react"
 import { getAllCourses, getAllPaths } from "@/lib/content"
+import { courseDurationLabel } from "@/lib/course-duration"
 import { DIFFICULTY_BADGE_CLASSES } from "@/lib/difficulty"
 
 export const dynamic = 'force-dynamic'
-
-const oneDecimal = new Intl.NumberFormat('en-US', {
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 1,
-})
-const hours = new Intl.NumberFormat('en-US', {
-  style: 'unit',
-  unit: 'hour',
-  unitDisplay: 'narrow',
-})
-
 export const metadata: Metadata = {
-  title: "Vivance",
+  title: "Vivancedata Learn",
   description: "Learn AI and data science through practical courses, projects, and assessments.",
 }
 
@@ -56,17 +45,11 @@ export default async function page() {
     (acc, course) => acc + course.sections.reduce((sum, section) => sum + section.lessons.length, 0),
     0
   )
-  const totalHours = courses.reduce((acc, course) => acc + course.durationHours, 0)
-  const coursesWithLessons = courses.filter(course =>
-    course.sections.some(section => section.lessons.length > 0)
-  ).length
-  const averageLessonsPerCourse = courses.length > 0 ? oneDecimal.format(totalLessons / courses.length) : '0'
 
   const stats = [
     { label: "Courses", value: courses.length.toString(), icon: BookOpen },
     { label: "Learning Paths", value: paths.length.toString(), icon: Rocket },
     { label: "Lessons", value: totalLessons.toString(), icon: Trophy },
-    { label: "Curriculum Hours", value: hours.format(totalHours), icon: Clock3 },
   ]
 
   const featuredCourses = courses.slice(0, 3)
@@ -117,12 +100,6 @@ export default async function page() {
     },
   ]
 
-  const momentumSignals = [
-    { label: 'Courses with lesson plans', value: `${coursesWithLessons}/${courses.length}` },
-    { label: 'Average lessons per course', value: averageLessonsPerCourse },
-    { label: 'Total guided hours', value: hours.format(totalHours) },
-  ]
-
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -134,12 +111,6 @@ export default async function page() {
 
         <div className="container relative px-4 py-24 md:py-32 lg:py-40">
           <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-brand text-sm font-medium mb-8 animate-fade-in-down">
-              <Sparkles className="h-4 w-4" />
-              <span>New: AI Agents Development Course</span>
-            </div>
-
             {/* Main heading */}
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 animate-fade-in-up">
               Learn to build{" "}
@@ -177,7 +148,7 @@ export default async function page() {
       {/* Stats Section */}
       <section className="border-y bg-muted/30">
         <div className="container px-4 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {stats.map((stat, index) => (
               <div
                 key={stat.label}
@@ -245,7 +216,7 @@ export default async function page() {
                   A Structured Loop That Keeps Learners Moving
                 </CardTitle>
                 <CardDescription className="text-base">
-                  VivanceData Learn blends guided direction, bite-sized execution, and immediate feedback to turn effort into measurable progress.
+                  Vivancedata Learn blends guided direction, bite-sized execution, and immediate feedback to turn effort into measurable progress.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -267,19 +238,7 @@ export default async function page() {
               </CardContent>
             </Card>
 
-            <div className="grid gap-5">
-              {momentumSignals.map((signal, index) => (
-                <Card
-                  key={signal.label}
-                  className="border-border/60 bg-gradient-to-br from-background to-muted/60 animate-fade-in-up"
-                  style={{ animationDelay: `${index * 120}ms` }}
-                >
-                  <CardContent className="pt-6">
-                    <p className="text-sm text-muted-foreground">{signal.label}</p>
-                    <p className="text-3xl md:text-4xl font-bold mt-1">{signal.value}</p>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="grid gap-5 content-start">
               <Card className="border-brand/25 bg-gradient-to-br from-primary/10 via-accent/20 to-background">
                 <CardContent className="pt-6">
                   <p className="text-sm font-medium text-brand mb-2">Ready for your next milestone?</p>
@@ -337,9 +296,11 @@ export default async function page() {
                       <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full border ${DIFFICULTY_BADGE_CLASSES[course.difficulty]}`}>
                         {course.difficulty}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {hours.format(course.durationHours)}
-                      </span>
+                      {courseDurationLabel(course) && (
+                        <span className="text-xs text-muted-foreground">
+                          {courseDurationLabel(course)}
+                        </span>
+                      )}
                     </div>
                     <CardTitle className="group-hover:text-brand transition-colors">
                       {course.title}
