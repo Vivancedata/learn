@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import AssessmentDetailPageClient from './page-client'
 
 export const metadata: Metadata = {
-  title: 'Assessment Details | Vivance',
+  title: 'Assessment Details | Vivancedata',
   description: 'Review assessment goals, history, and prepare to start.',
 }
 

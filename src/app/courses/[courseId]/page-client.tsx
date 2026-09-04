@@ -7,10 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { ProgressCircle } from "@/components/ui/progress-circle"
 import { CourseCertificate } from "@/components/course-certificate"
-import { SuccessStories } from "@/components/success-stories"
 import { CommunityDiscussions } from "@/components/community-discussions"
 import { useParams } from "next/navigation"
 import { Course } from "@/types/course"
+import { courseDurationLabel } from "@/lib/course-duration"
 import { Discussion } from "@/types/discussion"
 import { useAuth } from "@/hooks/useAuth"
 
@@ -164,27 +164,7 @@ export default function CoursePage() {
   
   const progress = course.progress ? (course.progress.completed / course.progress.total) * 100 : 0
 
-  // Sample success stories
-  const successStories = [
-    {
-      name: "Sarah Johnson",
-      role: "Frontend Developer",
-      company: "TechCorp",
-      testimonial: "This course was exactly what I needed to transition into web development. The project-based approach helped me build a portfolio that landed me my first dev job!"
-    },
-    {
-      name: "Michael Chen",
-      role: "Full Stack Engineer",
-      company: "StartupX",
-      testimonial: "I had tried learning web development on my own before, but this structured approach with clear explanations made all the difference. Highly recommended!"
-    },
-    {
-      name: "Priya Patel",
-      role: "UI Developer",
-      company: "DesignHub",
-      testimonial: "The HTML and CSS sections were incredibly thorough. I went from knowing nothing about web development to building responsive websites in just a few weeks."
-    }
-  ]
+  const durationLabel = courseDurationLabel(course)
 
   // Calculate progress metrics for certificate
   const totalLessons = course.sections.reduce((acc, section) => acc + section.lessons.length, 0)
@@ -230,9 +210,11 @@ export default function CoursePage() {
 
         <div className="flex gap-4">
           <Badge>{course.difficulty}</Badge>
-          <span className="text-sm text-muted-foreground">
-            {course.durationHours} hours
-          </span>
+          {durationLabel && (
+            <span className="text-sm text-muted-foreground">
+              {durationLabel}
+            </span>
+          )}
         </div>
 
         <Card>
@@ -287,7 +269,7 @@ export default function CoursePage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="max-w-2xl">
           <CourseCertificate 
             course={{
               ...course,
@@ -303,8 +285,6 @@ export default function CoursePage() {
             }}
             progress={progressMetrics}
           />
-          
-          <SuccessStories stories={successStories} />
         </div>
 
         <CommunityDiscussions 

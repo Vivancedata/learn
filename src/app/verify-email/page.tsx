@@ -132,7 +132,7 @@ function VerifyEmailContent() {
             <Alert>
               <CheckCircle2 className="h-4 w-4" />
               <AlertDescription>
-                You now have full access to all VivanceData features.
+                You now have full access to all Vivancedata features.
               </AlertDescription>
             </Alert>
           </CardContent>
