@@ -1,11 +1,12 @@
 import { GET as getCourses } from '../courses/route'
+import { GET as getCourse } from '../courses/[courseId]/route'
 import { GET as getPaths } from '../paths/route'
 import { GET as getLesson } from '../lessons/[id]/route'
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/db'
 
 const prismaMock = prisma as unknown as {
-  course: { findMany: jest.Mock }
+  course: { findMany: jest.Mock; findUnique: jest.Mock }
   path: { findMany: jest.Mock }
   lesson: { findUnique: jest.Mock }
 }
@@ -16,6 +17,7 @@ jest.mock('@/lib/db', () => ({
   default: {
     course: {
       findMany: jest.fn(),
+      findUnique: jest.fn(),
     },
     path: {
       findMany: jest.fn(),
@@ -66,6 +68,70 @@ describe('API Routes', () => {
       expect(response.status).toBe(500)
       expect(data.error).toBe('Internal Server Error')
       expect(data.message).toBe('Database error')
+    })
+  })
+
+  describe('GET /api/courses/[courseId]', () => {
+    const createAsyncParams = (courseId: string) => ({
+      params: Promise.resolve({ courseId }),
+    })
+
+    const request = new NextRequest('http://localhost:3000/api/courses/course-1')
+
+    it('should return a single course with its sections and lessons', async () => {
+      prismaMock.course.findUnique.mockResolvedValue({
+        id: 'course-1',
+        title: 'Course 1',
+        description: 'Test course',
+        difficulty: 'Beginner',
+        durationHours: 10,
+        pathId: 'path-1',
+        sections: [
+          {
+            id: 'section-1',
+            title: 'Section 1',
+            description: null,
+            order: 0,
+            lessons: [
+              {
+                id: 'lesson-1',
+                title: 'Lesson 1',
+                content: 'Body text',
+                type: 'lesson',
+                duration: '10 mins',
+                hasProject: false,
+              },
+            ],
+          },
+        ],
+        path: { id: 'path-1', title: 'Path 1' },
+      })
+
+      const response = await getCourse(request, createAsyncParams('course-1'))
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.data.id).toBe('course-1')
+      expect(data.data.sections[0].lessons[0].content).toBe('Body text')
+      expect(prismaMock.course.findUnique).toHaveBeenCalledTimes(1)
+    })
+
+    it('should 404 for an unknown course', async () => {
+      prismaMock.course.findUnique.mockResolvedValue(null)
+
+      const response = await getCourse(request, createAsyncParams('nope'))
+      const data = await response.json()
+
+      expect(response.status).toBe(404)
+      expect(data.message).toBe('Course not found')
+    })
+
+    it('should handle errors', async () => {
+      prismaMock.course.findUnique.mockRejectedValue(new Error('Database error'))
+
+      const response = await getCourse(request, createAsyncParams('course-1'))
+
+      expect(response.status).toBe(500)
     })
   })
 

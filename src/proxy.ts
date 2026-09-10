@@ -5,6 +5,7 @@ import rateLimiter, { RATE_LIMITS, getRateLimitHeaders } from '@/lib/rate-limit'
 
 const PUBLIC_READONLY_API_PATTERNS = [
   /^\/api\/courses\/?$/,
+  /^\/api\/courses\/[^/]+\/?$/, // a single course is as public as the catalog
   /^\/api\/paths\/?$/,
   /^\/api\/lessons\/[^/]+\/?$/,
   /^\/api\/discussions\/?$/,

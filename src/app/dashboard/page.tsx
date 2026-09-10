@@ -12,7 +12,7 @@ import { StreakPanel } from "@/components/streak-panel"
 import { XpLevelDisplay } from "@/components/xp-level-display"
 import { RecommendationsSection } from "@/components/recommendations-section"
 import { ArrowRight, BookOpen, Award, Calendar, Clock, CheckCircle2, Heart, Users, Target, FileQuestion, Trophy } from "lucide-react"
-import { Course, Path } from "@/types/course"
+import { CourseCatalogEntry, Path } from "@/types/course"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { useAuth } from "@/hooks/useAuth"
 
@@ -61,7 +61,7 @@ function useDashboardContentView() {
         fetch('/api/courses').then(async (res) => {
           if (!res.ok) throw new Error('Failed to load courses')
           const payload = await res.json()
-          return (payload.data || []) as Course[]
+          return (payload.data || []) as CourseCatalogEntry[]
         }),
         fetch('/api/paths').then(async (res) => {
           if (!res.ok) throw new Error('Failed to load paths')
@@ -127,19 +127,30 @@ function useDashboardContentView() {
         ? loadErrors.join('; ')
         : null
 
-  if (isLoading || !data) {
+  // The error check has to come first: when the fetcher throws, SWR clears
+  // `isLoading` but never fills `data`, so a loading return placed above this
+  // would spin forever instead of ever reaching the retry card.
+  if (displayError && courses.length === 0 && paths.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand"></div>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="max-w-md rounded-lg border border-destructive/30 bg-destructive/5 p-8 text-center">
+          <h1 className="text-heading-3 font-semibold">We could not load your dashboard</h1>
+          <p className="mt-2 text-body-sm text-muted-foreground">
+            Your courses and progress did not come back this time. Nothing has been
+            lost — it is the loading that failed, not your work.
+          </p>
+          <Button className="mt-6" onClick={() => void mutate()}>
+            Try Again
+          </Button>
+        </div>
       </div>
     )
   }
 
-  if (displayError && courses.length === 0 && paths.length === 0) {
+  if (isLoading || !data) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="text-destructive text-body-lg mb-4">{displayError}</div>
-        <Button onClick={() => void mutate()}>Try Again</Button>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand"></div>
       </div>
     )
   }

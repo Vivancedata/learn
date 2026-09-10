@@ -4,7 +4,7 @@
  */
 
 import type { Course as PrismaCourse, Path as PrismaPath, Lesson as PrismaLesson, CourseSection as PrismaCourseSection, VideoProgress as PrismaVideoProgress, SkillAssessment as PrismaSkillAssessment, AssessmentQuestion as PrismaAssessmentQuestion, AssessmentAttempt as PrismaAssessmentAttempt } from '@prisma/client'
-import type { Course, Path, Lesson, CourseSection, VideoProvider, VideoChapter, VideoProgress } from '@/types/course'
+import type { Course, Path, Lesson, CourseSection, VideoProvider, VideoChapter, VideoProgress, CourseCatalogEntry, CourseCatalogSection } from '@/types/course'
 import type { SkillAssessment, AssessmentQuestion, AssessmentAttempt, QuestionType, CourseDifficulty } from '@/types/assessment'
 
 type PrismaCourseWithRelations = PrismaCourse & {
@@ -138,6 +138,75 @@ export function adaptPath(prismaPath: PrismaPathWithRelations): Path {
     estimatedHours: prismaPath.estimatedHours ?? undefined,
     difficulty: prismaPath.difficulty ?? undefined,
   }
+}
+
+/**
+ * Shape returned by the catalog `select` in GET /api/courses. Lesson bodies,
+ * transcripts and video metadata are never selected, so they cannot leak into
+ * the list response by accident.
+ */
+export type PrismaCourseCatalogRow = {
+  id: string
+  title: string
+  description: string
+  difficulty: PrismaCourse['difficulty']
+  durationHours: number
+  pathId: string
+  prerequisites: string | null
+  learningOutcomes: string | null
+  sections: Array<{
+    id: string
+    title: string
+    description: string | null
+    order: number
+    lessons: Array<{
+      id: string
+      title: string
+      type: PrismaLesson['type']
+      duration: string | null
+    }>
+  }>
+}
+
+/**
+ * Convert a catalog projection row to the domain catalog entry the course
+ * cards and dashboard consume.
+ */
+export function adaptCourseCatalogEntry(row: PrismaCourseCatalogRow): CourseCatalogEntry {
+  const sections: CourseCatalogSection[] = row.sections.map((section) => ({
+    id: section.id,
+    title: section.title,
+    description: section.description ?? undefined,
+    order: section.order,
+    lessons: section.lessons.map((lesson) => ({
+      id: lesson.id,
+      title: lesson.title,
+      type: lesson.type,
+      duration: lesson.duration ?? undefined,
+    })),
+  }))
+
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    difficulty: row.difficulty,
+    durationHours: row.durationHours,
+    pathId: row.pathId,
+    prerequisites: row.prerequisites
+      ? safeJsonParse<string[]>(row.prerequisites, [])
+      : undefined,
+    learningOutcomes: row.learningOutcomes
+      ? safeJsonParse<string[]>(row.learningOutcomes, [])
+      : undefined,
+    sectionCount: sections.length,
+    lessonCount: sections.reduce((total, section) => total + section.lessons.length, 0),
+    sections,
+  }
+}
+
+export function adaptCourseCatalog(rows: PrismaCourseCatalogRow[]): CourseCatalogEntry[] {
+  return rows.map(adaptCourseCatalogEntry)
 }
 
 /**

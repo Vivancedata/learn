@@ -5,6 +5,7 @@ import useSWR from "swr"
 import { CourseLayout } from "@/components/course-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { ProgressCircle } from "@/components/ui/progress-circle"
 import { CourseCertificate } from "@/components/course-certificate"
 import { SuccessStories } from "@/components/success-stories"
@@ -42,13 +43,16 @@ export default function CoursePage() {
   const params = useParams()
   const courseId = params.courseId as string
   const { user } = useAuth()
-  const { data, isLoading, mutate } = useSWR(
+  const { data, isLoading, error, mutate } = useSWR(
     ['course-page', courseId, user?.id ?? 'guest'] as const,
     async ([, targetCourseId, userId]) => {
-      const [coursesPayload, discussionsPayload] = await Promise.all([
-        fetch('/api/courses').then(async (res) => {
-          if (!res.ok) throw new Error('Failed to load courses')
-          return (await res.json()) as { data?: Course[] }
+      const [coursePayload, discussionsPayload] = await Promise.all([
+        // One course, not the whole catalog. A 404 is a real answer here, not
+        // a failure: it means the slug does not exist.
+        fetch(`/api/courses/${encodeURIComponent(targetCourseId)}`).then(async (res) => {
+          if (res.status === 404) return { data: null }
+          if (!res.ok) throw new Error('Failed to load course')
+          return (await res.json()) as { data?: Course | null }
         }),
         fetch(`/api/discussions?courseId=${targetCourseId}`).then(async (res) => {
           if (!res.ok) throw new Error('Failed to load discussions')
@@ -56,8 +60,7 @@ export default function CoursePage() {
         }),
       ])
 
-      const courses = coursesPayload.data || []
-      let resolvedCourse = courses.find((c) => c.id === targetCourseId) || null
+      let resolvedCourse = coursePayload.data ?? null
       let completedLessonIds: string[] = []
 
       if (userId !== 'guest' && resolvedCourse) {
@@ -126,17 +129,46 @@ export default function CoursePage() {
   const courseData = data?.courseData || null
   const discussions = data?.discussions || []
   const completedLessonIds = data?.completedLessonIds || []
-  const loading = isLoading || !data
-
-  // Show loading state
-  if (loading) {
+  // A thrown fetch leaves `data` undefined forever, so the error must be
+  // checked before the loading state or the page spins for good.
+  if (error) {
     return (
       <div className="container py-8">
-        <h1 className="text-3xl font-bold">Loading course...</h1>
+        <div className="mx-auto max-w-md rounded-lg border border-destructive/30 bg-destructive/5 p-8 text-center">
+          <h1 className="text-heading-3 font-semibold">We could not load this course</h1>
+          <p className="mt-2 text-body-sm text-muted-foreground">
+            Something went wrong on our side while fetching the lessons. Nothing you
+            have completed has been lost.
+          </p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Button onClick={() => void mutate()}>Try Again</Button>
+            <Button asChild variant="outline">
+              <Link href="/courses">Back to courses</Link>
+            </Button>
+          </div>
+        </div>
       </div>
     )
   }
-  
+
+  if (isLoading || !data) {
+    return (
+      <div className="container space-y-6 py-8" aria-busy="true" aria-label="Loading course">
+        <div className="animate-pulse space-y-4">
+          <div className="h-9 w-2/3 rounded-md bg-muted" />
+          <div className="h-4 w-full max-w-2xl rounded bg-muted" />
+          <div className="h-4 w-3/4 max-w-2xl rounded bg-muted" />
+          <div className="flex gap-4 pt-2">
+            <div className="h-6 w-24 rounded-full bg-muted" />
+            <div className="h-6 w-20 rounded bg-muted" />
+          </div>
+          <div className="h-40 rounded-lg bg-muted" />
+          <div className="h-40 rounded-lg bg-muted" />
+        </div>
+      </div>
+    )
+  }
+
   // Fallback if course not found
   if (!courseData) {
     return (
