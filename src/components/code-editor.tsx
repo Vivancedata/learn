@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { escapeHtml, highlightPython } from '@/lib/python-highlight'
 
 export interface CodeEditorProps {
   /** Initial code to display in the editor */
@@ -24,74 +25,6 @@ export interface CodeEditorProps {
   showLineNumbers?: boolean
   /** Font size in pixels */
   fontSize?: number
-}
-
-// Python keywords for syntax highlighting
-const PYTHON_KEYWORDS = [
-  'and', 'as', 'assert', 'async', 'await', 'break', 'class', 'continue',
-  'def', 'del', 'elif', 'else', 'except', 'finally', 'for', 'from',
-  'global', 'if', 'import', 'in', 'is', 'lambda', 'nonlocal', 'not',
-  'or', 'pass', 'raise', 'return', 'try', 'while', 'with', 'yield',
-  'True', 'False', 'None',
-]
-
-const PYTHON_BUILTINS = [
-  'print', 'len', 'range', 'str', 'int', 'float', 'list', 'dict', 'set',
-  'tuple', 'bool', 'type', 'input', 'open', 'abs', 'all', 'any', 'bin',
-  'chr', 'dir', 'enumerate', 'filter', 'format', 'hex', 'id', 'isinstance',
-  'iter', 'map', 'max', 'min', 'next', 'oct', 'ord', 'pow', 'repr',
-  'reversed', 'round', 'slice', 'sorted', 'sum', 'super', 'zip',
-]
-
-/**
- * Syntax highlight Python code for display
- */
-function highlightPython(code: string): string {
-  // Escape HTML
-  let highlighted = code
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-
-  // Strings (triple quotes first, then single/double)
-  highlighted = highlighted.replace(
-    /("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g,
-    '<span class="text-success">$1</span>'
-  )
-
-  // Comments
-  highlighted = highlighted.replace(
-    /(#.*$)/gm,
-    '<span class="text-muted-foreground italic">$1</span>'
-  )
-
-  // Numbers
-  highlighted = highlighted.replace(
-    /\b(\d+\.?\d*)\b/g,
-    '<span class="text-info">$1</span>'
-  )
-
-  // Keywords
-  const keywordPattern = new RegExp(`\\b(${PYTHON_KEYWORDS.join('|')})\\b`, 'g')
-  highlighted = highlighted.replace(
-    keywordPattern,
-    '<span class="text-brand font-semibold">$1</span>'
-  )
-
-  // Builtins
-  const builtinPattern = new RegExp(`\\b(${PYTHON_BUILTINS.join('|')})\\b`, 'g')
-  highlighted = highlighted.replace(
-    builtinPattern,
-    '<span class="text-accent">$1</span>'
-  )
-
-  // Function definitions
-  highlighted = highlighted.replace(
-    /\b(def|class)\s+(\w+)/g,
-    '<span class="text-brand font-semibold">$1</span> <span class="text-warning">$2</span>'
-  )
-
-  return highlighted
 }
 
 /**
@@ -129,12 +62,7 @@ export function CodeEditor({
       setHighlightedCode(highlightPython(code))
     } else {
       // For other languages, just escape HTML
-      setHighlightedCode(
-        code
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-      )
+      setHighlightedCode(escapeHtml(code))
     }
   }, [code, language])
 
@@ -253,7 +181,9 @@ export function CodeEditor({
             }}
             aria-hidden="true"
             dangerouslySetInnerHTML={{
-              __html: highlightedCode || `<span class="text-[#6c7086]">${placeholder}</span>`,
+              __html:
+                highlightedCode ||
+                `<span class="text-[#6c7086]">${escapeHtml(placeholder)}</span>`,
             }}
           />
 
