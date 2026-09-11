@@ -98,6 +98,7 @@ export default function SignUpPage() {
                 name="name"
                 type="text"
                 placeholder="Your name"
+                className="placeholder:text-muted-foreground"
                 value={formData.name}
                 onChange={handleChange}
                 disabled={loading}
@@ -113,6 +114,7 @@ export default function SignUpPage() {
                 name="email"
                 type="email"
                 placeholder="your@email.com"
+                className="placeholder:text-muted-foreground"
                 value={formData.email}
                 onChange={handleChange}
                 disabled={loading}
@@ -129,6 +131,7 @@ export default function SignUpPage() {
                 name="password"
                 type="password"
                 placeholder="••••••••"
+                className="placeholder:text-muted-foreground"
                 value={formData.password}
                 onChange={handleChange}
                 disabled={loading}
@@ -190,6 +193,7 @@ export default function SignUpPage() {
                 name="githubUsername"
                 type="text"
                 placeholder="your-github-username"
+                className="placeholder:text-muted-foreground"
                 value={formData.githubUsername}
                 onChange={handleChange}
                 disabled={loading}
