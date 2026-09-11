@@ -48,7 +48,6 @@ const pathTitles: Record<string, string> = {
   '/courses': 'Courses',
   '/paths': 'Learning Paths',
   '/settings': 'Settings',
-  '/profile': 'Profile',
   '/leaderboard': 'Leaderboard',
   '/assessments': 'Assessments',
   '/pricing': 'Pricing',

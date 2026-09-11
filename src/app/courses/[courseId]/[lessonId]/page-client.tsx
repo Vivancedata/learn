@@ -17,7 +17,7 @@ import type { Components } from "react-markdown"
 import { useParams, usePathname, useRouter } from "next/navigation"
 import { Course, Lesson } from "@/types/course"
 import { useAuth } from "@/hooks/useAuth"
-import { PageSpinner } from "@/components/ui/spinner"
+import { LessonSkeleton } from "@/components/loading-states"
 import { InteractiveCodeBlock, parseCodeBlockLanguage } from "@/components/interactive-code-block"
 import { useAiTutor } from "@/hooks/useAiTutor"
 import { AiTutorButton } from "@/components/ai-tutor/chat-container"
@@ -443,7 +443,7 @@ function LessonContent() {
   }, [course, lesson, setLessonContext])
 
   if (isLoading || !data) {
-    return <PageSpinner />
+    return <LessonSkeleton />
   }
 
   const displayError = loadError instanceof Error ? loadError.message : actionError

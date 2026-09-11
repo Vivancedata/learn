@@ -97,10 +97,27 @@ describe('Redis Client', () => {
       const { Redis } = require('@upstash/redis')
       getRedisClient()
 
-      expect(Redis).toHaveBeenCalledWith({
-        url: 'https://kv.upstash.io',
-        token: 'kv-token',
-      })
+      expect(Redis).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: 'https://kv.upstash.io',
+          token: 'kv-token',
+        })
+      )
+    })
+
+    it('caps the client retry budget so a dead host cannot stall a request', () => {
+      process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io'
+      process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token'
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getRedisClient } = require('../redis')
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { Redis } = require('@upstash/redis')
+      getRedisClient()
+
+      const options = Redis.mock.calls.at(-1)[0]
+      expect(options.retry.retries).toBe(1)
+      expect(options.retry.backoff()).toBe(0)
     })
   })
 

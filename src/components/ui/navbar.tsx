@@ -56,7 +56,7 @@ export function Navbar() {
 
         <div className="ml-auto flex items-center space-x-4">
           {/* Desktop navigation */}
-          <div className="hidden sm:flex sm:items-center sm:space-x-1">
+          <div className="hidden xl:flex xl:items-center xl:space-x-1">
             <Button variant="ghost" asChild className="text-muted-foreground hover:text-foreground">
               <Link href="/dashboard" className="flex items-center gap-2">
                 <LayoutDashboard className="h-4 w-4" />
@@ -95,7 +95,7 @@ export function Navbar() {
             </Button>
           </div>
 
-          <div className="hidden sm:flex sm:items-center sm:space-x-2 sm:pl-4 sm:border-l sm:border-border">
+          <div className="hidden xl:flex xl:items-center xl:space-x-2 xl:pl-4 xl:border-l xl:border-border">
             {/* Subscription Status */}
             {isAuthenticated && !subscriptionLoading && (
               isPro ? (
@@ -125,7 +125,7 @@ export function Navbar() {
           <Button
             variant="ghost"
             size="icon"
-            className="sm:hidden"
+            className="xl:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileMenuOpen}
@@ -140,7 +140,7 @@ export function Navbar() {
       </div>
 
       {/* Mobile menu dropdown */}
-      <div className={`sm:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+      <div className={`xl:hidden overflow-hidden transition-all duration-300 ease-in-out ${
         mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
       }`}>
         <div className="bg-background border-t border-border">

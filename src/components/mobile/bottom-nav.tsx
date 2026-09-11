@@ -23,7 +23,8 @@ const navItems: NavItem[] = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/courses', label: 'Courses', icon: BookOpen },
   { href: '/dashboard', label: 'Progress', icon: BarChart2, requiresAuth: true },
-  { href: '/profile', label: 'Profile', icon: User, requiresAuth: true },
+  // /profile has never existed as a route; the account surface is /settings.
+  { href: '/settings', label: 'Account', icon: User, requiresAuth: true },
 ]
 
 interface BottomNavProps {
@@ -99,7 +100,7 @@ export function BottomNav({ notificationCount = 0 }: BottomNavProps) {
             {filteredItems.map((item) => {
               const active = isActive(item.href)
               const Icon = item.icon
-              const showBadge = item.href === '/profile' && notificationCount > 0
+              const showBadge = item.href === '/settings' && notificationCount > 0
 
               return (
                 <Link
