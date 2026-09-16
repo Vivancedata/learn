@@ -55,6 +55,11 @@ export function getRedisClient(): Redis | null {
   return new Redis({
     url: redisConfig.url,
     token: redisConfig.token,
+    // @upstash/redis retries five times with exponential backoff by default.
+    // On a rate-limit check that sits in front of every API request, a
+    // resolvable-but-unreachable host turns into seconds of dead wall clock
+    // per request. One attempt is enough: the caller fails open.
+    retry: { retries: 1, backoff: () => 0 },
   })
 }
 

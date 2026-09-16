@@ -24,6 +24,8 @@ jest.mock('../redis', () => ({
 
 import rateLimiter, {
   RATE_LIMITS,
+  REDIS_CHECK_TIMEOUT_MS,
+  REDIS_FAILURE_THRESHOLD,
   getClientIdentifier,
   checkRateLimit,
   checkRateLimitSync,
@@ -466,41 +468,73 @@ describe('Rate Limiter', () => {
       expect(upstashRatelimitMock.__mockLimit).toHaveBeenCalledTimes(2)
     })
 
-    it('should fail open when redis limiter throws', async () => {
+    it('degrades to the in-memory limiter when redis throws', async () => {
       upstashRatelimitMock.__mockLimit.mockRejectedValueOnce(new Error('redis unavailable'))
 
-      const result = await rateLimiter.check('redis-user', 3, 2000)
+      const result = await rateLimiter.check('redis-throw-user', 3, 2000)
 
+      // Still allowed, but counted -- a Redis outage now degrades to
+      // per-instance limiting rather than to no limiting at all.
       expect(result.success).toBe(true)
-      expect(result.remaining).toBe(3)
+      expect(result.remaining).toBe(2)
       expect(result.limit).toBe(3)
       expect(result.resetTime).toBeGreaterThan(Date.now())
     })
 
-    it('should fail open when redis client is unexpectedly missing', async () => {
+    it('degrades to the in-memory limiter when the redis client is missing', async () => {
       redisMock.getRedis.mockReturnValue(null)
       rateLimiter.destroy()
 
-      const result = await rateLimiter.check('redis-user', 4, 1500)
+      const result = await rateLimiter.check('redis-missing-user', 4, 1500)
 
       expect(result.success).toBe(true)
-      expect(result.remaining).toBe(4)
+      expect(result.remaining).toBe(3)
       expect(result.limit).toBe(4)
+    })
+
+    it('gives up on a hanging redis call instead of waiting for it', async () => {
+      // The measured production failure: a KV host that no longer resolves, so
+      // the client hangs through its retry budget on every single API request.
+      upstashRatelimitMock.__mockLimit.mockImplementationOnce(
+        () => new Promise(() => { /* never settles */ })
+      )
+
+      const started = Date.now()
+      const result = await rateLimiter.check('redis-hang-user', 5, 1000)
+      const elapsed = Date.now() - started
+
+      expect(result.success).toBe(true)
+      expect(elapsed).toBeLessThan(REDIS_CHECK_TIMEOUT_MS + 400)
+    })
+
+    it('opens the circuit after repeated failures and stops calling redis', async () => {
+      upstashRatelimitMock.__mockLimit.mockRejectedValue(new Error('redis unavailable'))
+
+      for (let i = 0; i < REDIS_FAILURE_THRESHOLD; i++) {
+        await rateLimiter.check(`breaker-user-${i}`, 100, 60_000)
+      }
+
+      const callsBeforeBreak = upstashRatelimitMock.__mockLimit.mock.calls.length
+      expect(callsBeforeBreak).toBe(REDIS_FAILURE_THRESHOLD)
+
+      // Subsequent checks are served entirely from memory: no further attempts.
+      await rateLimiter.check('breaker-user-after', 100, 60_000)
+      await rateLimiter.check('breaker-user-after', 100, 60_000)
+
+      expect(upstashRatelimitMock.__mockLimit.mock.calls.length).toBe(callsBeforeBreak)
     })
 
     it('should return true for isUsingRedis in redis mode', () => {
       expect(rateLimiter.isUsingRedis()).toBe(true)
     })
 
-    it('should warn and fail open for checkSync with redis backend', () => {
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
-
+    it('counts checkSync against the in-memory limiter in redis mode', () => {
+      // Previously this warned and returned an uncounted allowance, because no
+      // in-memory limiter existed alongside Redis. One always exists now.
       const result = rateLimiter.checkSync('redis-sync', 7, 5000)
 
       expect(result.success).toBe(true)
-      expect(result.remaining).toBe(7)
-      expect(warnSpy).toHaveBeenCalledTimes(1)
-      warnSpy.mockRestore()
+      expect(result.remaining).toBe(6)
     })
 
     it('should no-op reset and clear with redis backend', async () => {
