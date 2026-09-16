@@ -480,3 +480,17 @@ See `docs/PRODUCTION_CHECKLIST.md` for the complete guide.
 - Utilities: `camelCase.ts`
 - Tests: `*.test.ts`
 - Constants: `SCREAMING_SNAKE_CASE`
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `Vivancedata/learn`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles, label string equal to role name. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
