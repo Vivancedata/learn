@@ -12,10 +12,11 @@ import { ProjectSubmission } from "@/components/project-submission"
 import { KnowledgeCheck } from "@/components/knowledge-check"
 import { CommunityDiscussions } from "@/components/community-discussions"
 import { StudentSolutions } from "@/components/student-solutions"
-import { parseKnowledgeCheck } from "@/lib/content-utils"
+import { parseKnowledgeCheck, stripKnowledgeCheck } from "@/lib/content-utils"
 import type { Components } from "react-markdown"
 import { useParams, usePathname, useRouter } from "next/navigation"
 import { Course, Lesson } from "@/types/course"
+import type { Question as KnowledgeCheckQuestion } from "@/types/knowledge-check"
 import { useAuth } from "@/hooks/useAuth"
 import { LessonSkeleton } from "@/components/loading-states"
 import { InteractiveCodeBlock, parseCodeBlockLanguage } from "@/components/interactive-code-block"
@@ -137,6 +138,8 @@ function createMarkdownComponents(): Components {
 function LessonPrimaryContent({
   user,
   lesson,
+  lessonBody,
+  knowledgeCheck,
   courseId,
   lessonId,
   signInHref,
@@ -153,6 +156,8 @@ function LessonPrimaryContent({
 }: {
   user: AuthUser
   lesson: Lesson
+  lessonBody: string
+  knowledgeCheck: { questions: KnowledgeCheckQuestion[] } | null
   courseId: string
   lessonId: string
   signInHref: string
@@ -205,7 +210,7 @@ function LessonPrimaryContent({
       <Card>
         <CardContent className="prose prose-slate dark:prose-invert max-w-none p-6">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-            {lesson.content}
+            {lessonBody}
           </ReactMarkdown>
         </CardContent>
       </Card>
@@ -223,9 +228,9 @@ function LessonPrimaryContent({
         </Card>
       )}
 
-      {lesson.knowledgeCheck && (
+      {knowledgeCheck && (
         <KnowledgeCheck
-          questions={lesson.knowledgeCheck.questions}
+          questions={knowledgeCheck.questions}
           onComplete={user ? onQuizComplete : undefined}
         />
       )}
@@ -406,10 +411,6 @@ function LessonContent() {
         }
       }
 
-      if (lesson && !lesson.knowledgeCheck) {
-        parseKnowledgeCheck(lesson.content)
-      }
-
       return {
         course,
         lesson,
@@ -423,9 +424,20 @@ function LessonContent() {
   const lesson = data?.lesson || null
   const discussions = data?.discussions || []
   const completedLessonIds = data?.completedLessonIds || []
-  const tableOfContents = useMemo(
-    () => lesson ? extractTableOfContents(lesson.content) : [],
+  // The "## Knowledge Check" section is the answer key -- the first bullet
+  // under every question is the correct one. Strip it from the body that gets
+  // rendered, and feed the parsed questions to the interactive card instead.
+  const lessonBody = useMemo(
+    () => (lesson ? stripKnowledgeCheck(lesson.content) : ''),
     [lesson]
+  )
+  const knowledgeCheck = useMemo(
+    () => (lesson ? lesson.knowledgeCheck ?? parseKnowledgeCheck(lesson.content) : null),
+    [lesson]
+  )
+  const tableOfContents = useMemo(
+    () => extractTableOfContents(lessonBody),
+    [lessonBody]
   )
   const isCompleted = completionOverrides[lessonId] ?? completedLessonIds.includes(lessonId)
 
@@ -578,6 +590,8 @@ function LessonContent() {
             <LessonPrimaryContent
               user={user}
               lesson={lesson}
+              lessonBody={lessonBody}
+              knowledgeCheck={knowledgeCheck}
               courseId={courseId}
               lessonId={lessonId}
               signInHref={signInHref}
