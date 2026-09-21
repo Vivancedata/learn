@@ -33,6 +33,15 @@ updates:
         patterns:
           - "@capacitor/*"
         update-types: ["major", "minor", "patch"]
+      # Groups default to applies-to: version-updates. #78/#79/#80 (2026-08-12)
+      # were SECURITY updates, so they bypassed the group above and arrived as
+      # three individually-impossible majors three days after #72 merged. This
+      # twin group makes security-triggered Capacitor bumps travel together too.
+      capacitor-security:
+        applies-to: security-updates
+        patterns:
+          - "@capacitor/*"
+        update-types: ["major", "minor", "patch"]
       # Packages still on 0.x, kept out of the two groups below and given a
       # PATCH-ONLY group of their own.
       #
