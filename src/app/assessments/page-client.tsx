@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -120,6 +119,16 @@ function buildAssessmentQueryString(
   return params.toString()
 }
 
+type AssessmentFilterUpdate = {
+  skillArea?: string
+  difficulty?: CourseDifficulty | ''
+  page?: number
+}
+
+type GetFilterHref = (newFilters: AssessmentFilterUpdate) => string
+
+const CLEAR_FILTERS_HREF = '/assessments'
+
 function AssessmentsHeader({
   authLoading,
   user,
@@ -213,15 +222,13 @@ function AssessmentsFiltersPanel({
   currentSkillArea,
   currentDifficulty,
   hasActiveFilters,
-  updateFilters,
-  clearFilters,
+  getFilterHref,
 }: {
   filters: AssessmentsCatalogState['filters']
   currentSkillArea: string
   currentDifficulty: CourseDifficulty | ''
   hasActiveFilters: boolean
-  updateFilters: (newFilters: { skillArea?: string; difficulty?: CourseDifficulty | ''; page?: number }) => void
-  clearFilters: () => void
+  getFilterHref: GetFilterHref
 }) {
   return (
     <Card>
@@ -239,21 +246,33 @@ function AssessmentsFiltersPanel({
               <Button
                 variant={!currentSkillArea ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => updateFilters({ skillArea: '' })}
+                asChild
               >
-                All
+                <Link
+                  href={getFilterHref({ skillArea: '' })}
+                  prefetch={false}
+                  aria-current={!currentSkillArea ? 'true' : undefined}
+                >
+                  All
+                </Link>
               </Button>
               {filters.skillAreas.map((area) => (
                 <Button
                   key={area.name}
                   variant={currentSkillArea === area.name ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => updateFilters({ skillArea: area.name })}
+                  asChild
                 >
-                  {area.name}
-                  <Badge variant="secondary" className="ml-2 h-5 px-1.5">
-                    {area.count}
-                  </Badge>
+                  <Link
+                    href={getFilterHref({ skillArea: area.name })}
+                    prefetch={false}
+                    aria-current={currentSkillArea === area.name ? 'true' : undefined}
+                  >
+                    {area.name}
+                    <Badge variant="secondary" className="ml-2 h-5 px-1.5">
+                      {area.count}
+                    </Badge>
+                  </Link>
                 </Button>
               ))}
             </div>
@@ -265,16 +284,22 @@ function AssessmentsFiltersPanel({
               <Button
                 variant={!currentDifficulty ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => updateFilters({ difficulty: '' })}
+                asChild
               >
-                All
+                <Link
+                  href={getFilterHref({ difficulty: '' })}
+                  prefetch={false}
+                  aria-current={!currentDifficulty ? 'true' : undefined}
+                >
+                  All
+                </Link>
               </Button>
               {filters.difficulties.map((difficulty) => (
                 <Button
                   key={difficulty}
                   variant={currentDifficulty === difficulty ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => updateFilters({ difficulty: difficulty as CourseDifficulty })}
+                  asChild
                   className={cn(
                     currentDifficulty === difficulty &&
                       difficulty === 'Beginner' &&
@@ -287,7 +312,13 @@ function AssessmentsFiltersPanel({
                       'bg-destructive hover:bg-destructive/90'
                   )}
                 >
-                  {difficulty}
+                  <Link
+                    href={getFilterHref({ difficulty: difficulty as CourseDifficulty })}
+                    prefetch={false}
+                    aria-current={currentDifficulty === difficulty ? 'true' : undefined}
+                  >
+                    {difficulty}
+                  </Link>
                 </Button>
               ))}
             </div>
@@ -295,8 +326,10 @@ function AssessmentsFiltersPanel({
 
           {hasActiveFilters && (
             <div className="flex items-end">
-              <Button variant="ghost" size="sm" onClick={clearFilters}>
-                Clear Filters
+              <Button variant="ghost" size="sm" asChild>
+                <Link href={CLEAR_FILTERS_HREF} prefetch={false}>
+                  Clear Filters
+                </Link>
               </Button>
             </div>
           )}
@@ -314,8 +347,7 @@ function AssessmentsResultsSection({
   hasActiveFilters,
   user,
   onRetry,
-  clearFilters,
-  updateFilters,
+  getFilterHref,
 }: {
   loading: boolean
   error: string | null
@@ -324,8 +356,7 @@ function AssessmentsResultsSection({
   hasActiveFilters: boolean
   user: { id: string } | null
   onRetry: () => void
-  clearFilters: () => void
-  updateFilters: (newFilters: { skillArea?: string; difficulty?: CourseDifficulty | ''; page?: number }) => void
+  getFilterHref: GetFilterHref
 }) {
   if (error) {
     return (
@@ -357,8 +388,10 @@ function AssessmentsResultsSection({
             <p className="text-lg font-medium">No assessments found</p>
             <p className="text-muted-foreground">Try adjusting your filters to find assessments</p>
             {hasActiveFilters && (
-              <Button className="mt-4" onClick={clearFilters}>
-                Clear Filters
+              <Button className="mt-4" asChild>
+                <Link href={CLEAR_FILTERS_HREF} prefetch={false}>
+                  Clear Filters
+                </Link>
               </Button>
             )}
           </CardContent>
@@ -377,15 +410,19 @@ function AssessmentsResultsSection({
 
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-center gap-4">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={pagination.page <= 1}
-            onClick={() => updateFilters({ page: pagination.page - 1 })}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Previous
-          </Button>
+          {pagination.page <= 1 ? (
+            <Button variant="outline" size="sm" disabled>
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" asChild>
+              <Link href={getFilterHref({ page: pagination.page - 1 })} prefetch={false}>
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Link>
+            </Button>
+          )}
 
           <div className="flex items-center gap-2">
             {Array.from({ length: pagination.totalPages }, (_, index) => index + 1)
@@ -402,29 +439,40 @@ function AssessmentsResultsSection({
 
                 return (
                   <span key={page} className="flex items-center gap-2">
-                    {showEllipsis && <span className="text-muted-foreground">...</span>}
+                    {showEllipsis && <span className="text-muted-foreground">…</span>}
                     <Button
                       variant={page === pagination.page ? 'default' : 'outline'}
                       size="sm"
                       className="w-10"
-                      onClick={() => updateFilters({ page })}
+                      asChild
                     >
-                      {page}
+                      <Link
+                        href={getFilterHref({ page })}
+                        prefetch={false}
+                        aria-label={`Page ${page}`}
+                        aria-current={page === pagination.page ? 'page' : undefined}
+                      >
+                        {page}
+                      </Link>
                     </Button>
                   </span>
                 )
               })}
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={pagination.page >= pagination.totalPages}
-            onClick={() => updateFilters({ page: pagination.page + 1 })}
-          >
-            Next
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
+          {pagination.page >= pagination.totalPages ? (
+            <Button variant="outline" size="sm" disabled>
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" asChild>
+              <Link href={getFilterHref({ page: pagination.page + 1 })} prefetch={false}>
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Link>
+            </Button>
+          )}
         </div>
       )}
     </>
@@ -433,7 +481,6 @@ function AssessmentsResultsSection({
 
 function AssessmentsCatalogContent() {
   const { user, loading: authLoading } = useAuth()
-  const router = useRouter()
   const [state, setState] = useState<AssessmentsCatalogState>(initialAssessmentsCatalogState)
   const locationSearch = useLocationSearch()
   const searchParams = new URLSearchParams(locationSearch)
@@ -523,11 +570,7 @@ function AssessmentsCatalogContent() {
     void fetchUserStats()
   }, [fetchUserStats])
 
-  const updateFilters = (newFilters: {
-    skillArea?: string
-    difficulty?: CourseDifficulty | ''
-    page?: number
-  }) => {
+  const getFilterHref: GetFilterHref = (newFilters) => {
     const nextSkillArea =
       newFilters.skillArea !== undefined ? newFilters.skillArea : currentSkillArea
     const nextDifficulty =
@@ -540,11 +583,7 @@ function AssessmentsCatalogContent() {
           : currentPage
 
     const queryString = buildAssessmentQueryString(nextSkillArea, nextDifficulty, nextPage)
-    router.push(queryString ? `/assessments?${queryString}` : '/assessments')
-  }
-
-  const clearFilters = () => {
-    router.push('/assessments')
+    return queryString ? `/assessments?${queryString}` : CLEAR_FILTERS_HREF
   }
 
   const hasActiveFilters = Boolean(currentSkillArea || currentDifficulty)
@@ -563,8 +602,7 @@ function AssessmentsCatalogContent() {
         currentSkillArea={currentSkillArea}
         currentDifficulty={currentDifficulty}
         hasActiveFilters={hasActiveFilters}
-        updateFilters={updateFilters}
-        clearFilters={clearFilters}
+        getFilterHref={getFilterHref}
       />
       <AssessmentsResultsSection
         loading={loading}
@@ -574,8 +612,7 @@ function AssessmentsCatalogContent() {
         hasActiveFilters={hasActiveFilters}
         user={user}
         onRetry={() => void fetchAssessments()}
-        clearFilters={clearFilters}
-        updateFilters={updateFilters}
+        getFilterHref={getFilterHref}
       />
     </div>
   )

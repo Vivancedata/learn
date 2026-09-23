@@ -141,8 +141,12 @@ function AssessmentBackButton({
 
 function AssessmentLoadingState() {
   return (
-    <div className="flex min-h-[60vh] items-center justify-center">
-      <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-brand" />
+    <div role="status" className="flex min-h-[60vh] items-center justify-center">
+      <div
+        className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-brand"
+        aria-hidden="true"
+      />
+      <span className="sr-only">Loading assessment…</span>
     </div>
   )
 }
@@ -157,9 +161,9 @@ function AssessmentErrorState({
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center">
       <AlertTriangle className="mb-4 h-12 w-12 text-destructive" />
-      <h2 className="mb-2 text-xl font-semibold">
+      <h1 className="mb-2 text-xl font-semibold">
         {error === 'Assessment not found' ? 'Assessment Not Found' : 'Error Loading Assessment'}
-      </h2>
+      </h1>
       <p className="mb-4 text-muted-foreground">{error}</p>
       <div className="flex gap-2">
         <AssessmentBackButton variant="outline" />
@@ -280,7 +284,7 @@ function AssessmentOverviewCard({
                 </Badge>
               )}
             </div>
-            <CardTitle className="text-2xl">{assessment.name}</CardTitle>
+            <CardTitle as="h1" className="text-2xl">{assessment.name}</CardTitle>
             <CardDescription className="text-base">
               {assessment.description}
             </CardDescription>

@@ -45,6 +45,7 @@ function AssessmentResultsContent({
   const [results, setResults] = useState<StoredResults | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [shareStatus, setShareStatus] = useState<string | null>(null)
 
   useEffect(() => {
     // Get results from sessionStorage
@@ -91,9 +92,9 @@ function AssessmentResultsContent({
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
-      alert('Result copied to clipboard!')
+      setShareStatus('Result copied to clipboard.')
     }).catch(() => {
-      alert('Failed to copy. Please try again.')
+      setShareStatus('Could not copy the result. Select the score and copy it manually.')
     })
   }
 
@@ -101,7 +102,7 @@ function AssessmentResultsContent({
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="h-12 w-12 animate-spin text-brand mb-4" />
-        <p className="text-muted-foreground">Loading results...</p>
+        <p className="text-muted-foreground">Loading results…</p>
       </div>
     )
   }
@@ -121,8 +122,8 @@ function AssessmentResultsContent({
               Back to Assessment
             </Link>
           </Button>
-          <Button onClick={() => router.push(`/assessments/${slug}/take`)}>
-            Take Assessment
+          <Button asChild>
+            <Link href={`/assessments/${slug}/take`}>Take Assessment</Link>
           </Button>
         </div>
       </div>
@@ -130,8 +131,9 @@ function AssessmentResultsContent({
   }
 
   // Merge question details with results
+  const questionsById = new Map(results.questions.map((q) => [q.id, q]))
   const questionResultsWithDetails = results.questionResults.map((result) => {
-    const question = results.questions.find((q) => q.id === result.questionId)
+    const question = questionsById.get(result.questionId)
     return {
       ...result,
       question: question?.question || 'Unknown question',
@@ -165,6 +167,10 @@ function AssessmentResultsContent({
         onRetake={handleRetake}
         onShare={handleShare}
       />
+
+      <p role="status" aria-live="polite" className="text-center text-sm text-muted-foreground">
+        {shareStatus}
+      </p>
 
       {/* Additional Actions */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">

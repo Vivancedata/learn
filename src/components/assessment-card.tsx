@@ -51,6 +51,7 @@ export function AssessmentCard({
             getSkillBadgeColor(getSkillLevel(assessment.userBestScore))
           )}>
             <Trophy className="h-3 w-3" />
+            <span className="sr-only">Best score:</span>
             {assessment.userBestScore}%
           </div>
         </div>
