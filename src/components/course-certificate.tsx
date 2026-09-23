@@ -174,7 +174,7 @@ export function CourseCertificate({ course, progress }: CourseCertificateProps) 
               <div className="w-24 h-px bg-border" />
               
               <div className="text-sm text-muted-foreground">
-                VivanceData Learn
+                Vivancedata Learn
               </div>
             </div>
           </div>
