@@ -17,36 +17,36 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 50)
 
-    // Get top users who have opted into the leaderboard
-    const topHelpers = await prisma.user.findMany({
-      where: {
-        ...PUBLIC_LEADERBOARD_USER_WHERE,
-        points: {
-          gt: 0,
+    // Top opted-in users, and the total count of users with points
+    const [topHelpers, totalHelpersCount] = await Promise.all([
+      prisma.user.findMany({
+        where: {
+          ...PUBLIC_LEADERBOARD_USER_WHERE,
+          points: {
+            gt: 0,
+          },
         },
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        points: true,
-        githubUsername: true,
-      },
-      orderBy: {
-        points: 'desc',
-      },
-      take: limit,
-    })
-
-    // Get total count of users with points
-    const totalHelpersCount = await prisma.user.count({
-      where: {
-        ...PUBLIC_LEADERBOARD_USER_WHERE,
-        points: {
-          gt: 0,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          points: true,
+          githubUsername: true,
         },
-      },
-    })
+        orderBy: {
+          points: 'desc',
+        },
+        take: limit,
+      }),
+      prisma.user.count({
+        where: {
+          ...PUBLIC_LEADERBOARD_USER_WHERE,
+          points: {
+            gt: 0,
+          },
+        },
+      }),
+    ])
 
     // Format the response
     const leaderboard = topHelpers.map((user: { id: string; name: string | null; email: string; points: number; githubUsername: string | null }, index: number) => ({

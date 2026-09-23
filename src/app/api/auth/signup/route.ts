@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, after } from 'next/server'
 import prisma from '@/lib/db'
 import {
   apiSuccess,
@@ -83,19 +83,22 @@ export async function POST(request: NextRequest) {
     // Without this guard an unconfigured email service turned every signup
     // into a 500 after the user row was already created, and the
     // expose-the-code fallback below could never run in production.
+    // The response doesn't depend on delivery, so send after responding.
     if (isEmailServiceConfigured()) {
-      try {
-        await sendEmail({
-          to: user.email,
-          subject: verificationTemplate.subject,
-          text: verificationTemplate.text,
-          html: verificationTemplate.html,
-        })
-      } catch (error) {
-        // The account exists and a code was issued; a failed delivery can be
-        // retried via resend-verification, so it must not fail the signup.
-        console.error('Signup: verification email failed', error)
-      }
+      after(async () => {
+        try {
+          await sendEmail({
+            to: user.email,
+            subject: verificationTemplate.subject,
+            text: verificationTemplate.text,
+            html: verificationTemplate.html,
+          })
+        } catch (error) {
+          // The account exists and a code was issued; a failed delivery can be
+          // retried via resend-verification, so it must not fail the signup.
+          console.error('Signup: verification email failed', error)
+        }
+      })
     }
 
     const shouldExposeCode =

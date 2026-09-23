@@ -35,28 +35,32 @@ export async function GET(
     // Authorization check: users can only access their own progress
     requireOwnership(request, userId, 'progress')
 
-    // Fetch all course progress for the user
-    const courseProgressRecords = await prisma.courseProgress.findMany({
-      where: {
-        userId,
-      },
-      include: {
-        course: {
-          include: {
-            sections: {
-              include: {
-                lessons: {
-                  orderBy: {
-                    createdAt: 'asc',
+    // Fetch all course progress for the user, and the total course count
+    const [courseProgressRecords, totalCoursesCount] = await Promise.all([
+      prisma.courseProgress.findMany({
+        where: {
+          userId,
+        },
+        include: {
+          course: {
+            include: {
+              sections: {
+                include: {
+                  lessons: {
+                    orderBy: {
+                      createdAt: 'asc',
+                    },
                   },
                 },
               },
             },
           },
+          completedLessons: true,
         },
-        completedLessons: true,
-      },
-    })
+      }),
+      // Total courses count (all courses in the system)
+      prisma.course.count(),
+    ])
 
     // Transform progress data
     const courses = courseProgressRecords.map(record => {
@@ -87,9 +91,6 @@ export async function GET(
     const completedLessons = courses.reduce((acc, course) => acc + course.completedLessons, 0)
     const coursesCompleted = courses.filter(course => course.progress === 100).length
     const overallProgress = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0
-
-    // Get total courses count (all courses in the system)
-    const totalCoursesCount = await prisma.course.count()
 
     const response: UserProgressResponse = {
       userId,

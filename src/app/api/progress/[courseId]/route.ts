@@ -15,26 +15,24 @@ export async function GET(
       throw new UnauthorizedError()
     }
 
-    // Get or create course progress for this user
-    const progress = await prisma.courseProgress.findFirst({
-      where: {
-        userId,
-        courseId,
-      },
-      include: {
-        completedLessons: {
-          select: {
-            id: true,
-          },
+    // The user's progress and the course's lesson count are independent, and
+    // both branches below need the lesson count.
+    const [progress, course] = await Promise.all([
+      prisma.courseProgress.findFirst({
+        where: {
+          userId,
+          courseId,
         },
-        quizScores: true,
-      },
-    })
-
-    // If no progress exists, return empty progress
-    if (!progress) {
-      // Get total lessons for the course
-      const course = await prisma.course.findUnique({
+        include: {
+          completedLessons: {
+            select: {
+              id: true,
+            },
+          },
+          quizScores: true,
+        },
+      }),
+      prisma.course.findUnique({
         where: { id: courseId },
         include: {
           sections: {
@@ -45,13 +43,16 @@ export async function GET(
             },
           },
         },
-      })
+      }),
+    ])
 
-      const totalLessons = course?.sections.reduce(
-        (acc, section) => acc + section.lessons.length,
-        0
-      ) || 0
+    const totalLessons = course?.sections.reduce(
+      (acc, section) => acc + section.lessons.length,
+      0
+    ) || 0
 
+    // If no progress exists, return empty progress
+    if (!progress) {
       return apiSuccess({
         courseId,
         completedLessonIds: [],
@@ -61,25 +62,6 @@ export async function GET(
         quizScores: [],
       })
     }
-
-    // Get total lessons for the course
-    const course = await prisma.course.findUnique({
-      where: { id: courseId },
-      include: {
-        sections: {
-          include: {
-            lessons: {
-              select: { id: true },
-            },
-          },
-        },
-      },
-    })
-
-    const totalLessons = course?.sections.reduce(
-      (acc, section) => acc + section.lessons.length,
-      0
-    ) || 0
 
     const completedCount = progress.completedLessons.length
     const percentComplete = totalLessons > 0

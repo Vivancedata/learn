@@ -21,7 +21,6 @@ import {
   createConversation,
   addMessage,
   getConversation,
-  userOwnsConversation,
   generateSuggestedQuestions,
   type Message,
   type TutorContext,
@@ -69,19 +68,15 @@ export async function POST(request: NextRequest) {
     let conversationMessages: Message[] = []
 
     if (conversationId) {
-      // Verify user owns the conversation
-      const ownsConversation = await userOwnsConversation(userId, conversationId)
-      if (!ownsConversation) {
+      // Load the conversation (messages are needed for context) and verify
+      // the user owns it in one query; a missing conversation is reported as
+      // forbidden, as before
+      const existingConversation = await getConversation(conversationId)
+      if (!existingConversation || existingConversation.userId !== userId) {
         throw new ApiError(
           HTTP_STATUS.FORBIDDEN,
           'You do not have access to this conversation'
         )
-      }
-
-      // Get existing conversation messages for context
-      const existingConversation = await getConversation(conversationId)
-      if (!existingConversation) {
-        throw new ApiError(HTTP_STATUS.NOT_FOUND, 'Conversation not found')
       }
 
       activeConversationId = conversationId
@@ -127,17 +122,19 @@ export async function POST(request: NextRequest) {
     // Call the AI tutor
     const response = await chat(conversationMessages, tutorContext)
 
-    // Record usage
-    await recordUsage(userId, response.tokenCount)
-
-    // Store messages in the database
-    await addMessage(activeConversationId, 'user', message)
-    await addMessage(
-      activeConversationId,
-      'assistant',
-      response.content,
-      response.tokenCount
-    )
+    // Record usage and store the messages (user first, then assistant, to
+    // keep their order) -- the two are independent
+    await Promise.all([
+      recordUsage(userId, response.tokenCount),
+      addMessage(activeConversationId, 'user', message).then(() =>
+        addMessage(
+          activeConversationId,
+          'assistant',
+          response.content,
+          response.tokenCount
+        )
+      ),
+    ])
 
     // Generate suggested follow-up questions
     const suggestedQuestions = context?.currentContent

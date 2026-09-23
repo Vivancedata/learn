@@ -52,59 +52,58 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '20')
 
-    // Verify user exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        points: true,
-        showOnLeaderboard: true,
-      },
-    })
+    // The user, their recent points received, and the count of points they
+    // have given are independent lookups
+    const [user, pointsReceived, pointsGiven] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          points: true,
+          showOnLeaderboard: true,
+        },
+      }),
+      prisma.communityPoint.findMany({
+        where: { recipientId: userId },
+        include: {
+          giver: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          discussion: {
+            select: {
+              id: true,
+              content: true,
+              courseId: true,
+              lessonId: true,
+            },
+          },
+          reply: {
+            select: {
+              id: true,
+              content: true,
+              discussionId: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: limit,
+      }),
+      prisma.communityPoint.count({
+        where: { giverId: userId },
+      }),
+    ])
 
     if (!user) {
       throw new NotFoundError('User')
     }
-
-    // Get recent points received
-    const pointsReceived = await prisma.communityPoint.findMany({
-      where: { recipientId: userId },
-      include: {
-        giver: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        discussion: {
-          select: {
-            id: true,
-            content: true,
-            courseId: true,
-            lessonId: true,
-          },
-        },
-        reply: {
-          select: {
-            id: true,
-            content: true,
-            discussionId: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: limit,
-    })
-
-    // Get points given by this user
-    const pointsGiven = await prisma.communityPoint.count({
-      where: { giverId: userId },
-    })
 
     // Calculate helper badge level
     const badgeLevel = getHelperBadge(user.points)
@@ -172,5 +171,5 @@ function getHelperBadge(points: number): {
  */
 function truncateContent(content: string, maxLength: number): string {
   if (content.length <= maxLength) return content
-  return content.slice(0, maxLength).trim() + '...'
+  return content.slice(0, maxLength).trim() + '…'
 }

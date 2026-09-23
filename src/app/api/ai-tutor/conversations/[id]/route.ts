@@ -40,19 +40,14 @@ export async function GET(
     const { id } = await params
     validateParams({ id }, conversationIdParamsSchema)
 
-    // Check if user owns the conversation
-    const ownsConversation = await userOwnsConversation(userId, id)
-    if (!ownsConversation) {
+    // Fetch the conversation once and check ownership on the result (a
+    // missing conversation is reported as forbidden, as before)
+    const conversation = await getConversation(id)
+    if (!conversation || conversation.userId !== userId) {
       throw new ApiError(
         HTTP_STATUS.FORBIDDEN,
         'You do not have access to this conversation'
       )
-    }
-
-    // Get the conversation
-    const conversation = await getConversation(id)
-    if (!conversation) {
-      throw new ApiError(HTTP_STATUS.NOT_FOUND, 'Conversation not found')
     }
 
     // Define type for message
@@ -105,19 +100,14 @@ export async function DELETE(
     const { id } = await params
     validateParams({ id }, conversationIdParamsSchema)
 
-    // Check if user owns the conversation
+    // Check if user owns the conversation (this also proves it exists, so
+    // there is no need to load its messages first)
     const ownsConversation = await userOwnsConversation(userId, id)
     if (!ownsConversation) {
       throw new ApiError(
         HTTP_STATUS.FORBIDDEN,
         'You do not have access to this conversation'
       )
-    }
-
-    // Verify conversation exists
-    const conversation = await getConversation(id)
-    if (!conversation) {
-      throw new ApiError(HTTP_STATUS.NOT_FOUND, 'Conversation not found')
     }
 
     // Delete the conversation (messages are deleted via cascade)

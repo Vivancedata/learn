@@ -158,6 +158,12 @@ export async function proxy(request: NextRequest) {
   // Apply rate limiting to all other API routes.
   // Public read-only endpoints bypass auth, while sensitive routes require auth.
   if (pathname.startsWith('/api/') && !pathname.startsWith('/api/auth/')) {
+    // Start verifying the token now so it overlaps the (network) rate-limit
+    // check instead of waiting for it. The no-op catch only keeps an early 429
+    // return from leaving a rejection unhandled; awaiting below still throws.
+    const userPromise = getAuthUser(request)
+    userPromise.catch(() => {})
+
     const rateLimitResult = await safeRateLimitCheck(
       `api:${clientIp}`,
       RATE_LIMITS.API.limit,
@@ -185,7 +191,7 @@ export async function proxy(request: NextRequest) {
 
     // For public read-only routes, auth is optional. If a valid user exists,
     // we still inject identity headers so handlers can personalize responses.
-    const user = await getAuthUser(request)
+    const user = await userPromise
 
     if (!isPublicReadonly) {
       // Check authentication for protected API routes

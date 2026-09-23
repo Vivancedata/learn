@@ -18,46 +18,47 @@ export async function GET(
     // SECURITY: User can only view their own streak info
     requireOwnership(request, userId, 'streak information')
 
-    // Check if user exists and get streak data
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        currentStreak: true,
-        longestStreak: true,
-        lastActivityDate: true,
-        streakFreezes: true,
-      },
-    })
-
-    if (!user) {
-      throw new NotFoundError('User')
-    }
-
-    // Get recent activity (last 7 days)
+    // Recent activity window (last 7 days)
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
     sevenDaysAgo.setHours(0, 0, 0, 0)
 
-    const recentActivity = await prisma.dailyActivity.findMany({
-      where: {
-        userId,
-        date: {
-          gte: sevenDaysAgo,
+    // Streak data and recent activity are independent lookups
+    const [user, recentActivity] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          currentStreak: true,
+          longestStreak: true,
+          lastActivityDate: true,
+          streakFreezes: true,
         },
-      },
-      orderBy: {
-        date: 'desc',
-      },
-      select: {
-        id: true,
-        date: true,
-        xpEarned: true,
-        lessonsCompleted: true,
-        quizzesTaken: true,
-        timeSpentMinutes: true,
-      },
-    })
+      }),
+      prisma.dailyActivity.findMany({
+        where: {
+          userId,
+          date: {
+            gte: sevenDaysAgo,
+          },
+        },
+        orderBy: {
+          date: 'desc',
+        },
+        select: {
+          id: true,
+          date: true,
+          xpEarned: true,
+          lessonsCompleted: true,
+          quizzesTaken: true,
+          timeSpentMinutes: true,
+        },
+      }),
+    ])
+
+    if (!user) {
+      throw new NotFoundError('User')
+    }
 
     // Check if streak needs to be updated based on last activity
     const today = new Date()

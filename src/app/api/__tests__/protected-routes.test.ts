@@ -462,7 +462,7 @@ describe('Protected API Routes', () => {
       )
       expect(contexts).toEqual(['discussion', 'reply', null])
       // Long discussion content is truncated with an ellipsis
-      expect(data.data.recentPointsReceived[0].context.preview.endsWith('...')).toBe(true)
+      expect(data.data.recentPointsReceived[0].context.preview.endsWith('…')).toBe(true)
       // Giver with no name falls back to the email prefix
       expect(data.data.recentPointsReceived[0].giver.name).toBe('helper')
     })

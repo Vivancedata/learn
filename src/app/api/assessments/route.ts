@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
       where.difficulty = query.difficulty
     }
 
-    // Fetch assessments with pagination
-    const [assessments, total] = await Promise.all([
+    // Fetch assessments with pagination, plus the skill areas for filtering
+    const [assessments, total, skillAreas] = await Promise.all([
       prisma.skillAssessment.findMany({
         where,
         orderBy: [
@@ -44,6 +44,10 @@ export async function GET(request: NextRequest) {
         take: query.limit,
       }),
       prisma.skillAssessment.count({ where }),
+      prisma.skillAssessment.groupBy({
+        by: ['skillArea'],
+        _count: true,
+      }),
     ])
 
     // If user is authenticated, get their best scores
@@ -93,12 +97,6 @@ export async function GET(request: NextRequest) {
         userAttempts: userScore?.attempts,
         lastAttemptDate: userScore?.lastAttempt?.toISOString(),
       }
-    })
-
-    // Get unique skill areas for filtering
-    const skillAreas = await prisma.skillAssessment.groupBy({
-      by: ['skillArea'],
-      _count: true,
     })
 
     return apiSuccess({

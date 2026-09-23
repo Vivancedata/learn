@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, after } from 'next/server'
 import { z } from 'zod'
 import prisma from '@/lib/db'
 import {
@@ -90,16 +90,22 @@ export async function POST(request: NextRequest) {
       verificationUrl,
     })
 
-    try {
-      await sendEmail({
-        to: user.email,
-        subject: verificationTemplate.subject,
-        text: verificationTemplate.text,
-        html: verificationTemplate.html,
-      })
-    } catch (_error) {
-      // Intentionally swallow errors to avoid leaking account existence.
-    }
+    // Send after responding: the response must not depend on delivery, and
+    // the send is the slowest step that runs only when the account exists, so
+    // awaiting it widened the response-time gap between the two cases.
+    const recipient = user.email
+    after(async () => {
+      try {
+        await sendEmail({
+          to: recipient,
+          subject: verificationTemplate.subject,
+          text: verificationTemplate.text,
+          html: verificationTemplate.html,
+        })
+      } catch (_error) {
+        // Intentionally swallow errors to avoid leaking account existence.
+      }
+    })
 
     const shouldExpose = process.env.NODE_ENV !== 'production' || !isEmailServiceConfigured()
 

@@ -60,6 +60,11 @@ const createdUser = {
   emailVerified: false,
 }
 
+// The verification email is sent from next/server's after(); the jest mock
+// queues those tasks, so drain them before asserting on delivery.
+const flushAfter = () =>
+  (globalThis as unknown as { flushAfter: () => Promise<void> }).flushAfter()
+
 function signupRequest(): NextRequest {
   return new NextRequest('http://localhost/api/auth/signup', {
     method: 'POST',
@@ -90,6 +95,7 @@ describe('POST /api/auth/signup email fallback', () => {
     expect(body.data.user.email).toBe('new@example.com')
     expect(body.data.verificationCode).toBe('123456')
     // An unconfigured service must not even be attempted
+    await flushAfter()
     expect(mockedSendEmail).not.toHaveBeenCalled()
   })
 
@@ -102,6 +108,7 @@ describe('POST /api/auth/signup email fallback', () => {
 
     expect(response.status).toBe(201)
     expect(body.data.user.email).toBe('new@example.com')
+    await flushAfter()
     expect(mockedSendEmail).toHaveBeenCalledTimes(1)
   })
 
@@ -112,6 +119,7 @@ describe('POST /api/auth/signup email fallback', () => {
     const response = await signup(signupRequest())
 
     expect(response.status).toBe(201)
+    await flushAfter()
     expect(mockedSendEmail).toHaveBeenCalledTimes(1)
   })
 })

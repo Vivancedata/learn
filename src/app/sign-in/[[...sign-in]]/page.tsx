@@ -23,11 +23,11 @@ export default async function SignInPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
   const user = await getCurrentUser()
-  const resolvedSearchParams = await searchParams
-  const redirectPath = getSafeRedirectPath(resolvedSearchParams?.redirect)
 
   if (user) {
-    redirect(redirectPath)
+    // Only a signed-in visitor is redirected, so only then read the target
+    const resolvedSearchParams = await searchParams
+    redirect(getSafeRedirectPath(resolvedSearchParams?.redirect))
   }
 
   return <SignInPageClient />

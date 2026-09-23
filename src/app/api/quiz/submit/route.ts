@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, after } from 'next/server'
 import prisma from '@/lib/db'
 import {
   apiSuccess,
@@ -13,7 +13,7 @@ import { requireOwnership } from '@/lib/authorization'
 import { awardQuizXp, hasReceivedXpFor } from '@/lib/xp-service'
 import { recordActivityAndUpdateStreak } from '@/lib/streak-service'
 import { runAchievementsCheck } from '@/lib/achievements-service'
-import { serverAnalytics } from '@/lib/analytics-server'
+import { serverAnalytics, flushAnalytics } from '@/lib/analytics-server'
 
 /**
  * POST /api/quiz/submit
@@ -34,11 +34,19 @@ export async function POST(request: NextRequest) {
     // Authorization: Users can only submit quizzes for themselves
     requireOwnership(request, userId, 'quiz submission')
 
-    // Get quiz questions for this lesson
-    const quizQuestions = await prisma.quizQuestion.findMany({
-      where: { lessonId },
-      orderBy: { createdAt: 'asc' },
-    })
+    // Quiz questions and the user's course progress are independent lookups
+    const [quizQuestions, existingProgress] = await Promise.all([
+      prisma.quizQuestion.findMany({
+        where: { lessonId },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.courseProgress.findFirst({
+        where: {
+          userId,
+          courseId,
+        },
+      }),
+    ])
 
     if (quizQuestions.length === 0) {
       throw new NotFoundError('Quiz questions for this lesson')
@@ -76,12 +84,7 @@ export async function POST(request: NextRequest) {
     const percentage = Math.round((score / maxScore) * 100)
 
     // Find or create course progress
-    let courseProgress = await prisma.courseProgress.findFirst({
-      where: {
-        userId,
-        courseId,
-      },
-    })
+    let courseProgress = existingProgress
 
     if (!courseProgress) {
       courseProgress = await prisma.courseProgress.create({
@@ -93,21 +96,21 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Save quiz score
-    const quizScore = await prisma.quizScore.create({
-      data: {
-        courseProgressId: courseProgress.id,
-        lessonId,
-        score,
-        maxScore,
-      },
-    })
-
-    // Update last accessed time
-    await prisma.courseProgress.update({
-      where: { id: courseProgress.id },
-      data: { lastAccessed: new Date() },
-    })
+    // Save quiz score and update last accessed time
+    const [quizScore] = await Promise.all([
+      prisma.quizScore.create({
+        data: {
+          courseProgressId: courseProgress.id,
+          lessonId,
+          score,
+          maxScore,
+        },
+      }),
+      prisma.courseProgress.update({
+        where: { id: courseProgress.id },
+        data: { lastAccessed: new Date() },
+      }),
+    ])
 
     const passed = percentage >= 70
 
@@ -116,11 +119,14 @@ export async function POST(request: NextRequest) {
     // submission, so they are best-effort. XP is deduplicated per lesson.
     let xpAwarded = 0
     let leveledUp = false
+    let gamificationFailed = false
     try {
       if (passed) {
-        const alreadyAwarded =
-          (await hasReceivedXpFor(userId, 'QUIZ_PASS', lessonId)) ||
-          (await hasReceivedXpFor(userId, 'QUIZ_PERFECT', lessonId))
+        const [passAwarded, perfectAwarded] = await Promise.all([
+          hasReceivedXpFor(userId, 'QUIZ_PASS', lessonId),
+          hasReceivedXpFor(userId, 'QUIZ_PERFECT', lessonId),
+        ])
+        const alreadyAwarded = passAwarded || perfectAwarded
 
         if (!alreadyAwarded) {
           const xpResult = await awardQuizXp(userId, lessonId, percentage)
@@ -135,10 +141,21 @@ export async function POST(request: NextRequest) {
           xpEarned: xpAwarded,
         })
       }
-
-      await runAchievementsCheck(userId)
     } catch (gamificationError) {
+      gamificationFailed = true
       void gamificationError
+    }
+
+    // The response doesn't use the achievements result, so evaluate them
+    // after responding (still skipped if the XP/streak step above failed).
+    if (!gamificationFailed) {
+      after(async () => {
+        try {
+          await runAchievementsCheck(userId)
+        } catch (achError) {
+          void achError
+        }
+      })
     }
 
     // Track quiz completion with analytics
@@ -150,6 +167,9 @@ export async function POST(request: NextRequest) {
       percentage,
       passed,
     })
+
+    // posthog-node batches events; flush them before the function is frozen
+    after(flushAnalytics)
 
     return apiSuccess(
       {

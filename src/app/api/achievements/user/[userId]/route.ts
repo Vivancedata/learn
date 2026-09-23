@@ -17,27 +17,28 @@ export async function GET(
     // SECURITY: User can only view their own achievements
     requireOwnership(request, userId, 'achievements')
 
-    // Check if user exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    })
+    // Check the user exists and fetch their achievements in parallel
+    const [user, userAchievements] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true },
+      }),
+      prisma.userAchievement.findMany({
+        where: {
+          userId,
+        },
+        include: {
+          achievement: true,
+        },
+        orderBy: {
+          earnedAt: 'desc',
+        },
+      }),
+    ])
 
     if (!user) {
       throw new NotFoundError('User')
     }
-
-    // Get all user achievements
-    const userAchievements = await prisma.userAchievement.findMany({
-      where: {
-        userId,
-      },
-      include: {
-        achievement: true,
-      },
-      orderBy: {
-        earnedAt: 'desc',
-      },
-    })
 
     return apiSuccess({
       achievements: userAchievements,

@@ -29,35 +29,40 @@ export interface AchievementCheckResult {
 export async function runAchievementsCheck(
   userId: string
 ): Promise<AchievementCheckResult | null> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      achievements: {
-        include: {
-          achievement: true,
+  // The user's full record and the platform's course count (which drives
+  // the "Completionist" achievement) are independent queries
+  const [user, totalCoursesAvailable] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        achievements: {
+          include: {
+            achievement: true,
+          },
         },
-      },
-      courses: {
-        include: {
-          completedLessons: true,
-          quizScores: true,
-          course: {
-            include: {
-              sections: {
-                include: {
-                  lessons: true,
+        courses: {
+          include: {
+            completedLessons: true,
+            quizScores: true,
+            course: {
+              include: {
+                sections: {
+                  include: {
+                    lessons: true,
+                  },
                 },
               },
             },
           },
         },
+        projectSubmissions: true,
+        certificates: true,
+        discussions: true,
+        discussionReplies: true,
       },
-      projectSubmissions: true,
-      certificates: true,
-      discussions: true,
-      discussionReplies: true,
-    },
-  })
+    }),
+    prisma.course.count(),
+  ])
 
   if (!user) {
     return null
@@ -161,9 +166,6 @@ export async function runAchievementsCheck(
       })
     }).length
   }
-
-  // Total courses on the platform — drives the "Completionist" achievement.
-  const totalCoursesAvailable = await prisma.course.count()
 
   const stats: UserStats = {
     completedLessons: completedLessonsCount,

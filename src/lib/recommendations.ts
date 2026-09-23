@@ -117,47 +117,49 @@ export async function generateRecommendations(userId: string): Promise<Recommend
     where: { userId },
   })
 
-  // Insert new recommendations
-  const recommendations: Recommendation[] = []
+  // Insert new recommendations (independent inserts, so in parallel;
+  // Promise.all keeps them in score order)
+  const scoresToStore = topScores.filter(scoreData =>
+    context.allCourses.some(c => c.id === scoreData.courseId)
+  )
 
-  for (const scoreData of topScores) {
-    const course = context.allCourses.find(c => c.id === scoreData.courseId)
-    if (!course) continue
-
-    const recommendation = await prisma.courseRecommendation.create({
-      data: {
-        userId,
-        courseId: scoreData.courseId,
-        score: scoreData.score,
-        reason: scoreData.reason,
-        reasonType: scoreData.reasonType,
-        expiresAt,
-      },
-      include: {
-        course: {
-          include: {
-            path: true,
+  const created = await Promise.all(
+    scoresToStore.map(scoreData =>
+      prisma.courseRecommendation.create({
+        data: {
+          userId,
+          courseId: scoreData.courseId,
+          score: scoreData.score,
+          reason: scoreData.reason,
+          reasonType: scoreData.reasonType,
+          expiresAt,
+        },
+        include: {
+          course: {
+            include: {
+              path: true,
+            },
           },
         },
-      },
-    })
+      })
+    )
+  )
 
-    recommendations.push({
-      id: recommendation.id,
-      courseId: recommendation.courseId,
-      courseTitle: recommendation.course.title,
-      courseDescription: recommendation.course.description,
-      courseDifficulty: recommendation.course.difficulty,
-      courseDurationHours: recommendation.course.durationHours,
-      pathId: recommendation.course.pathId,
-      pathTitle: recommendation.course.path.title,
-      score: recommendation.score,
-      reason: recommendation.reason,
-      reasonType: recommendation.reasonType,
-      createdAt: recommendation.createdAt,
-      expiresAt: recommendation.expiresAt,
-    })
-  }
+  const recommendations: Recommendation[] = created.map(recommendation => ({
+    id: recommendation.id,
+    courseId: recommendation.courseId,
+    courseTitle: recommendation.course.title,
+    courseDescription: recommendation.course.description,
+    courseDifficulty: recommendation.course.difficulty,
+    courseDurationHours: recommendation.course.durationHours,
+    pathId: recommendation.course.pathId,
+    pathTitle: recommendation.course.path.title,
+    score: recommendation.score,
+    reason: recommendation.reason,
+    reasonType: recommendation.reasonType,
+    createdAt: recommendation.createdAt,
+    expiresAt: recommendation.expiresAt,
+  }))
 
   return recommendations
 }
@@ -273,52 +275,56 @@ export async function trackRecommendationEnrollment(
  * Build context needed for scoring recommendations
  */
 async function buildScoringContext(userId: string): Promise<ScoringContext> {
-  // Get user's course progress
-  const courseProgress = await prisma.courseProgress.findMany({
-    where: { userId },
-    include: {
-      course: {
-        include: {
-          path: true,
-          sections: {
-            include: {
-              lessons: true,
+  // The user's course progress, their path progress, and all courses are
+  // independent queries
+  const [courseProgress, pathProgress, allCoursesData] = await Promise.all([
+    // Get user's course progress
+    prisma.courseProgress.findMany({
+      where: { userId },
+      include: {
+        course: {
+          include: {
+            path: true,
+            sections: {
+              include: {
+                lessons: true,
+              },
             },
           },
         },
+        completedLessons: true,
+        quizScores: true,
       },
-      completedLessons: true,
-      quizScores: true,
-    },
-    orderBy: {
-      lastAccessed: 'desc',
-    },
-  })
+      orderBy: {
+        lastAccessed: 'desc',
+      },
+    }),
 
-  // Get user's path progress
-  const pathProgress = await prisma.pathProgress.findMany({
-    where: { userId },
-    include: {
-      path: {
-        include: {
-          courses: true,
+    // Get user's path progress
+    prisma.pathProgress.findMany({
+      where: { userId },
+      include: {
+        path: {
+          include: {
+            courses: true,
+          },
         },
       },
-    },
-  })
+    }),
 
-  // Get all courses with enrollment counts
-  const allCoursesData = await prisma.course.findMany({
-    include: {
-      path: true,
-      sections: {
-        include: {
-          lessons: true,
+    // Get all courses with enrollment counts
+    prisma.course.findMany({
+      include: {
+        path: true,
+        sections: {
+          include: {
+            lessons: true,
+          },
         },
+        progress: true,
       },
-      progress: true,
-    },
-  })
+    }),
+  ])
 
   // Build completed course IDs set
   const completedCourseIds = new Set<string>()

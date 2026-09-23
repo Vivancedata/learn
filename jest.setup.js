@@ -140,10 +140,26 @@ jest.mock('next/server', () => {
     }
   }
 
+  // next/server's after() throws outside a real request scope. Route tests call
+  // handlers directly, so queue the task instead (deferred, like the real one:
+  // the response must not depend on it) and let tests drain the queue with
+  // `await globalThis.flushAfter()` before asserting on its side effects.
+  const pendingAfterTasks = []
+  const after = (task) => {
+    const run = Promise.resolve().then(() => (typeof task === 'function' ? task() : task))
+    pendingAfterTasks.push(run)
+  }
+  globalThis.flushAfter = async () => {
+    while (pendingAfterTasks.length > 0) {
+      await Promise.allSettled(pendingAfterTasks.splice(0))
+    }
+  }
+
   return {
     __esModule: true,
     NextRequest: MockNextRequest,
     NextResponse: MockNextResponse,
+    after,
   }
 })
 
@@ -158,3 +174,11 @@ jest.mock('next/headers', () => ({
 
 // Silence console errors during tests (optional)
 // console.error = jest.fn()
+
+// Drain after() tasks queued by the next/server mock so none leak into the
+// next test (flushAfter only exists once a test has imported next/server).
+afterEach(async () => {
+  if (typeof globalThis.flushAfter === 'function') {
+    await globalThis.flushAfter()
+  }
+})

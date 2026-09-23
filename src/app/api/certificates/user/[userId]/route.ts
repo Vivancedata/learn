@@ -17,34 +17,35 @@ export async function GET(
     // SECURITY: User can only view their own certificates
     requireOwnership(request, userId, 'certificates')
 
-    // Check if user exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    })
+    // Check the user exists and fetch their certificates in parallel
+    const [user, certificates] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true },
+      }),
+      prisma.certificate.findMany({
+        where: {
+          userId,
+        },
+        include: {
+          course: {
+            select: {
+              id: true,
+              title: true,
+              difficulty: true,
+              durationHours: true,
+            },
+          },
+        },
+        orderBy: {
+          issueDate: 'desc',
+        },
+      }),
+    ])
 
     if (!user) {
       throw new NotFoundError('User')
     }
-
-    // Get all certificates for this user
-    const certificates = await prisma.certificate.findMany({
-      where: {
-        userId,
-      },
-      include: {
-        course: {
-          select: {
-            id: true,
-            title: true,
-            difficulty: true,
-            durationHours: true,
-          },
-        },
-      },
-      orderBy: {
-        issueDate: 'desc',
-      },
-    })
 
     // Parse skills JSON for each certificate
     const certificatesWithParsedSkills = certificates.map(cert => ({

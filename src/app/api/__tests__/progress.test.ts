@@ -35,6 +35,7 @@ jest.mock('@/lib/db', () => ({
 
 // Mock analytics to avoid side effects in tests
 jest.mock('@/lib/analytics-server', () => ({
+  flushAnalytics: jest.fn(),
   serverAnalytics: {
     trackLessonCompleted: jest.fn(),
     trackStreakUpdate: jest.fn(),

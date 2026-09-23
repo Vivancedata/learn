@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, after } from 'next/server'
 import prisma from '@/lib/db'
 import {
   apiSuccess,
@@ -15,7 +15,7 @@ import {
 } from '@/lib/xp-service'
 import { recordActivityAndUpdateStreak } from '@/lib/streak-service'
 import { runAchievementsCheck } from '@/lib/achievements-service'
-import { serverAnalytics } from '@/lib/analytics-server'
+import { serverAnalytics, flushAnalytics } from '@/lib/analytics-server'
 
 /**
  * POST /api/progress/lessons
@@ -36,22 +36,26 @@ export async function POST(request: NextRequest) {
     // Authorization: Users can only mark their own lessons complete
     requireOwnership(request, userId, 'progress')
 
-    // Get lesson title for XP description
-    const lesson = await prisma.lesson.findUnique({
-      where: { id: lessonId },
-      select: { title: true },
-    })
+    // Lesson title (for the XP description) and existing course progress are
+    // independent lookups
+    const [lesson, existingProgress] = await Promise.all([
+      prisma.lesson.findUnique({
+        where: { id: lessonId },
+        select: { title: true },
+      }),
+      prisma.courseProgress.findFirst({
+        where: {
+          userId,
+          courseId,
+        },
+        include: {
+          completedLessons: true,
+        },
+      }),
+    ])
 
     // Find or create course progress for this user
-    let courseProgress = await prisma.courseProgress.findFirst({
-      where: {
-        userId,
-        courseId,
-      },
-      include: {
-        completedLessons: true,
-      },
-    })
+    let courseProgress = existingProgress
 
     // Track if this is a new completion (for XP)
     let isNewCompletion = false
@@ -180,12 +184,18 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // Evaluate achievements server-side on a new completion (non-fatal)
-      try {
-        await runAchievementsCheck(userId)
-      } catch (achError) {
-        void achError
-      }
+      // Evaluate achievements server-side on a new completion (non-fatal).
+      // The response doesn't use the result, so run it after responding.
+      after(async () => {
+        try {
+          await runAchievementsCheck(userId)
+        } catch (achError) {
+          void achError
+        }
+      })
+
+      // posthog-node batches events; flush them before the function is frozen
+      after(flushAnalytics)
     }
 
     return apiSuccess(
