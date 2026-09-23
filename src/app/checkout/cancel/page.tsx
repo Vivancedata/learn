@@ -1,5 +1,3 @@
-'use client'
-
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -22,7 +20,7 @@ export default function CheckoutCancelPage() {
 
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>What happened?</CardTitle>
+          <CardTitle as="h2">What happened?</CardTitle>
           <CardDescription>
             The checkout process was cancelled before completion
           </CardDescription>
@@ -33,7 +31,7 @@ export default function CheckoutCancelPage() {
             You can continue using the free plan or try upgrading again when you&apos;re ready.
           </p>
           <div className="bg-muted/50 p-4 rounded-lg">
-            <h4 className="font-medium mb-2">Common reasons for cancellation:</h4>
+            <h3 className="font-medium mb-2">Common reasons for cancellation:</h3>
             <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
               <li>Wanted to review the pricing again</li>
               <li>Needed to check with a manager or team</li>
@@ -48,7 +46,7 @@ export default function CheckoutCancelPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <HelpCircle className="h-5 w-5 text-brand" />
-            <CardTitle>Need Help Deciding?</CardTitle>
+            <CardTitle as="h2">Need Help Deciding?</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">

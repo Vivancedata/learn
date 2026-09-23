@@ -144,11 +144,11 @@ class ErrorBoundary extends Component<Props, State> {
                 Try Again
               </Button>
 
-              <Button
-                onClick={() => (window.location.href = '/')}
-                variant="outline"
-              >
-                Go Home
+              {/* A plain <a> keeps the full reload that clears the broken state;
+                  this boundary does not reset on client navigation. */}
+              <Button asChild variant="outline">
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- full reload is intended */}
+                <a href="/">Go Home</a>
               </Button>
 
               {this.state.eventId && (

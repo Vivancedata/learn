@@ -342,7 +342,7 @@ export function YouTubePlayer({
       {!isReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
           <div className="animate-pulse text-muted-foreground">
-            Loading video...
+            Loading video…
           </div>
         </div>
       )}

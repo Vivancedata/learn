@@ -26,15 +26,17 @@ export function useElapsed(delayMs: number = SLOW_LOAD_MS): boolean {
  * A line of copy that appears only when a load has been running long enough
  * that silence would read as breakage. Named, not generic: it says what is
  * being fetched.
+ *
+ * The live region is mounted empty from the start (visually hidden, so it
+ * takes no space) and filled later; a region inserted already holding its
+ * text is often not announced.
  */
 export function SlowLoadNotice({ children }: { children: React.ReactNode }) {
   const slow = useElapsed()
 
-  if (!slow) return null
-
   return (
-    <p className="text-sm text-muted-foreground" role="status">
-      {children}
+    <p className={slow ? "text-sm text-muted-foreground" : "sr-only"} role="status">
+      {slow ? children : null}
     </p>
   )
 }
@@ -69,6 +71,8 @@ export function PathsSkeleton() {
           </div>
         ))}
       </div>
+
+      <span className="sr-only">Loading learning paths…</span>
     </div>
   )
 }
@@ -112,6 +116,8 @@ export function LessonSkeleton() {
           </div>
         </div>
       </div>
+
+      <span className="sr-only">Loading lesson…</span>
     </div>
   )
 }

@@ -110,14 +110,14 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
             Try Again
           </Button>
 
-          <Button
-            onClick={() => window.location.href = '/'}
-            variant="outline"
-            size="lg"
-            className="gap-2"
-          >
-            <Home className="h-4 w-4" />
-            Go Home
+          {/* A plain <a> keeps the full reload that clears the broken state;
+              a client <Link> to the current path would leave this error up. */}
+          <Button asChild variant="outline" size="lg" className="gap-2">
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- full reload is intended */}
+            <a href="/">
+              <Home className="h-4 w-4" />
+              Go Home
+            </a>
           </Button>
 
           <Button

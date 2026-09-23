@@ -8,12 +8,20 @@ import { Badge } from '@/components/ui/badge'
 import { Check, Crown, X, Zap } from 'lucide-react'
 import { SUBSCRIPTION_PLANS, redirectToCheckout } from '@/lib/stripe-client'
 
+const usd = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 0,
+})
+
 export default function PricingPageClient() {
   const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('year')
   const [loading, setLoading] = useState<string | null>(null)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   const handleSubscribe = async (planId: string) => {
     setLoading(planId)
+    setCheckoutError(null)
 
     try {
       const priceId = billingInterval === 'year'
@@ -30,7 +38,7 @@ export default function PricingPageClient() {
         return
       }
 
-      alert('Failed to start checkout. Please try again.')
+      setCheckoutError('Failed to start checkout. Please try again.')
     } finally {
       setLoading(null)
     }
@@ -46,14 +54,16 @@ export default function PricingPageClient() {
           Monthly
         </span>
         <button
+          id="billing-toggle"
           data-testid="billing-toggle"
-          onClick={() => setBillingInterval(billingInterval === 'month' ? 'year' : 'month')}
+          onClick={() => setBillingInterval((prev) => (prev === 'month' ? 'year' : 'month'))}
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
             billingInterval === 'year' ? 'bg-primary' : 'bg-muted'
           }`}
           type="button"
-          aria-label={`Switch to ${billingInterval === 'year' ? 'monthly' : 'yearly'} billing`}
-          aria-pressed={billingInterval === 'year'}
+          role="switch"
+          aria-label="Yearly billing"
+          aria-checked={billingInterval === 'year'}
         >
           <span
             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -61,16 +71,19 @@ export default function PricingPageClient() {
             }`}
           />
         </button>
-        <span className={billingInterval === 'year' ? 'font-semibold' : 'text-muted-foreground'}>
+        <label
+          htmlFor="billing-toggle"
+          className={`cursor-pointer ${billingInterval === 'year' ? 'font-semibold' : 'text-muted-foreground'}`}
+        >
           Yearly
-        </span>
+        </label>
         {billingInterval === 'year' && (
           <Badge
             variant="default"
             className="bg-emerald-700 text-white"
             data-testid="yearly-savings"
           >
-            Save ${SUBSCRIPTION_PLANS.PRO_YEARLY.savings}
+            Save {usd.format(Number(SUBSCRIPTION_PLANS.PRO_YEARLY.savings))}
           </Badge>
         )}
       </div>
@@ -127,11 +140,11 @@ export default function PricingPageClient() {
           </CardHeader>
           <CardContent>
             <div className="mb-6">
-              <span className="text-4xl font-bold" data-testid="pro-price">${currentPlan.price}</span>
+              <span className="text-4xl font-bold" data-testid="pro-price">{usd.format(currentPlan.price)}</span>
               <span className="text-muted-foreground" data-testid="pro-interval">/{currentPlan.interval}</span>
               {billingInterval === 'year' && (
                 <div className="mt-1 text-sm text-muted-foreground">
-                  ${Math.round(SUBSCRIPTION_PLANS.PRO_YEARLY.price / 12)}/month billed annually
+                  {usd.format(Math.round(SUBSCRIPTION_PLANS.PRO_YEARLY.price / 12))}/month billed annually
                 </div>
               )}
             </div>
@@ -154,7 +167,7 @@ export default function PricingPageClient() {
               {loading === 'pro' ? (
                 <span className="flex items-center gap-2">
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Processing...
+                  Processing…
                 </span>
               ) : (
                 'Start Free Trial'
@@ -164,6 +177,12 @@ export default function PricingPageClient() {
         </Card>
       </div>
 
+      {checkoutError && (
+        <p role="alert" className="-mt-12 mb-8 text-center text-sm text-destructive">
+          {checkoutError}
+        </p>
+      )}
+
       <div className="rounded-2xl bg-primary/5 p-12 text-center">
         <h2 className="mb-4 text-3xl font-bold">Ready to Accelerate Your Career?</h2>
         <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
@@ -172,7 +191,7 @@ export default function PricingPageClient() {
         </p>
         <div className="flex flex-col justify-center gap-4 sm:flex-row">
           <Button size="lg" onClick={() => handleSubscribe('pro')} disabled={loading === 'pro'}>
-            {loading === 'pro' ? 'Processing...' : 'Start Free Trial'}
+            {loading === 'pro' ? 'Processing…' : 'Start Free Trial'}
           </Button>
           <Button size="lg" variant="outline" asChild>
             <Link href="/courses">Browse Courses</Link>
