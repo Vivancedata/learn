@@ -10,7 +10,7 @@ import {
   BarChart2,
   User
 } from 'lucide-react'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface NavItem {
   href: string
@@ -40,26 +40,23 @@ export function BottomNav({ notificationCount = 0 }: BottomNavProps) {
   const pathname = usePathname()
   const { isAuthenticated } = useAuth()
   const [isVisible, setIsVisible] = useState(true)
-  const [lastScrollY, setLastScrollY] = useState(0)
+  // A ref, not state: the last position changes on every scroll event and
+  // nothing renders from it, so it should neither re-render nor re-subscribe.
+  const lastScrollYRef = useRef(0)
 
   // Hide nav on scroll down, show on scroll up
-  const handleScroll = useCallback(() => {
-    const currentScrollY = window.scrollY
-    const scrollThreshold = 10
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      const scrollThreshold = 10
 
-    if (currentScrollY > lastScrollY && currentScrollY > scrollThreshold) {
-      setIsVisible(false)
-    } else {
-      setIsVisible(true)
+      setIsVisible(!(currentScrollY > lastScrollYRef.current && currentScrollY > scrollThreshold))
+      lastScrollYRef.current = currentScrollY
     }
 
-    setLastScrollY(currentScrollY)
-  }, [lastScrollY])
-
-  useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [handleScroll])
+  }, [])
 
   // Trigger haptic feedback if supported
   const triggerHaptic = () => {
@@ -95,7 +92,7 @@ export function BottomNav({ notificationCount = 0 }: BottomNavProps) {
       {/* Glass background with blur */}
       <div className="bg-background/80 backdrop-blur-xl border-t border-border/50 shadow-lg">
         {/* Safe area padding for notched phones */}
-        <div className="pb-safe">
+        <div className="pb-[env(safe-area-inset-bottom)]">
           <div className="flex items-center justify-around h-16 px-2">
             {filteredItems.map((item) => {
               const active = isActive(item.href)
@@ -110,7 +107,7 @@ export function BottomNav({ notificationCount = 0 }: BottomNavProps) {
                   className={cn(
                     'flex flex-col items-center justify-center',
                     'w-16 h-14 rounded-xl',
-                    'transition-all duration-200 ease-out',
+                    'transition-[transform,background-color,color] duration-200 ease-out',
                     'touch-manipulation select-none',
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
                     active
@@ -123,7 +120,7 @@ export function BottomNav({ notificationCount = 0 }: BottomNavProps) {
                   <div className="relative">
                     <Icon
                       className={cn(
-                        'h-5 w-5 transition-all duration-200',
+                        'h-5 w-5 transition-transform duration-200',
                         active && 'scale-110'
                       )}
                     />
@@ -138,7 +135,7 @@ export function BottomNav({ notificationCount = 0 }: BottomNavProps) {
                           'text-[10px] font-bold rounded-full',
                           'animate-in zoom-in duration-200'
                         )}
-                        aria-label={`${notificationCount} notifications`}
+                        aria-hidden="true"
                       >
                         {notificationCount > 99 ? '99+' : notificationCount}
                       </span>
@@ -157,12 +154,14 @@ export function BottomNav({ notificationCount = 0 }: BottomNavProps) {
                   <span
                     className={cn(
                       'text-[10px] font-medium mt-1',
-                      'transition-all duration-200',
                       active && 'font-semibold'
                     )}
                   >
                     {item.label}
                   </span>
+                  {showBadge && (
+                    <span className="sr-only">, {notificationCount} notifications</span>
+                  )}
                 </Link>
               )
             })}

@@ -4,6 +4,48 @@ import { useState, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { X, Download, Share, Plus } from 'lucide-react'
+import { readStorage, writeStorage } from '@/lib/safe-storage'
+
+const DISMISSED_KEY = 'pwa-install-dismissed:v1'
+const VISIT_COUNT_KEY = 'pwa-visit-count:v1'
+// Pre-versioning keys, read once so existing visitors keep their count/dismissal.
+const LEGACY_DISMISSED_KEY = 'pwa-install-dismissed'
+const LEGACY_VISIT_COUNT_KEY = 'pwa-visit-count'
+
+/**
+ * Whether this page load meets the visit criteria. Computed once per app load:
+ * the visit counter must advance by exactly one per load, however many times
+ * the component re-renders, re-runs effects or remounts.
+ */
+let visitCriteriaForThisLoad: boolean | null = null
+
+function meetsVisitCriteria(minVisits: number): boolean {
+  if (visitCriteriaForThisLoad !== null) return visitCriteriaForThisLoad
+
+  const dismissed = readStorage(DISMISSED_KEY) ?? readStorage(LEGACY_DISMISSED_KEY)
+  if (dismissed === 'permanent') {
+    visitCriteriaForThisLoad = false
+    return false
+  }
+
+  const storedVisits = readStorage(VISIT_COUNT_KEY) ?? readStorage(LEGACY_VISIT_COUNT_KEY) ?? '0'
+  const visits = (parseInt(storedVisits, 10) || 0) + 1
+  writeStorage(VISIT_COUNT_KEY, String(visits))
+
+  const sessionDismissed =
+    readStorage(DISMISSED_KEY, 'session') ?? readStorage(LEGACY_DISMISSED_KEY, 'session')
+  visitCriteriaForThisLoad = visits >= minVisits && !sessionDismissed
+  return visitCriteriaForThisLoad
+}
+
+/** Decorative checkmark, hoisted so it is not rebuilt for each benefit row. */
+const benefitCheckIcon = (
+  <span className="w-5 h-5 rounded-full bg-success/10 flex items-center justify-center text-success">
+    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+    </svg>
+  </span>
+)
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -98,31 +140,20 @@ export function InstallPrompt({
       setIsVisible(true)
       return
     }
+    if (window.matchMedia('(display-mode: standalone)').matches) return
 
-    // Check if user dismissed permanently
-    const dismissed = localStorage.getItem('pwa-install-dismissed')
-    if (dismissed === 'permanent') return
+    // Counts this visit (once per load) and applies the dismissal flags
+    if (!meetsVisitCriteria(minVisits)) return
 
-    // Track visits
-    const visits = parseInt(localStorage.getItem('pwa-visit-count') || '0', 10)
-    localStorage.setItem('pwa-visit-count', String(visits + 1))
+    // Show prompt after delay
+    const timer = setTimeout(() => {
+      // Only show on mobile for now, or if we have a deferred prompt
+      if (platform === 'ios' || platform === 'android' || deferredPrompt) {
+        setIsVisible(true)
+      }
+    }, showDelay)
 
-    // Check if we should show
-    if (visits + 1 >= minVisits) {
-      // Check if dismissed in this session
-      const sessionDismissed = sessionStorage.getItem('pwa-install-dismissed')
-      if (sessionDismissed) return
-
-      // Show prompt after delay
-      const timer = setTimeout(() => {
-        // Only show on mobile for now, or if we have a deferred prompt
-        if (platform === 'ios' || platform === 'android' || deferredPrompt) {
-          setIsVisible(true)
-        }
-      }, showDelay)
-
-      return () => clearTimeout(timer)
-    }
+    return () => clearTimeout(timer)
   }, [minVisits, showDelay, forceShow, isInstalled, platform, deferredPrompt])
 
   // Handle install click
@@ -139,7 +170,7 @@ export function InstallPrompt({
 
         if (outcome === 'accepted') {
           setIsVisible(false)
-          localStorage.setItem('pwa-install-dismissed', 'permanent')
+          writeStorage(DISMISSED_KEY, 'permanent')
         }
 
         setDeferredPrompt(null)
@@ -155,11 +186,21 @@ export function InstallPrompt({
     setShowIOSInstructions(false)
 
     if (permanent) {
-      localStorage.setItem('pwa-install-dismissed', 'permanent')
+      writeStorage(DISMISSED_KEY, 'permanent')
     } else {
-      sessionStorage.setItem('pwa-install-dismissed', 'true')
+      writeStorage(DISMISSED_KEY, 'true', 'session')
     }
   }, [])
+
+  // Escape closes the sheet, like any dialog
+  useEffect(() => {
+    if (!isVisible) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleDismiss(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [isVisible, handleDismiss])
 
   // Don't render if not visible or already installed
   if (!isVisible || isInstalled) return null
@@ -179,7 +220,7 @@ export function InstallPrompt({
           'fixed bottom-0 left-0 right-0 z-50 md:hidden',
           'bg-background rounded-t-2xl shadow-2xl',
           'animate-in slide-in-from-bottom duration-300',
-          'safe-area-bottom',
+          'pb-[env(safe-area-inset-bottom)] overscroll-contain',
           className
         )}
         role="dialog"
@@ -237,27 +278,15 @@ export function InstallPrompt({
             {/* Benefits */}
             <ul className="text-sm space-y-2 mb-6">
               <li className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-success/10 flex items-center justify-center text-success">
-                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </span>
+                {benefitCheckIcon}
                 Learn offline - access your courses anywhere
               </li>
               <li className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-success/10 flex items-center justify-center text-success">
-                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </span>
+                {benefitCheckIcon}
                 Get notified about new content
               </li>
               <li className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-success/10 flex items-center justify-center text-success">
-                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </span>
+                {benefitCheckIcon}
                 Fast loading and smooth experience
               </li>
             </ul>

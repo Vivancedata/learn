@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useCallback, useEffect, useState } from 'react'
+import { useRef, useCallback, useEffect, useEffectEvent, useState } from 'react'
 
 type SwipeDirection = 'left' | 'right' | 'up' | 'down'
 
@@ -58,6 +58,30 @@ const defaultConfig: Required<SwipeConfig> = {
   minVelocity: 0.3
 }
 
+const IDLE_STATE: SwipeState = {
+  direction: null,
+  distance: 0,
+  velocity: 0,
+  isSwiping: false,
+  progress: 0
+}
+
+function getSwipeDirection(deltaX: number, deltaY: number, maxDeviation: number): SwipeDirection | null {
+  const absX = Math.abs(deltaX)
+  const absY = Math.abs(deltaY)
+
+  // Determine primary direction
+  if (absX > absY) {
+    // Horizontal swipe
+    if (absY > maxDeviation) return null // Too much vertical deviation
+    return deltaX > 0 ? 'right' : 'left'
+  } else {
+    // Vertical swipe
+    if (absX > maxDeviation) return null // Too much horizontal deviation
+    return deltaY > 0 ? 'down' : 'up'
+  }
+}
+
 /**
  * Hook for detecting swipe gestures on touch devices
  *
@@ -82,46 +106,24 @@ export function useSwipeGesture(
   const mergedConfig = { ...defaultConfig, ...config }
   const { threshold, maxDeviation, directions, preventDefault, minVelocity } = mergedConfig
 
-  const [state, setState] = useState<SwipeState>({
-    direction: null,
-    distance: 0,
-    velocity: 0,
-    isSwiping: false,
-    progress: 0
-  })
+  const [state, setState] = useState<SwipeState>(IDLE_STATE)
 
   // Touch start position and time
   const touchStart = useRef({ x: 0, y: 0, time: 0 })
   const isTracking = useRef(false)
+  // The latest move, read synchronously at touchend (render state may lag a frame)
+  const swipeRef = useRef<SwipeState>(IDLE_STATE)
 
   const reset = useCallback(() => {
-    setState({
-      direction: null,
-      distance: 0,
-      velocity: 0,
-      isSwiping: false,
-      progress: 0
-    })
+    swipeRef.current = IDLE_STATE
+    setState(IDLE_STATE)
     isTracking.current = false
   }, [])
 
-  const getSwipeDirection = useCallback((deltaX: number, deltaY: number): SwipeDirection | null => {
-    const absX = Math.abs(deltaX)
-    const absY = Math.abs(deltaY)
-
-    // Determine primary direction
-    if (absX > absY) {
-      // Horizontal swipe
-      if (absY > maxDeviation) return null // Too much vertical deviation
-      return deltaX > 0 ? 'right' : 'left'
-    } else {
-      // Vertical swipe
-      if (absX > maxDeviation) return null // Too much horizontal deviation
-      return deltaY > 0 ? 'down' : 'up'
-    }
-  }, [maxDeviation])
-
-  const handleTouchStart = useCallback((e: TouchEvent) => {
+  // Touch handlers are Effect Events: they always see the latest callbacks and
+  // config, so the listeners below attach once instead of on every render
+  // (callers pass inline callbacks/config, which change identity each render).
+  const handleTouchStart = useEffectEvent((e: TouchEvent) => {
     if (!ref.current) return
 
     const touch = e.touches[0]
@@ -131,21 +133,22 @@ export function useSwipeGesture(
       time: Date.now()
     }
     isTracking.current = true
+    swipeRef.current = { ...IDLE_STATE, isSwiping: true }
 
     setState(prev => ({
       ...prev,
       isSwiping: true
     }))
-  }, [])
+  })
 
-  const handleTouchMove = useCallback((e: TouchEvent) => {
+  const handleTouchMove = useEffectEvent((e: TouchEvent) => {
     if (!isTracking.current || !ref.current) return
 
     const touch = e.touches[0]
     const deltaX = touch.clientX - touchStart.current.x
     const deltaY = touch.clientY - touchStart.current.y
 
-    const direction = getSwipeDirection(deltaX, deltaY)
+    const direction = getSwipeDirection(deltaX, deltaY, maxDeviation)
 
     // Check if direction is allowed
     if (direction && !directions.includes(direction)) {
@@ -176,6 +179,8 @@ export function useSwipeGesture(
       progress
     }
 
+    const previousDirection = swipeRef.current.direction
+    swipeRef.current = newState
     setState(newState)
 
     // Notify about swipe movement
@@ -184,16 +189,16 @@ export function useSwipeGesture(
     }
 
     // Notify about swipe start (first detection of direction)
-    if (direction && !state.direction && callbacks.onSwipeStart) {
+    if (direction && !previousDirection && callbacks.onSwipeStart) {
       callbacks.onSwipeStart(direction)
     }
-  }, [directions, threshold, preventDefault, getSwipeDirection, callbacks, state.direction])
+  })
 
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = useEffectEvent(() => {
     if (!isTracking.current) return
     isTracking.current = false
 
-    const { direction, distance, velocity } = state
+    const { direction, distance, velocity } = swipeRef.current
 
     // Check if swipe meets criteria
     const meetsThreshold = distance >= threshold
@@ -219,32 +224,37 @@ export function useSwipeGesture(
 
     // Reset state
     reset()
-  }, [state, threshold, minVelocity, callbacks, reset])
+  })
 
-  const handleTouchCancel = useCallback(() => {
+  const handleTouchCancel = useEffectEvent(() => {
     if (callbacks.onSwipeCancel) {
       callbacks.onSwipeCancel()
     }
     reset()
-  }, [callbacks, reset])
+  })
 
-  // Attach event listeners
+  // Attach event listeners once per element (and when passive-ness changes)
   useEffect(() => {
     const element = ref.current
     if (!element) return
 
-    element.addEventListener('touchstart', handleTouchStart, { passive: true })
-    element.addEventListener('touchmove', handleTouchMove, { passive: !preventDefault })
-    element.addEventListener('touchend', handleTouchEnd, { passive: true })
-    element.addEventListener('touchcancel', handleTouchCancel, { passive: true })
+    const onTouchStart = (e: TouchEvent) => handleTouchStart(e)
+    const onTouchMove = (e: TouchEvent) => handleTouchMove(e)
+    const onTouchEnd = () => handleTouchEnd()
+    const onTouchCancel = () => handleTouchCancel()
+
+    element.addEventListener('touchstart', onTouchStart, { passive: true })
+    element.addEventListener('touchmove', onTouchMove, { passive: !preventDefault })
+    element.addEventListener('touchend', onTouchEnd, { passive: true })
+    element.addEventListener('touchcancel', onTouchCancel, { passive: true })
 
     return () => {
-      element.removeEventListener('touchstart', handleTouchStart)
-      element.removeEventListener('touchmove', handleTouchMove)
-      element.removeEventListener('touchend', handleTouchEnd)
-      element.removeEventListener('touchcancel', handleTouchCancel)
+      element.removeEventListener('touchstart', onTouchStart)
+      element.removeEventListener('touchmove', onTouchMove)
+      element.removeEventListener('touchend', onTouchEnd)
+      element.removeEventListener('touchcancel', onTouchCancel)
     }
-  }, [handleTouchStart, handleTouchMove, handleTouchEnd, handleTouchCancel, preventDefault])
+  }, [preventDefault])
 
   return { ref, state, reset }
 }

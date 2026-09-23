@@ -278,7 +278,7 @@ export function MobileLesson({
                       />
                     </svg>
                   </span>
-                  Saving...
+                  Saving…
                 </>
               ) : isCompleted ? (
                 <>

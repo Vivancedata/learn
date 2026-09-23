@@ -37,7 +37,7 @@ export function Navbar() {
   }, [])
 
   return (
-    <nav className={`sticky top-0 z-50 transition-all duration-300 ${
+    <nav className={`sticky top-0 z-50 transition-[background-color,border-color] duration-300 ${
       scrolled
         ? 'bg-background/95 backdrop-blur-sm border-b border-border'
         : 'bg-background border-b border-transparent'
@@ -126,9 +126,10 @@ export function Navbar() {
             variant="ghost"
             size="icon"
             className="xl:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => setMobileMenuOpen((open) => !open)}
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-nav-menu"
           >
             {mobileMenuOpen ? (
               <X className="h-5 w-5" />
@@ -139,11 +140,17 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu dropdown */}
-      <div className={`xl:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-        mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-      }`}>
-        <div className="bg-background border-t border-border">
+      {/* Mobile menu dropdown. Collapses via a 0fr/1fr grid row (no fixed
+          max-height to outgrow), and is `inert` while closed so its links
+          leave the tab order and the accessibility tree. */}
+      <div
+        id="mobile-nav-menu"
+        inert={!mobileMenuOpen}
+        className={`xl:hidden grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+          mobileMenuOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+      >
+        <div className="min-h-0 overflow-hidden bg-background border-t border-border">
           <div className="container px-4 py-4 space-y-1">
             <Link
               href="/dashboard"
@@ -205,7 +212,7 @@ export function Navbar() {
             {isAuthenticated && !subscriptionLoading && !isPro && (
               <Link
                 href="/pricing"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg bg-brand text-primary-foreground"
+                className="flex items-center gap-3 px-4 py-3 rounded-lg bg-brand text-primary-foreground hover:bg-brand/90 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Crown className="h-5 w-5" />

@@ -180,7 +180,7 @@ export function PullToRefresh({
         'flex items-center justify-center',
         'w-10 h-10 rounded-full',
         'bg-background border border-border shadow-md',
-        'transition-all duration-200'
+        'transition-[transform,opacity] duration-200'
       )}
       style={{
         transform: `rotate(${rotation}deg) scale(${scale})`,
@@ -220,13 +220,14 @@ export function PullToRefresh({
       {/* Pull indicator */}
       <div
         className={cn(
-          'absolute left-1/2 -translate-x-1/2 z-10',
-          'transition-all duration-300 ease-out',
+          'absolute left-1/2 top-0 z-10',
+          // Positioned with a transform rather than `top`, so following the
+          // finger and snapping back stay on the compositor.
+          'transition-[transform,opacity] duration-300 ease-out',
           state === 'idle' && pullDistance === 0 && 'opacity-0'
         )}
         style={{
-          top: Math.max(pullDistance - 50, -50),
-          transform: `translateX(-50%)`
+          transform: `translate(-50%, ${Math.max(pullDistance - 50, -50)}px)`
         }}
         aria-hidden="true"
       >
@@ -257,7 +258,7 @@ export function PullToRefresh({
         className="sr-only"
       >
         {state === 'ready' && 'Release to refresh'}
-        {state === 'refreshing' && 'Refreshing...'}
+        {state === 'refreshing' && 'Refreshing…'}
       </div>
     </div>
   )

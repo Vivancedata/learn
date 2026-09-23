@@ -142,7 +142,7 @@ export function MobileHeader({
     <header
       className={cn(
         'fixed top-0 left-0 right-0 z-40 md:hidden',
-        'transition-all duration-300',
+        'transition-[background-color,border-color,box-shadow] duration-300',
         transparentOnTop && !scrolled
           ? 'bg-transparent'
           : 'bg-background/80 backdrop-blur-xl border-b border-border/50',
@@ -162,10 +162,10 @@ export function MobileHeader({
         >
           <div
             className={cn(
-              'h-full bg-primary transition-all duration-300 ease-out',
+              'h-full bg-primary transition-transform duration-300 ease-out',
               isLoading && 'animate-pulse'
             )}
-            style={{ width: `${progress}%` }}
+            style={{ transform: `translateX(-${100 - progress}%)` }}
           />
         </div>
       )}
@@ -219,7 +219,6 @@ export function MobileHeader({
           <h1
             className={cn(
               'flex-1 text-center font-semibold truncate',
-              'transition-all duration-200',
               scrolled ? 'text-base' : 'text-lg'
             )}
           >

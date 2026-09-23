@@ -3,6 +3,13 @@
 import { useEffect } from 'react'
 
 /**
+ * Registration (and its hourly update interval) must happen once per page
+ * load, not once per mount: StrictMode and remounts would otherwise stack
+ * extra intervals that are never cleared.
+ */
+let registrationStarted = false
+
+/**
  * Service Worker Registration Component
  * Registers the service worker for PWA functionality
  */
@@ -14,7 +21,14 @@ export function ServiceWorkerRegistration() {
 
     // Only register in production or when explicitly enabled
     if (process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_ENABLE_SW === 'true') {
-      registerServiceWorker()
+      if (registrationStarted) return
+      registrationStarted = true
+      // Not needed for first paint; keep it off the hydration path.
+      const scheduleIdle =
+        window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1))
+      scheduleIdle(() => {
+        void registerServiceWorker()
+      })
     }
   }, [])
 
