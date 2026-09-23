@@ -67,13 +67,14 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
     }
   }, [user?.id, lessonId])
 
+  const userId = user?.id
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && userId) {
       fetchExistingSubmission()
-    } else if (!authLoading && !user) {
+    } else if (!authLoading && !userId) {
       setFetchingExisting(false)
     }
-  }, [authLoading, user, fetchExistingSubmission])
+  }, [authLoading, userId, fetchExistingSubmission])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -144,13 +145,6 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
     }
   }
 
-  const handleButtonSubmit = () => {
-    const form = document.getElementById("project-form") as HTMLFormElement
-    if (form) {
-      form.requestSubmit()
-    }
-  }
-
   const defaultRequirements = [
     "Repository must include a README.md with project description",
     "Code must be well-commented and follow best practices",
@@ -182,7 +176,7 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
         <CardContent>
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-muted-foreground">Loading...</span>
+            <span className="ml-2 text-muted-foreground">Loading…</span>
           </div>
         </CardContent>
       </Card>
@@ -241,6 +235,13 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
               <Label htmlFor="github-url">GitHub Repository URL <span className="text-destructive">*</span></Label>
               <Input
                 id="github-url"
+                name="githubUrl"
+                type="url"
+                inputMode="url"
+                autoComplete="url"
+                spellCheck={false}
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? "project-form-error" : undefined}
                 placeholder="https://github.com/yourusername/project-repo"
                 value={githubUrl}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGithubUrl(e.target.value)}
@@ -252,6 +253,12 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
               <Label htmlFor="live-url">Live Demo URL (optional)</Label>
               <Input
                 id="live-url"
+                name="liveUrl"
+                type="url"
+                inputMode="url"
+                autoComplete="url"
+                spellCheck={false}
+                aria-describedby={error ? "project-form-error" : undefined}
                 placeholder="https://your-project-demo.netlify.app"
                 value={liveUrl}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLiveUrl(e.target.value)}
@@ -265,7 +272,8 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
               <Label htmlFor="notes">Notes for Reviewer (optional)</Label>
               <Textarea
                 id="notes"
-                placeholder="Any additional information you'd like to share about your project..."
+                name="notes"
+                placeholder="Any additional information you'd like to share about your project…"
                 value={notes}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
                 rows={3}
@@ -273,7 +281,7 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
             </div>
             
             {error && (
-              <div className="bg-destructive/10 text-destructive p-3 rounded-md flex items-start gap-2">
+              <div id="project-form-error" role="alert" className="bg-destructive/10 text-destructive p-3 rounded-md flex items-start gap-2">
                 <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
                 <p className="text-sm">{error}</p>
               </div>
@@ -370,11 +378,11 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
             >
               Cancel
             </Button>
-            <Button type="button" onClick={handleButtonSubmit} disabled={loading || !githubUrl}>
+            <Button type="submit" form="project-form" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
+                  Submitting…
                 </>
               ) : submissionId ? (
                 'Update Submission'
