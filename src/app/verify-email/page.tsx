@@ -123,7 +123,7 @@ function VerifyEmailContent() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
               <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
-            <CardTitle>Email Verified</CardTitle>
+            <CardTitle as="h1">Email Verified</CardTitle>
             <CardDescription>
               Your email address has been verified successfully.
             </CardDescription>
@@ -137,14 +137,12 @@ function VerifyEmailContent() {
             </Alert>
           </CardContent>
           <CardFooter className="flex flex-col gap-2">
-            <Link href="/dashboard" className="w-full">
-              <Button className="w-full">Go to Dashboard</Button>
-            </Link>
-            <Link href="/courses" className="w-full">
-              <Button variant="outline" className="w-full">
-                Browse Courses
-              </Button>
-            </Link>
+            <Button asChild className="w-full">
+              <Link href="/dashboard">Go to Dashboard</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/courses">Browse Courses</Link>
+            </Button>
           </CardFooter>
         </Card>
       </div>
@@ -158,7 +156,7 @@ function VerifyEmailContent() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <Mail className="h-6 w-6 text-brand" />
           </div>
-          <CardTitle>Verify Your Email</CardTitle>
+          <CardTitle as="h1">Verify Your Email</CardTitle>
           <CardDescription>
             Enter the 6-digit verification code sent to your email
           </CardDescription>
@@ -185,6 +183,7 @@ function VerifyEmailContent() {
               <Label htmlFor="code">Verification Code</Label>
               <Input
                 id="code"
+                name="code"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -209,12 +208,12 @@ function VerifyEmailContent() {
             <Button
               type="submit"
               className="w-full"
-              disabled={isVerifying || verificationCode.length !== 6}
+              disabled={isVerifying}
             >
               {isVerifying ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Verifying...
+                  Verifying…
                 </>
               ) : (
                 'Verify Email'
@@ -232,7 +231,7 @@ function VerifyEmailContent() {
                 {isResending ? (
                   <>
                     <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                    Sending...
+                    Sending…
                   </>
                 ) : (
                   <>

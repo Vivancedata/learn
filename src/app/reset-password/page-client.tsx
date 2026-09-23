@@ -161,7 +161,7 @@ function ResetPasswordForm() {
         }),
       })
 
-      const result = await response.json()
+      const result = await response.json().catch(() => ({}))
 
       if (!response.ok) {
         throw new Error(result.message || 'Failed to reset password')
@@ -181,7 +181,8 @@ function ResetPasswordForm() {
   if (!tokenReady) {
     return (
       <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
-        <Loader2 className="h-8 w-8 animate-spin text-brand" />
+        <Loader2 className="h-8 w-8 animate-spin text-brand" aria-hidden="true" />
+        <span role="status" className="sr-only">Loading…</span>
       </div>
     )
   }
@@ -200,9 +201,9 @@ function ResetPasswordForm() {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            <Link href="/forgot-password" className="w-full">
-              <Button className="w-full">Request New Reset Link</Button>
-            </Link>
+            <Button asChild className="w-full">
+              <Link href="/forgot-password">Request New Reset Link</Link>
+            </Button>
           </CardFooter>
         </Card>
       </div>
@@ -232,9 +233,9 @@ function ResetPasswordForm() {
             </Alert>
           </CardContent>
           <CardFooter>
-            <Link href="/sign-in" className="w-full">
-              <Button className="w-full">Sign In</Button>
-            </Link>
+            <Button asChild className="w-full">
+              <Link href="/sign-in">Sign In</Link>
+            </Button>
           </CardFooter>
         </Card>
       </div>
@@ -261,17 +262,19 @@ function ResetPasswordForm() {
               <Label htmlFor="password">New Password</Label>
               <Input
                 id="password"
+                name="newPassword"
                 type="password"
-                placeholder="Enter new password"
+                placeholder="Enter new password…"
                 value={password}
                 onChange={(e) => dispatch({ type: 'setPassword', value: e.target.value })}
                 disabled={isSubmitting}
                 autoComplete="new-password"
+                aria-describedby="password-requirements"
                 required
               />
 
               {password && (
-                <div className="mt-2 space-y-1 text-xs">
+                <div id="password-requirements" aria-live="polite" className="mt-2 space-y-1 text-xs">
                   <div className="flex items-center gap-2">
                     {passwordStrength.hasMinLength ? (
                       <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-400" />
@@ -286,6 +289,7 @@ function ResetPasswordForm() {
                       }
                     >
                       At least 8 characters
+                      <span className="sr-only">{passwordStrength.hasMinLength ? ' (met)' : ' (not met)'}</span>
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -302,6 +306,7 @@ function ResetPasswordForm() {
                       }
                     >
                       One uppercase letter
+                      <span className="sr-only">{passwordStrength.hasUpperCase ? ' (met)' : ' (not met)'}</span>
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -318,6 +323,7 @@ function ResetPasswordForm() {
                       }
                     >
                       One lowercase letter
+                      <span className="sr-only">{passwordStrength.hasLowerCase ? ' (met)' : ' (not met)'}</span>
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -334,6 +340,7 @@ function ResetPasswordForm() {
                       }
                     >
                       One number
+                      <span className="sr-only">{passwordStrength.hasNumber ? ' (met)' : ' (not met)'}</span>
                     </span>
                   </div>
                 </div>
@@ -344,16 +351,18 @@ function ResetPasswordForm() {
               <Label htmlFor="confirmPassword">Confirm Password</Label>
               <Input
                 id="confirmPassword"
+                name="confirmPassword"
                 type="password"
-                placeholder="Confirm new password"
+                placeholder="Confirm new password…"
                 value={confirmPassword}
                 onChange={(e) => dispatch({ type: 'setConfirmPassword', value: e.target.value })}
                 disabled={isSubmitting}
                 autoComplete="new-password"
+                aria-describedby="password-match"
                 required
               />
               {confirmPassword && (
-                <div className="flex items-center gap-2 mt-1 text-xs">
+                <div id="password-match" aria-live="polite" className="flex items-center gap-2 mt-1 text-xs">
                   {passwordsMatch ? (
                     <>
                       <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-400" />
@@ -374,12 +383,12 @@ function ResetPasswordForm() {
             <Button
               type="submit"
               className="w-full"
-              disabled={isSubmitting || !isPasswordValid || !passwordsMatch}
+              disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                  Resetting password...
+                  Resetting password…
                 </>
               ) : (
                 'Reset Password'

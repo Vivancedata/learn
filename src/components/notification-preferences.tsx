@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useId } from 'react'
 import { Bell, BellOff, Clock, Loader2, Send, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -22,6 +22,14 @@ interface NotificationPreferences {
 
 const QUIET_HOURS_OPTIONS = Array.from({ length: 24 }, (_, hour) => hour)
 
+// Hour labels follow the reader's locale (e.g. "1 PM" or "13"), not a
+// hardcoded "13:00".
+const hourFormatter = new Intl.DateTimeFormat(undefined, { hour: 'numeric' })
+
+function formatHour(hour: number): string {
+  return hourFormatter.format(new Date(2000, 0, 1, hour))
+}
+
 interface NotificationPreferencesUiState {
   loading: boolean
   saving: boolean
@@ -36,6 +44,7 @@ interface NotificationPreferencesUiState {
  */
 function useNotificationPreferencesContent() {
   const { user } = useAuth()
+  const userId = user?.id
   const {
     permission,
     isSupported,
@@ -68,12 +77,12 @@ function useNotificationPreferencesContent() {
   const { loading, saving, error, success, testSent } = uiState
 
   const fetchPreferences = useCallback(async () => {
-    if (!user) return
+    if (!userId) return
 
     setUiState((prev) => ({ ...prev, loading: true, error: null }))
 
     try {
-      const response = await fetch(`/api/notifications/preferences/${user.id}`)
+      const response = await fetch(`/api/notifications/preferences/${userId}`)
 
       if (!response.ok) {
         throw new Error('Failed to load preferences')
@@ -89,15 +98,15 @@ function useNotificationPreferencesContent() {
     } finally {
       setUiState((prev) => ({ ...prev, loading: false }))
     }
-  }, [user])
+  }, [userId])
 
   const savePreferences = useCallback(async (updates: Partial<NotificationPreferences>) => {
-    if (!user) return
+    if (!userId) return
 
     setUiState((prev) => ({ ...prev, saving: true, error: null, success: null }))
 
     try {
-      const response = await fetch(`/api/notifications/preferences/${user.id}`, {
+      const response = await fetch(`/api/notifications/preferences/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +132,7 @@ function useNotificationPreferencesContent() {
     } finally {
       setUiState((prev) => ({ ...prev, saving: false }))
     }
-  }, [user])
+  }, [userId])
 
   // Fetch preferences on mount
   useEffect(() => {
@@ -180,7 +189,7 @@ function useNotificationPreferencesContent() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle as="h2" className="flex items-center gap-2">
             <BellOff className="h-5 w-5" />
             Push Notifications
           </CardTitle>
@@ -195,7 +204,7 @@ function useNotificationPreferencesContent() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle as="h2" className="flex items-center gap-2">
           <Bell className="h-5 w-5" />
           Push Notifications
         </CardTitle>
@@ -335,7 +344,7 @@ function useNotificationPreferencesContent() {
                     <option value="">None</option>
                     {QUIET_HOURS_OPTIONS.map((hour) => (
                       <option key={hour} value={hour}>
-                        {hour.toString().padStart(2, '0')}:00
+                        {formatHour(hour)}
                       </option>
                     ))}
                   </select>
@@ -353,7 +362,7 @@ function useNotificationPreferencesContent() {
                     <option value="">None</option>
                     {QUIET_HOURS_OPTIONS.map((hour) => (
                       <option key={hour} value={hour}>
-                        {hour.toString().padStart(2, '0')}:00
+                        {formatHour(hour)}
                       </option>
                     ))}
                   </select>
@@ -407,20 +416,27 @@ function PreferenceToggle({
   onChange,
   disabled,
 }: PreferenceToggleProps) {
+  const id = useId()
+  const descriptionId = `${id}-description`
+
   return (
     <div className="flex items-center justify-between py-2">
       <div className="flex-1 mr-4">
-        <Label className="font-medium cursor-pointer" onClick={onChange}>
+        {/* A label tied to the button: clicking it presses the button, and it
+            names the button for screen readers (not just "On"/"Off"). */}
+        <Label htmlFor={id} className="font-medium cursor-pointer">
           {label}
         </Label>
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <p id={descriptionId} className="text-sm text-muted-foreground">{description}</p>
       </div>
       <Button
+        id={id}
         variant={checked ? 'default' : 'outline'}
         size="sm"
         onClick={onChange}
         disabled={disabled}
         aria-pressed={checked}
+        aria-describedby={descriptionId}
       >
         {checked ? 'On' : 'Off'}
       </Button>

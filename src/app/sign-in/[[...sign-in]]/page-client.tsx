@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useSyncExternalStore } from "react"
 import { redirect, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +10,24 @@ import Link from "next/link"
 import { useAuth } from "@/hooks/useAuth"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Loader2 } from "lucide-react"
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// The query string never changes while this page is mounted, so there is
+// nothing to subscribe to. Reading it through useSyncExternalStore gives the
+// server snapshot ('') during hydration, then the real value -- a plain
+// `window.location` read in render made the server and client HTML disagree.
+function subscribeToNothing() {
+  return () => {}
+}
+
+function getLocationSearch() {
+  return window.location.search
+}
+
+function getServerLocationSearch() {
+  return ''
+}
 
 function getSafeRedirectPath(rawPath: string | null): string {
   if (!rawPath) return '/dashboard'
@@ -25,20 +43,20 @@ export default function SignInPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const locationSearch = useSyncExternalStore(
+    subscribeToNothing,
+    getLocationSearch,
+    getServerLocationSearch
+  )
   const redirectPath = getSafeRedirectPath(
-    typeof window !== 'undefined'
-      ? new URLSearchParams(window.location.search).get('redirect')
-      : null
+    new URLSearchParams(locationSearch).get('redirect')
   )
 
   if (user) {
     redirect(redirectPath)
   }
 
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
-  }
+  const validateEmail = (email: string): boolean => EMAIL_REGEX.test(email)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -96,12 +114,14 @@ export default function SignInPage() {
               </Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
-                placeholder="your@email.com"
+                placeholder="your@email.com…"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isSubmitting}
                 autoComplete="email"
+                spellCheck={false}
                 aria-describedby={error ? "error-message" : undefined}
                 required
               />
@@ -121,6 +141,7 @@ export default function SignInPage() {
               </div>
               <Input
                 id="password"
+                name="password"
                 type="password"
                 placeholder="••••••••"
                 value={password}
@@ -137,7 +158,7 @@ export default function SignInPage() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                  Signing in...
+                  Signing in…
                 </>
               ) : (
                 "Sign In"
