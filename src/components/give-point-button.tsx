@@ -97,7 +97,10 @@ export function GivePointButton({
           disabled={loading}
         >
           {loading ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
+            <>
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span className="sr-only">Sending…</span>
+            </>
           ) : (
             'Yes'
           )}
@@ -111,6 +114,9 @@ export function GivePointButton({
         >
           Cancel
         </Button>
+        {error && (
+          <span className="text-xs text-destructive" role="alert">{error}</span>
+        )}
       </div>
     )
   }
@@ -129,7 +135,7 @@ export function GivePointButton({
         <span className="text-xs">Thanks</span>
       </Button>
       {error && (
-        <span className="text-xs text-destructive mt-1">{error}</span>
+        <span className="text-xs text-destructive mt-1" role="alert">{error}</span>
       )}
     </div>
   )

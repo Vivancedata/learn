@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, after } from 'next/server'
 import prisma from '@/lib/db'
 import {
   apiSuccess,
@@ -81,22 +81,25 @@ export async function POST(
     })
 
     // On approval, award the submitter project-approval XP (deduplicated) and
-    // re-evaluate their achievements. Non-fatal — never block the review.
+    // re-evaluate their achievements. Non-fatal — never block the review, so
+    // it runs after the response is sent.
     if (status === 'approved') {
-      try {
-        if (
-          !(await hasReceivedXpFor(
-            submission.userId,
-            'PROJECT_APPROVED',
-            submissionId
-          ))
-        ) {
-          await awardProjectApprovedXp(submission.userId, submissionId)
+      after(async () => {
+        try {
+          if (
+            !(await hasReceivedXpFor(
+              submission.userId,
+              'PROJECT_APPROVED',
+              submissionId
+            ))
+          ) {
+            await awardProjectApprovedXp(submission.userId, submissionId)
+          }
+          await runAchievementsCheck(submission.userId)
+        } catch (xpError) {
+          void xpError
         }
-        await runAchievementsCheck(submission.userId)
-      } catch (xpError) {
-        void xpError
-      }
+      })
     }
 
     return apiSuccess({

@@ -1,6 +1,6 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import { HelpCircle, Lightbulb, Code, ArrowRight, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -115,7 +115,7 @@ function SuggestedQuestionsComponent({
                 variant="outline"
                 size="sm"
                 className={cn(
-                  'text-xs h-auto py-1.5 px-3 rounded-full transition-all duration-200',
+                  'text-xs h-auto max-w-full py-1.5 px-3 rounded-full transition-colors duration-200',
                   categoryClasses
                 )}
                 onClick={() => onQuestionClick(question.text)}
@@ -133,7 +133,7 @@ function SuggestedQuestionsComponent({
               type="button"
               className={cn(
                 'group flex items-start gap-3 w-full p-3 rounded-lg border text-left',
-                'transition-all duration-200',
+                'transition-colors duration-200',
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
                 categoryClasses
@@ -192,7 +192,9 @@ export function WelcomeMessage({
   onQuestionClick,
   isLoading,
 }: WelcomeMessageProps) {
-  const defaultQuestions: SuggestedQuestion[] = [
+  // Memoized so the memo()'d SuggestedQuestions below is not handed a new
+  // array on every render.
+  const defaultQuestions = useMemo<SuggestedQuestion[]>(() => [
     {
       id: 'understand',
       text: lessonTitle
@@ -219,7 +221,7 @@ export function WelcomeMessage({
       category: 'navigation',
       icon: 'arrow-right',
     },
-  ]
+  ], [lessonTitle])
 
   return (
     <div className="flex flex-col items-center justify-center text-center p-6 space-y-4">
@@ -227,13 +229,13 @@ export function WelcomeMessage({
         <MessageSquare className="w-8 h-8 text-primary-foreground" />
       </div>
       <div className="space-y-1">
-        <h3 className="text-lg font-semibold">Hi! I&apos;m your AI Tutor</h3>
+        <h3 className="text-lg font-semibold">Hi! I’m your AI Tutor</h3>
         <p className="text-sm text-muted-foreground max-w-xs">
           {lessonTitle
-            ? `I'm here to help you learn ${lessonTitle}. Ask me anything!`
+            ? `I’m here to help you learn ${lessonTitle}. Ask me anything!`
             : courseName
-            ? `I'm here to help you with ${courseName}. Ask me anything!`
-            : "I'm here to help you learn. Ask me anything about your course!"}
+            ? `I’m here to help you with ${courseName}. Ask me anything!`
+            : 'I’m here to help you learn. Ask me anything about your course!'}
         </p>
       </div>
       <SuggestedQuestions

@@ -234,7 +234,7 @@ export function AssessmentResults({
             <Button
               variant="ghost"
               className="w-full"
-              onClick={() => setShowAllQuestions(!showAllQuestions)}
+              onClick={() => setShowAllQuestions((prev) => !prev)}
             >
               {showAllQuestions ? (
                 <>
@@ -279,6 +279,10 @@ function QuestionReviewItem({
     return String(answer)
   }
 
+  // Formatted once per question rather than once per option below.
+  const formattedUserAnswer = formatAnswer(result.userAnswer)
+  const formattedCorrectAnswer = formatAnswer(result.correctAnswer)
+
   return (
     <div
       className={cn(
@@ -294,7 +298,7 @@ function QuestionReviewItem({
         )}
         aria-expanded={isExpanded}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <span className={cn(
             'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-medium',
             result.correct ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'
@@ -305,7 +309,7 @@ function QuestionReviewItem({
               <XCircle className="h-5 w-5" />
             )}
           </span>
-          <div>
+          <div className="min-w-0">
             <span className="font-medium">Question {questionNumber}</span>
             <p className="text-sm text-muted-foreground line-clamp-1">
               {result.question}
@@ -328,9 +332,9 @@ function QuestionReviewItem({
             {result.options && result.options.length > 0 && (
               <div className="space-y-2 mb-4">
                 {result.options.map((option, i) => {
-                  const isUserAnswer = formatAnswer(result.userAnswer) === option ||
+                  const isUserAnswer = formattedUserAnswer === option ||
                     (Array.isArray(result.userAnswer) && result.userAnswer.includes(option))
-                  const isCorrect = formatAnswer(result.correctAnswer) === option ||
+                  const isCorrect = formattedCorrectAnswer === option ||
                     (Array.isArray(result.correctAnswer) && result.correctAnswer.includes(option))
 
                   return (
@@ -365,12 +369,12 @@ function QuestionReviewItem({
                   result.correct ? 'bg-success/10 border-success/30' : 'bg-destructive/10 border-destructive/30'
                 )}>
                   <span className="text-sm text-muted-foreground">Your answer: </span>
-                  <span className="font-mono">{formatAnswer(result.userAnswer)}</span>
+                  <span className="font-mono">{formattedUserAnswer}</span>
                 </div>
                 {!result.correct && (
                   <div className="p-3 rounded-lg border bg-success/10 border-success/30">
                     <span className="text-sm text-muted-foreground">Correct answer: </span>
-                    <span className="font-mono text-success">{formatAnswer(result.correctAnswer)}</span>
+                    <span className="font-mono text-success">{formattedCorrectAnswer}</span>
                   </div>
                 )}
               </div>

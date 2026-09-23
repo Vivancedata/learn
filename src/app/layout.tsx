@@ -52,8 +52,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+    // Matches --background in @vivancedata/ui (0 0% 98% light, 0 0% 0% dark).
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -79,6 +80,12 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className="font-sans">
+        <a
+          href="#main-content"
+          className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:left-4 focus-visible:top-4 focus-visible:z-[100] focus-visible:rounded-md focus-visible:bg-background focus-visible:px-4 focus-visible:py-2 focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          Skip to Main Content
+        </a>
         <ErrorBoundary>
           <Suspense fallback={null}>
             <PostHogProvider>
@@ -98,7 +105,7 @@ export default function RootLayout({
                       installPromptMinVisits={2}
                     >
                       <Navbar />
-                      <main className="container mx-auto py-8 px-4 pb-24 md:pb-8">
+                      <main id="main-content" tabIndex={-1} className="container mx-auto py-8 px-4 pb-24 md:pb-8 focus:outline-none">
                         {children}
                       </main>
                     </MobileProvider>

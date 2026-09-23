@@ -11,7 +11,7 @@ import { HelperBadge } from "@/components/helper-badge"
 import { StreakPanel } from "@/components/streak-panel"
 import { XpLevelDisplay } from "@/components/xp-level-display"
 import { RecommendationsSection } from "@/components/recommendations-section"
-import { ArrowRight, BookOpen, Award, Calendar, Clock, CheckCircle2, Heart, Users, Target, FileQuestion, Trophy } from "lucide-react"
+import { ArrowRight, BookOpen, Award, Calendar, Clock, CheckCircle2, Heart, Users, Target, FileQuestion, Trophy, Globe, File, AppWindow } from "lucide-react"
 import { CourseCatalogEntry, Path } from "@/types/course"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { useAuth } from "@/hooks/useAuth"
@@ -50,6 +50,20 @@ interface UserPointsData {
       minPoints: number
     } | null
   }
+}
+
+// Static icon elements, hoisted so they are not recreated on every render.
+const ACHIEVEMENT_ICONS = {
+  "first-lesson": <BookOpen className="h-8 w-8 text-brand" />,
+  "first-course": <Award className="h-8 w-8 text-brand" />,
+  "streak-7": <Calendar className="h-8 w-8 text-brand" />,
+  "hours-10": <Clock className="h-8 w-8 text-brand" />,
+}
+
+const PATH_ICONS: Record<string, React.ReactNode> = {
+  globe: <Globe className="h-6 w-6" aria-hidden="true" />,
+  file: <File className="h-6 w-6" aria-hidden="true" />,
+  window: <AppWindow className="h-6 w-6" aria-hidden="true" />,
 }
 
 function useDashboardContentView() {
@@ -92,11 +106,12 @@ function useDashboardContentView() {
       if (coursesResult.status === 'rejected') loadErrors.push('Failed to load courses')
       if (pathsResult.status === 'rejected') loadErrors.push('Failed to load paths')
 
+      const progressByCourseId = new Map(
+        (userProgress?.courses ?? []).map((p: CourseProgressData) => [p.courseId, p])
+      )
       const courses = userProgress
         ? baseCourses.map((course) => {
-            const progressData = userProgress.courses.find(
-              (p: CourseProgressData) => p.courseId === course.id
-            )
+            const progressData = progressByCourseId.get(course.id)
 
             if (!progressData) return course
 
@@ -149,8 +164,9 @@ function useDashboardContentView() {
 
   if (isLoading || !data) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand"></div>
+      <div className="flex items-center justify-center min-h-[60vh]" role="status">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand" aria-hidden="true"></div>
+        <span className="sr-only">Loading dashboard…</span>
       </div>
     )
   }
@@ -188,14 +204,14 @@ function useDashboardContentView() {
       id: "first-lesson",
       title: "First Steps",
       description: "Completed your first lesson",
-      icon: <BookOpen className="h-8 w-8 text-brand" />,
+      icon: ACHIEVEMENT_ICONS["first-lesson"],
       earned: completedLessons > 0
     },
     {
       id: "first-course",
       title: "Course Graduate",
       description: "Completed your first course",
-      icon: <Award className="h-8 w-8 text-brand" />,
+      icon: ACHIEVEMENT_ICONS["first-course"],
       earned: inProgressCourses.some(course =>
         course.progress?.completed === course.progress?.total
       )
@@ -204,14 +220,14 @@ function useDashboardContentView() {
       id: "streak-7",
       title: "Consistency Champion",
       description: "Studied for 7 days in a row",
-      icon: <Calendar className="h-8 w-8 text-brand" />,
+      icon: ACHIEVEMENT_ICONS["streak-7"],
       earned: false
     },
     {
       id: "hours-10",
       title: "Dedicated Learner",
       description: "Spent 10+ hours learning",
-      icon: <Clock className="h-8 w-8 text-brand" />,
+      icon: ACHIEVEMENT_ICONS["hours-10"],
       earned: completedLessons >= 10
     }
   ]
@@ -502,7 +518,8 @@ function useDashboardContentView() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {paths.slice(0, 3).map(path => {
             // Get courses for this path
-            const pathCourses = courses.filter(course => path.courses.includes(course.id))
+            const pathCourseIds = new Set(path.courses)
+            const pathCourses = courses.filter(course => pathCourseIds.has(course.id))
             const totalPathCourses = pathCourses.length
             const completedPathCourses = pathCourses.filter(
               course =>
@@ -523,13 +540,7 @@ function useDashboardContentView() {
                     />
                   </div>
                   <CardTitle className="flex items-center gap-2">
-                    {path.icon && (
-                      <span className="text-heading-2">
-                        {path.icon === 'globe' && '(globe)'}
-                        {path.icon === 'file' && '(file)'}
-                        {path.icon === 'window' && '(window)'}
-                      </span>
-                    )}
+                    {path.icon && PATH_ICONS[path.icon]}
                     {path.title}
                   </CardTitle>
                   <CardDescription>{path.description}</CardDescription>

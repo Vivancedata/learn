@@ -1,1 +1,38 @@
 /* Shared design tokens and global utilities are imported from @vivancedata/ui/styles. */
+
+/*
+ * App-level interaction defaults (Vercel Web Interface Guidelines).
+ *
+ * - The navbar is sticky and 64px tall (the mobile header is fixed), so
+ *   `scroll-padding-top` keeps in-page anchors (lesson headings, the skip
+ *   link) and keyboard-focused elements from landing underneath it.
+ * - `touch-action: manipulation` removes the double-tap-to-zoom delay on
+ *   controls without disabling pinch zoom.
+ * - The tap highlight is set on purpose: a faint tint, so a tap still shows.
+ * - Headings balance their lines so a two-line heading keeps no widow.
+ */
+html {
+  scroll-padding-top: 5rem;
+  -webkit-tap-highlight-color: hsl(var(--foreground) / 0.08);
+}
+
+a,
+button,
+input,
+label,
+select,
+summary,
+textarea,
+[role="button"],
+[role="tab"] {
+  touch-action: manipulation;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}

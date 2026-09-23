@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import useSWR from 'swr'
 import { RecommendationCard } from '@/components/recommendation-card'
 import { EmptyRecommendations } from '@/components/empty-recommendations'
 import { Button } from '@/components/ui/button'
@@ -24,6 +25,20 @@ interface Recommendation {
   expiresAt: string
 }
 
+async function fetchRecommendations(
+  [, userId, maxItems]: readonly [string, string, number]
+): Promise<Recommendation[]> {
+  const response = await fetch(`/api/recommendations/user/${userId}`)
+
+  if (!response.ok) {
+    const data = await response.json()
+    throw new Error(data.message || 'Failed to load recommendations')
+  }
+
+  const data = await response.json()
+  return data.data.recommendations.slice(0, maxItems)
+}
+
 interface RecommendationsSectionProps {
   userId: string
   title?: string
@@ -45,33 +60,26 @@ export function RecommendationsSection({
   emptyVariant = 'default',
   className,
 }: RecommendationsSectionProps) {
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const {
+    data,
+    error: loadError,
+    isLoading,
+    isValidating,
+    mutate,
+  } = useSWR(['recommendations', userId, maxItems] as const, fetchRecommendations)
+  const recommendations = data ?? []
+  const error = loadError
+    ? loadError instanceof Error
+      ? loadError.message
+      : 'Failed to load recommendations'
+    : null
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [refreshError, setRefreshError] = useState<string | null>(null)
   const [carouselIndex, setCarouselIndex] = useState(0)
-
-  const fetchRecommendations = useCallback(async () => {
-    try {
-      setError(null)
-      const response = await fetch(`/api/recommendations/user/${userId}`)
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.message || 'Failed to load recommendations')
-      }
-
-      const data = await response.json()
-      setRecommendations(data.data.recommendations.slice(0, maxItems))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load recommendations')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [userId, maxItems])
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
+    setRefreshError(null)
     try {
       const response = await fetch('/api/recommendations/refresh', {
         method: 'POST',
@@ -83,23 +91,25 @@ export function RecommendationsSection({
         throw new Error('Failed to refresh recommendations')
       }
 
-      const data = await response.json()
-      setRecommendations(data.data.recommendations.slice(0, maxItems))
+      const refreshed = await response.json()
+      await mutate(
+        (refreshed.data.recommendations as Recommendation[]).slice(0, maxItems),
+        { revalidate: false }
+      )
       setCarouselIndex(0)
     } catch (_err) {
-      // Refresh failed - user can try again
+      setRefreshError('Could not refresh recommendations. Try again.')
     } finally {
       setIsRefreshing(false)
     }
   }
 
   const handleDismiss = (courseId: string) => {
-    setRecommendations(prev => prev.filter(r => r.courseId !== courseId))
+    void mutate(
+      (prev) => prev?.filter((r) => r.courseId !== courseId),
+      { revalidate: false }
+    )
   }
-
-  useEffect(() => {
-    fetchRecommendations()
-  }, [fetchRecommendations])
 
   // Carousel navigation
   const itemsPerView = variant === 'carousel' ? 3 : recommendations.length
@@ -126,13 +136,15 @@ export function RecommendationsSection({
         </div>
         <div className="flex items-center justify-center py-12">
           <Spinner className="w-8 h-8" />
-          <span className="ml-3 text-muted-foreground">Loading recommendations...</span>
+          <span className="ml-3 text-muted-foreground">Loading recommendations…</span>
         </div>
       </section>
     )
   }
 
-  if (error) {
+  // Only replace the section when there is nothing to show; a failed
+  // background revalidation keeps the recommendations already on screen.
+  if (error && !data) {
     return (
       <section className={cn('py-6', className)}>
         <div className="flex items-center justify-between mb-6">
@@ -151,10 +163,8 @@ export function RecommendationsSection({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              setIsLoading(true)
-              fetchRecommendations()
-            }}
+            onClick={() => void mutate()}
+            disabled={isValidating}
             className="mt-3"
           >
             Try Again
@@ -215,7 +225,7 @@ export function RecommendationsSection({
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            {isRefreshing ? 'Refreshing…' : 'Refresh'}
           </Button>
 
           {/* Carousel navigation */}
@@ -272,6 +282,12 @@ export function RecommendationsSection({
         </div>
       </div>
 
+      {refreshError && (
+        <p className="mb-4 text-sm text-destructive" role="alert">
+          {refreshError}
+        </p>
+      )}
+
       {/* Recommendations grid/carousel */}
       {variant === 'grid' ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -317,7 +333,7 @@ export function RecommendationsSection({
                   key={index}
                   onClick={() => setCarouselIndex(index)}
                   className={cn(
-                    'w-2 h-2 rounded-full transition-all duration-200',
+                    'w-2 h-2 rounded-full transition-colors duration-200',
                     index === carouselIndex
                       ? 'bg-primary w-4'
                       : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'

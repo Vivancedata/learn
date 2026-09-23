@@ -46,30 +46,31 @@ export async function POST(request: NextRequest) {
       return apiSuccess({ subscription: updated, updated: true }, HTTP_STATUS.OK)
     }
 
-    // Create new subscription
-    const subscription = await prisma.pushSubscription.create({
-      data: {
-        userId: body.userId,
-        endpoint: body.subscription.endpoint,
-        p256dh: body.subscription.keys.p256dh,
-        auth: body.subscription.keys.auth,
-      },
-    })
-
-    // Ensure notification preferences exist for the user
-    await prisma.notificationPreference.upsert({
-      where: { userId: body.userId },
-      create: {
-        userId: body.userId,
-        streakReminders: true,
-        courseUpdates: true,
-        achievementAlerts: true,
-        weeklyProgress: true,
-        communityReplies: true,
-        marketingEmails: false,
-      },
-      update: {},
-    })
+    // Create the new subscription and ensure notification preferences exist
+    // for the user -- the two writes are independent
+    const [subscription] = await Promise.all([
+      prisma.pushSubscription.create({
+        data: {
+          userId: body.userId,
+          endpoint: body.subscription.endpoint,
+          p256dh: body.subscription.keys.p256dh,
+          auth: body.subscription.keys.auth,
+        },
+      }),
+      prisma.notificationPreference.upsert({
+        where: { userId: body.userId },
+        create: {
+          userId: body.userId,
+          streakReminders: true,
+          courseUpdates: true,
+          achievementAlerts: true,
+          weeklyProgress: true,
+          communityReplies: true,
+          marketingEmails: false,
+        },
+        update: {},
+      }),
+    ])
 
     return apiSuccess({ subscription, created: true }, HTTP_STATUS.CREATED)
   } catch (error) {

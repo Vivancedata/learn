@@ -74,20 +74,11 @@ export function StreakDisplay({
   // Pulse animation for active streaks
   const shouldAnimate = isActive && status === 'active' && streak > 0
 
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'inline-flex items-center rounded-full border transition-all duration-200',
-        'hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand/50',
-        colors.container,
-        config.container,
-        onClick ? 'cursor-pointer' : 'cursor-default',
-        className
-      )}
-      aria-label={`Current streak: ${streak} day${streak !== 1 ? 's' : ''}`}
-      type="button"
-    >
+  const streakLabel = `Current streak: ${streak} day${streak !== 1 ? 's' : ''}`
+
+  const content = (
+    <>
+      <span className="sr-only">{streakLabel}</span>
       <span
         className={cn(
           'relative',
@@ -103,14 +94,41 @@ export function StreakDisplay({
           aria-hidden="true"
         />
       </span>
-      <span className={cn(config.text, colors.text)}>
+      <span className={cn(config.text, colors.text)} aria-hidden="true">
         {streak}
       </span>
       {showLabel && (
-        <span className={cn(config.label, 'text-muted-foreground ml-0.5')}>
+        <span className={cn(config.label, 'text-muted-foreground ml-0.5')} aria-hidden="true">
           {streak === 1 ? 'day' : 'days'}
         </span>
       )}
+    </>
+  )
+
+  const baseClassName = cn(
+    'inline-flex items-center rounded-full border',
+    colors.container,
+    config.container
+  )
+
+  // Without a click handler this is a status readout, not a control: render
+  // it as plain text so it is not an inert focusable button.
+  if (!onClick) {
+    return <span className={cn(baseClassName, className)}>{content}</span>
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        baseClassName,
+        'cursor-pointer transition-[transform,background-color,border-color,color] duration-200',
+        'hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+        className
+      )}
+      type="button"
+    >
+      {content}
     </button>
   )
 }
@@ -135,7 +153,8 @@ export function StreakDisplaySkeleton({
         'rounded-full bg-muted animate-pulse',
         sizeConfig[size]
       )}
-      aria-label="Loading streak..."
+      role="status"
+      aria-label="Loading streak…"
     />
   )
 }

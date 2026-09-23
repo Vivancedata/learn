@@ -28,49 +28,38 @@ export async function GET(
       throw new NotFoundError('Assessment')
     }
 
-    // Get user's previous attempts if authenticated
-    let userAttempts: {
-      id: string
-      score: number
-      passed: boolean
-      timeSpent: number
-      completedAt: Date
-    }[] = []
-    let bestScore: number | undefined
+    // The user's previous attempts (if authenticated) and the related course
+    // (if linked) depend only on the assessment, so fetch them in parallel.
+    const [userAttempts, course] = await Promise.all([
+      userId
+        ? prisma.assessmentAttempt.findMany({
+            where: {
+              userId,
+              assessmentId: assessment.id,
+            },
+            select: {
+              id: true,
+              score: true,
+              passed: true,
+              timeSpent: true,
+              completedAt: true,
+            },
+            orderBy: { completedAt: 'desc' },
+            take: 10, // Last 10 attempts
+          })
+        : [],
+      assessment.courseId
+        ? prisma.course.findUnique({
+            where: { id: assessment.courseId },
+            select: { id: true, title: true },
+          })
+        : null,
+    ])
 
-    if (userId) {
-      userAttempts = await prisma.assessmentAttempt.findMany({
-        where: {
-          userId,
-          assessmentId: assessment.id,
-        },
-        select: {
-          id: true,
-          score: true,
-          passed: true,
-          timeSpent: true,
-          completedAt: true,
-        },
-        orderBy: { completedAt: 'desc' },
-        take: 10, // Last 10 attempts
-      })
-
-      if (userAttempts.length > 0) {
-        bestScore = Math.max(...userAttempts.map(a => a.score))
-      }
-    }
-
-    // Get related course if linked
-    let relatedCourse: { id: string; title: string } | undefined
-    if (assessment.courseId) {
-      const course = await prisma.course.findUnique({
-        where: { id: assessment.courseId },
-        select: { id: true, title: true },
-      })
-      if (course) {
-        relatedCourse = course
-      }
-    }
+    const bestScore = userAttempts.length > 0
+      ? Math.max(...userAttempts.map(a => a.score))
+      : undefined
+    const relatedCourse: { id: string; title: string } | undefined = course ?? undefined
 
     const adaptedAssessment = adaptSkillAssessment(assessment)
 

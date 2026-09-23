@@ -75,7 +75,7 @@ export default function SignUpPage() {
     <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Sign Up</CardTitle>
+          <CardTitle as="h1">Sign Up</CardTitle>
           <CardDescription>
             Create a new account to start learning
           </CardDescription>
@@ -97,7 +97,8 @@ export default function SignUpPage() {
                 id="name"
                 name="name"
                 type="text"
-                placeholder="Your name"
+                autoComplete="name"
+                placeholder="Your name…"
                 value={formData.name}
                 onChange={handleChange}
                 disabled={loading}
@@ -112,7 +113,9 @@ export default function SignUpPage() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="your@email.com"
+                autoComplete="email"
+                spellCheck={false}
+                placeholder="your@email.com…"
                 value={formData.email}
                 onChange={handleChange}
                 disabled={loading}
@@ -128,6 +131,8 @@ export default function SignUpPage() {
                 id="password"
                 name="password"
                 type="password"
+                autoComplete="new-password"
+                aria-describedby={formData.password ? "password-requirements" : undefined}
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
@@ -136,7 +141,7 @@ export default function SignUpPage() {
               />
 
               {formData.password && (
-                <div className="mt-2 space-y-1 text-xs">
+                <div id="password-requirements" className="mt-2 space-y-1 text-xs">
                   <div className="flex items-center gap-2">
                     {passwordStrength.hasMinLength ? (
                       <CheckCircle2 className="h-3 w-3 text-success" />
@@ -189,7 +194,9 @@ export default function SignUpPage() {
                 id="githubUsername"
                 name="githubUsername"
                 type="text"
-                placeholder="your-github-username"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="your-github-username…"
                 value={formData.githubUsername}
                 onChange={handleChange}
                 disabled={loading}
@@ -198,11 +205,11 @@ export default function SignUpPage() {
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-2">
-            <Button type="submit" className="w-full" disabled={loading || !isPasswordValid}>
+            <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
+                  Creating account…
                 </>
               ) : (
                 "Sign Up"

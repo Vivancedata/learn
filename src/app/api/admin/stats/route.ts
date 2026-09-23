@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
       approvedProjects,
       totalCertificates,
       recentUsers,
+      roleStats,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { emailVerified: true } }),
@@ -42,13 +43,12 @@ export async function GET(request: NextRequest) {
           role: true,
         },
       }),
+      // Role breakdown
+      prisma.user.groupBy({
+        by: ['role'],
+        _count: true,
+      }),
     ])
-
-    // Role breakdown
-    const roleStats = await prisma.user.groupBy({
-      by: ['role'],
-      _count: true,
-    })
 
     return apiSuccess({
       overview: {

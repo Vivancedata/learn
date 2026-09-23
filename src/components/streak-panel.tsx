@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { StreakDisplay, StreakDisplaySkeleton } from './streak-display'
 import { StreakCalendar, StreakCalendarSkeleton } from './streak-calendar'
 import { StreakFreezeButton, StreakFreezeInfo } from './streak-freeze-button'
@@ -104,6 +105,17 @@ export function StreakPanel({
           <div className="text-center text-muted-foreground">
             <Flame className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p>{error || 'Unable to load streak data'}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => {
+                setLoading(true)
+                void fetchStreakData()
+              }}
+            >
+              Try Again
+            </Button>
           </div>
         </CardContent>
       </Card>

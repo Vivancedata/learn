@@ -83,32 +83,33 @@ export async function GET(
       return apiSuccess(hiddenResponse)
     }
 
-    // Get all cached rankings for this user
-    const cachedRankings = await prisma.leaderboardCache.findMany({
-      where: { userId },
-      select: {
-        type: true,
-        period: true,
-        rank: true,
-        previousRank: true,
-        score: true,
-      },
-    })
-
-    // Count total participants for each type/period combo
-    const totalParticipantsCounts = await Promise.all(
-      leaderboardTypes.flatMap(type =>
-        leaderboardPeriods.map(async period => {
-          const count = await prisma.leaderboardCache.count({
-            where: {
-              type: typeToEnum[type],
-              period: periodToEnum[period],
-            },
+    // Get all cached rankings for this user, and count total participants for
+    // each type/period combo -- all independent, so in parallel
+    const [cachedRankings, totalParticipantsCounts] = await Promise.all([
+      prisma.leaderboardCache.findMany({
+        where: { userId },
+        select: {
+          type: true,
+          period: true,
+          rank: true,
+          previousRank: true,
+          score: true,
+        },
+      }),
+      Promise.all(
+        leaderboardTypes.flatMap(type =>
+          leaderboardPeriods.map(async period => {
+            const count = await prisma.leaderboardCache.count({
+              where: {
+                type: typeToEnum[type],
+                period: periodToEnum[period],
+              },
+            })
+            return { type, period, count }
           })
-          return { type, period, count }
-        })
-      )
-    )
+        )
+      ),
+    ])
 
     const participantsMap = new Map<string, number>()
     totalParticipantsCounts.forEach(({ type, period, count }) => {

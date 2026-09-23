@@ -42,11 +42,11 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit'),
     })
 
-    // Get user's conversations
-    const conversations = await getUserConversations(userId, queryParams.limit)
-
-    // Get usage stats
-    const usageStats = await getUsageStats(userId)
+    // Get user's conversations and usage stats (independent)
+    const [conversations, usageStats] = await Promise.all([
+      getUserConversations(userId, queryParams.limit),
+      getUsageStats(userId),
+    ])
 
     // Define type for conversation with messages
     interface ConversationWithMessages {
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
         ? {
             content:
               conv.messages[0].content.slice(0, 100) +
-              (conv.messages[0].content.length > 100 ? '...' : ''),
+              (conv.messages[0].content.length > 100 ? '…' : ''),
             role: conv.messages[0].role,
             createdAt: conv.messages[0].createdAt,
           }

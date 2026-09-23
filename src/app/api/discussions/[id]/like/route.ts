@@ -20,22 +20,23 @@ export async function POST(
     const { id } = await params
     const user = await requireAuth(request)
 
-    const discussion = await prisma.discussion.findUnique({
-      where: { id },
-    })
+    const [discussion, existingLike] = await Promise.all([
+      prisma.discussion.findUnique({
+        where: { id },
+      }),
+      prisma.discussionLike.findUnique({
+        where: {
+          userId_discussionId: {
+            userId: user.userId,
+            discussionId: id,
+          },
+        },
+      }),
+    ])
 
     if (!discussion) {
       throw new NotFoundError('Discussion')
     }
-
-    const existingLike = await prisma.discussionLike.findUnique({
-      where: {
-        userId_discussionId: {
-          userId: user.userId,
-          discussionId: id,
-        },
-      },
-    })
 
     if (existingLike) {
       await prisma.$transaction([

@@ -12,19 +12,19 @@ export const metadata: Metadata = {
 const faqs = [
   {
     question: 'Can I switch between monthly and yearly plans?',
-    answer: 'Yes! You can switch between plans at any time from your account settings. When upgrading to yearly, you\'ll receive a prorated credit for the remaining time on your monthly plan.',
+    answer: 'Yes! You can switch between plans at any time from your account settings. When upgrading to yearly, you’ll receive a prorated credit for the remaining time on your monthly plan.',
   },
   {
     question: 'Is there a free trial?',
-    answer: 'Yes, all new Pro subscribers get a 7-day free trial. You can cancel anytime during the trial period and won\'t be charged.',
+    answer: 'Yes, all new Pro subscribers get a 7-day free trial. You can cancel anytime during the trial period and won’t be charged.',
   },
   {
     question: 'What happens when I cancel my subscription?',
-    answer: 'When you cancel, you\'ll keep Pro access until the end of your current billing period. After that, you\'ll be downgraded to the Free plan but can still access any certificates you\'ve earned.',
+    answer: 'When you cancel, you’ll keep Pro access until the end of your current billing period. After that, you’ll be downgraded to the Free plan but can still access any certificates you’ve earned.',
   },
   {
     question: 'Can I get a refund?',
-    answer: 'We offer a 30-day money-back guarantee. If you\'re not satisfied with Pro within the first 30 days, contact us for a full refund.',
+    answer: 'We offer a 30-day money-back guarantee. If you’re not satisfied with Pro within the first 30 days, contact us for a full refund.',
   },
   {
     question: 'Do you offer team or enterprise plans?',
@@ -77,7 +77,7 @@ export default function PricingPage() {
         </h1>
         <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
           Structured paths for mastering AI and data science.
-          Start free, upgrade when you&apos;re ready.
+          Start free, upgrade when you’re ready.
         </p>
       </div>
 
@@ -89,15 +89,15 @@ export default function PricingPage() {
           <table className="mx-auto w-full max-w-4xl">
             <thead>
               <tr className="border-b">
-                <th className="px-4 py-4 text-left">Feature</th>
-                <th className="px-4 py-4 text-center">Free</th>
-                <th className="bg-primary/5 px-4 py-4 text-center">Pro</th>
+                <th scope="col" className="px-4 py-4 text-left">Feature</th>
+                <th scope="col" className="px-4 py-4 text-center">Free</th>
+                <th scope="col" className="bg-primary/5 px-4 py-4 text-center">Pro</th>
               </tr>
             </thead>
             <tbody>
               {comparisonRows.map((row) => (
                 <tr key={row.feature} className="border-b">
-                  <td className="px-4 py-4 font-medium">{row.feature}</td>
+                  <th scope="row" className="px-4 py-4 text-left font-medium">{row.feature}</th>
                   <td className="px-4 py-4 text-center">
                     <PlanValue value={row.free} />
                   </td>
@@ -122,7 +122,7 @@ export default function PricingPage() {
               <details key={faq.question} className="group border-b border-border last:border-0">
                 <summary className="flex cursor-pointer list-none items-center justify-between py-4 font-medium [&::-webkit-details-marker]:hidden">
                   <span>{faq.question}</span>
-                  <span className="text-muted-foreground transition-transform group-open:rotate-180">
+                  <span aria-hidden="true" className="text-muted-foreground transition-transform group-open:rotate-180">
                     v
                   </span>
                 </summary>

@@ -5,6 +5,7 @@ import {
   useRef,
   useCallback,
   useEffect,
+  useId,
   KeyboardEvent,
   ChangeEvent,
   FormEvent,
@@ -16,13 +17,6 @@ import { cn } from '@/lib/utils'
 const MAX_CHARS = 2000
 const MIN_ROWS = 1
 const MAX_ROWS = 6
-
-interface QuickActionButton {
-  id: string
-  label: string
-  icon: typeof HelpCircle
-  onClick: () => void
-}
 
 interface ChatInputProps {
   onSendMessage: (message: string) => Promise<void>
@@ -44,11 +38,11 @@ export function ChatInput({
   onHintClick,
   onExampleClick,
   isLoading = false,
-  placeholder = 'Ask me anything about this lesson...',
+  placeholder = 'Ask me anything about this lesson…',
   showQuickActions = true,
 }: ChatInputProps) {
   const [value, setValue] = useState('')
-  const [isFocused, setIsFocused] = useState(false)
+  const charCountId = useId()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const charCount = value.length
@@ -115,7 +109,9 @@ export function ChatInput({
    */
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      // Ignore Enter while an IME composition is in progress (e.g. Japanese,
+      // Chinese, Korean input), where it confirms the candidate, not the message.
+      if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
         e.preventDefault()
         if (canSend) {
           handleSubmit(e as unknown as FormEvent)
@@ -125,34 +121,12 @@ export function ChatInput({
     [canSend, handleSubmit]
   )
 
-  /**
-   * Quick action buttons configuration
-   */
-  const quickActions: QuickActionButton[] = [
-    {
-      id: 'explain',
-      label: 'Explain this',
-      icon: HelpCircle,
-      onClick: onExplainClick || (() => {}),
-    },
-    {
-      id: 'hint',
-      label: 'Give me a hint',
-      icon: Lightbulb,
-      onClick: onHintClick || (() => {}),
-    },
-    {
-      id: 'example',
-      label: 'Show example',
-      icon: Code,
-      onClick: onExampleClick || (() => {}),
-    },
-  ].filter((action) => action.onClick !== (() => {}))
+  const hasQuickActions = Boolean(onExplainClick || onHintClick || onExampleClick)
 
   return (
     <div className="border-t border-border bg-card/50 backdrop-blur-sm p-3 space-y-3">
       {/* Quick action buttons */}
-      {showQuickActions && quickActions.length > 0 && !isLoading && (
+      {showQuickActions && hasQuickActions && !isLoading && (
         <div className="flex flex-wrap gap-2" role="group" aria-label="Quick actions">
           {onExplainClick && (
             <Button
@@ -200,8 +174,8 @@ export function ChatInput({
       <form onSubmit={handleSubmit} className="relative">
         <div
           className={cn(
-            'flex items-end gap-2 rounded-xl border bg-background p-2 transition-all duration-200',
-            isFocused && 'ring-2 ring-ring ring-offset-2 ring-offset-background',
+            'flex items-end gap-2 rounded-xl border bg-background p-2 transition-[box-shadow,border-color] duration-200',
+            'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background',
             isOverLimit && 'border-destructive'
           )}
         >
@@ -210,8 +184,6 @@ export function ChatInput({
             value={value}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
             disabled={isLoading}
             rows={MIN_ROWS}
@@ -221,7 +193,7 @@ export function ChatInput({
               'min-h-[24px] py-1.5 px-2'
             )}
             aria-label="Type your message"
-            aria-describedby="char-count"
+            aria-describedby={charCountId}
           />
 
           <Button
@@ -229,7 +201,7 @@ export function ChatInput({
             size="icon"
             variant={canSend ? 'default' : 'ghost'}
             className={cn(
-              'h-8 w-8 rounded-lg flex-shrink-0 transition-all duration-200',
+              'h-8 w-8 rounded-lg flex-shrink-0 transition-colors duration-200',
               canSend && 'bg-primary hover:bg-primary/90'
             )}
             disabled={!canSend}
@@ -245,7 +217,7 @@ export function ChatInput({
 
         {/* Character count */}
         <div
-          id="char-count"
+          id={charCountId}
           className={cn(
             'flex justify-between items-center mt-1 px-2 text-xs',
             isOverLimit ? 'text-destructive' : 'text-muted-foreground'

@@ -86,7 +86,9 @@ export function OfflineIndicator({
           'fixed left-0 right-0 z-50',
           'px-4 py-3',
           'animate-in fade-in duration-200',
-          position === 'top' && 'top-0 slide-in-from-top',
+          // Clears the notch / status bar in the standalone PWA
+          position === 'top' && 'top-0 slide-in-from-top pt-[max(0.75rem,env(safe-area-inset-top))]',
+          position === 'bottom' && 'pb-[max(0.75rem,env(safe-area-inset-bottom))]',
           position === 'bottom' && 'bottom-0 slide-in-from-bottom',
           isOffline && 'bg-destructive text-destructive-foreground',
           isReconnected && 'bg-success text-success-foreground',

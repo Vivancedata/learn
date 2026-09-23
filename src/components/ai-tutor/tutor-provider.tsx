@@ -14,7 +14,11 @@ import type {
   TutorContext,
   TutorContextValue,
 } from '@/types/ai-tutor'
-const STORAGE_KEY = 'ai-tutor-messages'
+import { readStorageJSON, removeStorage, writeStorageJSON } from '@/lib/safe-storage'
+
+const STORAGE_KEY = 'ai-tutor-messages:v1'
+/** Pre-versioning key; read once so an open conversation survives the rename. */
+const LEGACY_STORAGE_KEY = 'ai-tutor-messages'
 const MAX_MESSAGES = 100
 const MAX_MESSAGE_LENGTH = 2000
 
@@ -76,18 +80,17 @@ export function TutorProvider({ children }: TutorProviderProps) {
    * Load messages from session storage on mount
    */
   useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored) as ChatMessage[]
-        const messagesWithDates = parsed.map((msg) => ({
+    const stored =
+      readStorageJSON<ChatMessage[] | null>(STORAGE_KEY, null, 'session') ??
+      readStorageJSON<ChatMessage[] | null>(LEGACY_STORAGE_KEY, null, 'session')
+    removeStorage(LEGACY_STORAGE_KEY, 'session')
+    if (Array.isArray(stored)) {
+      setMessages(
+        stored.map((msg) => ({
           ...msg,
           timestamp: new Date(msg.timestamp),
         }))
-        setMessages(messagesWithDates)
-      }
-    } catch {
-      // Ignore errors when loading from storage
+      )
     }
   }, [])
 
@@ -95,11 +98,7 @@ export function TutorProvider({ children }: TutorProviderProps) {
    * Save messages to session storage when they change
    */
   useEffect(() => {
-    try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages))
-    } catch {
-      // Ignore errors when saving to storage
-    }
+    writeStorageJSON(STORAGE_KEY, messages, 'session')
   }, [messages])
 
   /**
@@ -203,11 +202,7 @@ export function TutorProvider({ children }: TutorProviderProps) {
   const clearHistory = useCallback(() => {
     setMessages([])
     setTutorState((prev) => ({ ...prev, error: null, conversationId: undefined }))
-    try {
-      sessionStorage.removeItem(STORAGE_KEY)
-    } catch {
-      // Ignore storage errors
-    }
+    removeStorage(STORAGE_KEY, 'session')
   }, [])
 
   /**

@@ -57,7 +57,7 @@ export function LeaderboardUserCard({
           {/* Avatar and rank */}
           <div className="flex flex-col items-center">
             <div className="relative">
-              <div className="w-20 h-20 rounded-full bg-brand flex items-center justify-center text-white text-xl font-bold shadow-lg">
+              <div aria-hidden="true" className="w-20 h-20 rounded-full bg-brand flex items-center justify-center text-white text-xl font-bold shadow-lg">
                 {initials}
               </div>
               {userRank.rank <= 3 && (

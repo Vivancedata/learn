@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, after } from 'next/server'
 import { z } from 'zod'
 import prisma from '@/lib/db'
 import { apiSuccess, handleApiError, parseRequestBody, NotFoundError, ValidationError, ForbiddenError, HTTP_STATUS } from '@/lib/api-errors'
@@ -30,6 +30,8 @@ export async function POST(request: NextRequest) {
     // Authorization check - user can only generate certificate for themselves
     requireOwnership(request, body.userId, 'certificate generation')
 
+    // The Pro gate runs first so non-subscribers never trigger the heavier
+    // lookups below.
     const subscription = await prisma.subscription.findUnique({
       where: { userId: body.userId },
       select: { status: true },
@@ -39,43 +41,56 @@ export async function POST(request: NextRequest) {
       throw new ForbiddenError('Verified certificates require a Pro subscription')
     }
 
-    // 1. Check if user exists
-    const user = await prisma.user.findUnique({
-      where: { id: body.userId },
-    })
+    // The remaining four lookups are keyed only by the request body, so run
+    // them in parallel; the checks below keep their original order.
+    const [user, course, existingCertificate, courseProgress] =
+      await Promise.all([
+        prisma.user.findUnique({
+          where: { id: body.userId },
+        }),
+        prisma.course.findUnique({
+          where: { id: body.courseId },
+          include: {
+            sections: {
+              include: {
+                lessons: {
+                  include: {
+                    quizQuestions: true,
+                  },
+                },
+              },
+            },
+          },
+        }),
+        prisma.certificate.findFirst({
+          where: {
+            userId: body.userId,
+            courseId: body.courseId,
+          },
+        }),
+        prisma.courseProgress.findFirst({
+          where: {
+            userId: body.userId,
+            courseId: body.courseId,
+          },
+          include: {
+            completedLessons: true,
+            quizScores: true,
+          },
+        }),
+      ])
 
+    // 1. Check if user exists
     if (!user) {
       throw new NotFoundError('User')
     }
 
     // 2. Check if course exists
-    const course = await prisma.course.findUnique({
-      where: { id: body.courseId },
-      include: {
-        sections: {
-          include: {
-            lessons: {
-              include: {
-                quizQuestions: true,
-              },
-            },
-          },
-        },
-      },
-    })
-
     if (!course) {
       throw new NotFoundError('Course')
     }
 
     // 3. Check if certificate already exists
-    const existingCertificate = await prisma.certificate.findFirst({
-      where: {
-        userId: body.userId,
-        courseId: body.courseId,
-      },
-    })
-
     if (existingCertificate) {
       return apiSuccess({
         certificate: existingCertificate,
@@ -83,18 +98,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // 4. Get user's course progress
-    const courseProgress = await prisma.courseProgress.findFirst({
-      where: {
-        userId: body.userId,
-        courseId: body.courseId,
-      },
-      include: {
-        completedLessons: true,
-        quizScores: true,
-      },
-    })
-
+    // 4. Check the user's course progress
     if (!courseProgress) {
       throw new ValidationError(
         'Cannot generate certificate - course not started',
@@ -188,12 +192,15 @@ export async function POST(request: NextRequest) {
     })
 
     // Earning a certificate can unlock achievements (certified, multi-certified).
-    // Evaluate them server-side; never block certificate issuance on failure.
-    try {
-      await runAchievementsCheck(body.userId)
-    } catch (achError) {
-      void achError
-    }
+    // Evaluate them server-side after responding; never block certificate
+    // issuance on them or on their failure.
+    after(async () => {
+      try {
+        await runAchievementsCheck(body.userId)
+      } catch (achError) {
+        void achError
+      }
+    })
 
     return apiSuccess(
       {

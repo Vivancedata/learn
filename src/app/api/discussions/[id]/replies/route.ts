@@ -26,6 +26,15 @@ export async function POST(
     const { id } = await params
     const discussionId = id
 
+    // Parse and validate request body
+    const body = await parseRequestBody(request, createReplySchema)
+
+    const { userId, content } = body
+
+    // Authorization: Users can only create replies as themselves. Both checks
+    // are cheap, so run them before querying the database.
+    requireOwnership(request, userId, 'discussion reply')
+
     // Verify discussion exists
     const discussion = await prisma.discussion.findUnique({
       where: { id: discussionId },
@@ -34,14 +43,6 @@ export async function POST(
     if (!discussion) {
       throw new NotFoundError('Discussion')
     }
-
-    // Parse and validate request body
-    const body = await parseRequestBody(request, createReplySchema)
-
-    const { userId, content } = body
-
-    // Authorization: Users can only create replies as themselves
-    requireOwnership(request, userId, 'discussion reply')
 
     // Create the reply
     const reply = await prisma.discussionReply.create({

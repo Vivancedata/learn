@@ -16,16 +16,15 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import Link from 'next/link'
 import { AlertCircle, Loader2, CheckCircle2, ArrowLeft, Mail } from 'lucide-react'
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const validateEmail = (value: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(value)
-  }
+  const validateEmail = (value: string): boolean => EMAIL_REGEX.test(value)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -106,12 +105,12 @@ export default function ForgotPasswordPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Link href="/sign-in" className="w-full">
-              <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full" asChild>
+              <Link href="/sign-in">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Sign In
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </CardFooter>
         </Card>
       </div>
@@ -140,12 +139,14 @@ export default function ForgotPasswordPage() {
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
-                placeholder="your@email.com"
+                placeholder="your@email.com…"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isSubmitting}
                 autoComplete="email"
+                spellCheck={false}
                 aria-describedby={error ? 'error-message' : undefined}
                 required
               />
@@ -157,7 +158,7 @@ export default function ForgotPasswordPage() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                  Sending reset link...
+                  Sending reset link…
                 </>
               ) : (
                 'Send Reset Link'

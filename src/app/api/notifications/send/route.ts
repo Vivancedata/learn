@@ -4,7 +4,7 @@
  * This endpoint is for internal/admin use
  */
 
-import { NextRequest } from 'next/server'
+import { NextRequest, after } from 'next/server'
 import {
   apiSuccess,
   handleApiError,
@@ -100,20 +100,24 @@ export async function POST(request: NextRequest) {
       } else {
         failureCount++
 
-        // If subscription is invalid, delete it
+        // If subscription is invalid, mark it for deletion
         if (result.status === 'rejected' || !result.value.success) {
           failedEndpoints.push(subscription.endpoint)
-
-          // Delete invalid subscription
-          try {
-            await prisma.pushSubscription.delete({
-              where: { endpoint: subscription.endpoint },
-            })
-          } catch {
-            // Ignore deletion errors
-          }
         }
       }
+    }
+
+    // Delete invalid subscriptions in one query, after the response is sent
+    if (failedEndpoints.length > 0) {
+      after(async () => {
+        try {
+          await prisma.pushSubscription.deleteMany({
+            where: { endpoint: { in: failedEndpoints } },
+          })
+        } catch {
+          // Ignore deletion errors
+        }
+      })
     }
 
     return apiSuccess({

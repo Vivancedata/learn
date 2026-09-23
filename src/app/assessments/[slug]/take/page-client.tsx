@@ -225,11 +225,25 @@ function getQuestionStatuses(
   })
 }
 
+/** Close an open overlay on Escape. */
+function useEscapeToClose(isOpen: boolean, onClose: () => void) {
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+}
+
 function LoadingState() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center">
       <Loader2 className="mb-4 h-12 w-12 animate-spin text-brand" />
-      <p className="text-muted-foreground">Loading assessment...</p>
+      <p className="text-muted-foreground">Loading assessment…</p>
     </div>
   )
 }
@@ -308,7 +322,12 @@ function AssessmentHeader({
               Questions
             </Button>
 
-            <Button onClick={onOpenSubmitModal} size="sm" className="gap-2">
+            <Button
+              onClick={onOpenSubmitModal}
+              size="sm"
+              className="gap-2"
+              aria-label="Submit assessment"
+            >
               <Send className="h-4 w-4" />
               <span className="hidden sm:inline">Submit</span>
             </Button>
@@ -450,12 +469,19 @@ function MobileQuestionSidebar({
   onQuestionClick: (index: number) => void
   onClose: () => void
 }) {
+  useEscapeToClose(isOpen, onClose)
+
   if (!isOpen) {
     return null
   }
 
   return (
-    <div className="fixed inset-0 z-50 lg:hidden">
+    <div
+      className="fixed inset-0 z-50 lg:hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="question-sidebar-title"
+    >
       <button
         type="button"
         aria-label="Close question sidebar"
@@ -464,12 +490,12 @@ function MobileQuestionSidebar({
       />
       <div className="absolute right-0 top-0 h-full w-80 max-w-full border-l bg-card shadow-lg">
         <div className="flex items-center justify-between border-b p-4">
-          <h3 className="font-semibold">Questions</h3>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <h3 id="question-sidebar-title" className="font-semibold">Questions</h3>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close questions">
             <X className="h-5 w-5" />
           </Button>
         </div>
-        <div className="max-h-[calc(100vh-4rem)] overflow-y-auto p-4">
+        <div className="max-h-[calc(100vh-4rem)] overflow-y-auto overscroll-contain p-4">
           <AssessmentNavigation
             totalQuestions={totalQuestions}
             currentQuestion={currentQuestionIndex}
@@ -501,12 +527,19 @@ function SubmitConfirmationModal({
   onClose: () => void
   onSubmit: () => void
 }) {
+  useEscapeToClose(isOpen, onClose)
+
   if (!isOpen) {
     return null
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="submit-confirmation-title"
+    >
       <button
         type="button"
         aria-label="Close submit confirmation"
@@ -515,7 +548,9 @@ function SubmitConfirmationModal({
       />
       <Card className="relative w-full max-w-md">
         <CardHeader>
-          <h2 className="text-xl font-semibold">Submit Assessment?</h2>
+          <h2 id="submit-confirmation-title" className="text-xl font-semibold">
+            Submit Assessment?
+          </h2>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -576,7 +611,7 @@ function SubmittingOverlay({ isSubmitting }: { isSubmitting: boolean }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
       <div className="text-center">
         <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-brand" />
-        <p className="text-lg font-medium">Submitting your assessment...</p>
+        <p className="text-lg font-medium">Submitting your assessment…</p>
         <p className="text-muted-foreground">Please wait</p>
       </div>
     </div>

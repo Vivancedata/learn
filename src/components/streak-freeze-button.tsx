@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -32,6 +32,21 @@ export function StreakFreezeButton({
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
+  // Keyboard focus: the trigger unmounts when the confirmation opens, so move
+  // focus into the card, and hand it back to the trigger when the card closes.
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const cancelRef = useRef<HTMLButtonElement>(null)
+  const wasOpenRef = useRef(false)
+  useEffect(() => {
+    if (showConfirmation) {
+      wasOpenRef.current = true
+      cancelRef.current?.focus()
+    } else if (wasOpenRef.current) {
+      wasOpenRef.current = false
+      triggerRef.current?.focus()
+    }
+  }, [showConfirmation])
+
   const canUseFreeze = freezesRemaining > 0 && streakStatus === 'at_risk' && currentStreak > 0 && !disabled
 
   const handleUseFreeze = async () => {
@@ -55,7 +70,7 @@ export function StreakFreezeButton({
   if (showConfirmation) {
     return (
       <Card className={cn('w-full max-w-sm', className)}>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2" aria-live="polite">
           <CardTitle className="text-lg flex items-center gap-2">
             {success ? (
               <>
@@ -90,7 +105,7 @@ export function StreakFreezeButton({
                 </div>
               </div>
               {error && (
-                <div className="mt-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <div className="mt-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20" role="alert">
                   <p className="text-sm text-destructive">{error}</p>
                 </div>
               )}
@@ -98,6 +113,7 @@ export function StreakFreezeButton({
 
             <CardFooter className="flex gap-2">
               <Button
+                ref={cancelRef}
                 variant="outline"
                 onClick={() => setShowConfirmation(false)}
                 disabled={isLoading}
@@ -116,7 +132,7 @@ export function StreakFreezeButton({
                     <span className="animate-spin mr-2">
                       <Snowflake className="h-4 w-4" />
                     </span>
-                    Using...
+                    Using…
                   </>
                 ) : (
                   <>
@@ -142,6 +158,7 @@ export function StreakFreezeButton({
 
   return (
     <Button
+      ref={triggerRef}
       variant="outline"
       onClick={() => setShowConfirmation(true)}
       disabled={!canUseFreeze}

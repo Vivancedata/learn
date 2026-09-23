@@ -1,11 +1,28 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import { cn } from '@/lib/utils'
-import { CodePlayground } from '@/components/code-playground'
 import { CodeDisplay } from '@/components/code-editor'
 import { Button } from '@/components/ui/button'
 import { Play, Code2 } from 'lucide-react'
+
+// The playground (editor chrome + the Pyodide runner) is only needed once a
+// block is interactive or the reader clicks "Try it", so it is split out of
+// the lesson bundle and loaded on demand.
+const CodePlayground = dynamic(
+  () => import('@/components/code-playground').then((mod) => mod.CodePlayground),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="h-[220px] animate-pulse rounded-lg border bg-muted"
+        role="status"
+        aria-label="Loading code playground…"
+      />
+    ),
+  }
+)
 
 export interface InteractiveCodeBlockProps {
   /** The code content */
@@ -36,7 +53,7 @@ export function InteractiveCodeBlock({
   const [isExpandedByUser, setIsExpandedByUser] = useState(false)
 
   // Clean up the code (remove trailing newlines)
-  const cleanCode = useMemo(() => code.trim(), [code])
+  const cleanCode = code.trim()
 
   // Handle toggle between static and interactive view
   const toggleInteractive = useCallback(() => {
@@ -70,7 +87,7 @@ export function InteractiveCodeBlock({
 
       {/* "Try it" button for Python code blocks */}
       {canBeInteractive && (
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity">
           <Button
             size="sm"
             variant="secondary"

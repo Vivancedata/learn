@@ -20,6 +20,7 @@ jest.mock('@/lib/auth', () => ({
 }))
 
 jest.mock('@/lib/analytics-server', () => ({
+  flushAnalytics: jest.fn(),
   serverAnalytics: { trackProjectSubmitted: jest.fn() },
 }))
 

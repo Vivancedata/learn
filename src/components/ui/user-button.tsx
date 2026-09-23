@@ -26,12 +26,12 @@ export function UserButton() {
         <Button variant="ghost" size="sm" asChild>
           <Link href="/dashboard" className="flex items-center gap-2">
             <User className="h-4 w-4" />
-            <span className="hidden sm:inline">{user.name || user.email}</span>
+            <span className="sr-only sm:not-sr-only">{user.name || user.email}</span>
           </Link>
         </Button>
         <Button variant="outline" size="sm" onClick={logout}>
           <LogOut className="h-4 w-4" />
-          <span className="hidden sm:inline ml-2">Sign Out</span>
+          <span className="sr-only sm:not-sr-only sm:ml-2">Sign Out</span>
         </Button>
       </div>
     )

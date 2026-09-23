@@ -11,8 +11,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex items-center justify-center min-h-[60vh]" role="status">
         <Loader2 className="h-8 w-8 animate-spin text-brand" />
+        <span className="sr-only">Loading…</span>
       </div>
     )
   }

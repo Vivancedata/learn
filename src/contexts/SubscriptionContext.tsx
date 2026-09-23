@@ -39,6 +39,7 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated } = useAuth()
+  const userId = user?.id
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -72,28 +73,23 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated])
 
-  // Fetch subscription when auth changes
+  // Fetch subscription when the signed-in user changes. Keyed on the id, not
+  // the user object, which AuthContext replaces on every auth check.
   useEffect(() => {
     fetchSubscription()
-  }, [fetchSubscription, user])
+  }, [fetchSubscription, userId])
 
-  // Computed values
-  const isPro = useMemo(() => {
-    if (!subscription) return false
-    return subscription.status === 'active' || subscription.status === 'trialing' || subscription.status === 'past_due'
-  }, [subscription])
+  // Computed values (cheap primitives: no useMemo needed)
+  const isPro =
+    subscription?.status === 'active' ||
+    subscription?.status === 'trialing' ||
+    subscription?.status === 'past_due'
 
-  const isSubscribed = useMemo(() => {
-    return !!subscription && subscription.status !== 'incomplete'
-  }, [subscription])
+  const isSubscribed = !!subscription && subscription.status !== 'incomplete'
 
-  const isTrialing = useMemo(() => {
-    return subscription?.status === 'trialing'
-  }, [subscription])
+  const isTrialing = subscription?.status === 'trialing'
 
-  const willCancel = useMemo(() => {
-    return subscription?.cancelAtPeriodEnd || false
-  }, [subscription])
+  const willCancel = subscription?.cancelAtPeriodEnd || false
 
   const daysUntilExpiry = useMemo(() => {
     if (!subscription?.currentPeriodEnd) return null
@@ -104,9 +100,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     return diffDays > 0 ? diffDays : 0
   }, [subscription])
 
-  const plan = useMemo((): 'free' | 'pro' => {
-    return isPro ? 'pro' : 'free'
-  }, [isPro])
+  const plan: 'free' | 'pro' = isPro ? 'pro' : 'free'
 
   const contextValue = useMemo(
     () => ({

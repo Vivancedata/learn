@@ -21,6 +21,17 @@ import { getAllCourses, getAllPaths } from "@/lib/content"
 import { DIFFICULTY_BADGE_CLASSES } from "@/lib/difficulty"
 
 export const dynamic = 'force-dynamic'
+
+const oneDecimal = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+})
+const hours = new Intl.NumberFormat('en-US', {
+  style: 'unit',
+  unit: 'hour',
+  unitDisplay: 'narrow',
+})
+
 export const metadata: Metadata = {
   title: "Vivance",
   description: "Learn AI and data science through practical courses, projects, and assessments.",
@@ -49,13 +60,13 @@ export default async function page() {
   const coursesWithLessons = courses.filter(course =>
     course.sections.some(section => section.lessons.length > 0)
   ).length
-  const averageLessonsPerCourse = courses.length > 0 ? (totalLessons / courses.length).toFixed(1) : '0'
+  const averageLessonsPerCourse = courses.length > 0 ? oneDecimal.format(totalLessons / courses.length) : '0'
 
   const stats = [
     { label: "Courses", value: courses.length.toString(), icon: BookOpen },
     { label: "Learning Paths", value: paths.length.toString(), icon: Rocket },
     { label: "Lessons", value: totalLessons.toString(), icon: Trophy },
-    { label: "Curriculum Hours", value: `${totalHours}h`, icon: Clock3 },
+    { label: "Curriculum Hours", value: hours.format(totalHours), icon: Clock3 },
   ]
 
   const featuredCourses = courses.slice(0, 3)
@@ -109,7 +120,7 @@ export default async function page() {
   const momentumSignals = [
     { label: 'Courses with lesson plans', value: `${coursesWithLessons}/${courses.length}` },
     { label: 'Average lessons per course', value: averageLessonsPerCourse },
-    { label: 'Total guided hours', value: `${totalHours}h` },
+    { label: 'Total guided hours', value: hours.format(totalHours) },
   ]
 
   return (
@@ -327,7 +338,7 @@ export default async function page() {
                         {course.difficulty}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {course.durationHours}h
+                        {hours.format(course.durationHours)}
                       </span>
                     </div>
                     <CardTitle className="group-hover:text-brand transition-colors">

@@ -42,6 +42,7 @@ function RankChangeIndicator({ currentRank, previousRank }: { currentRank: numbe
   return (
     <span className="flex items-center gap-1 text-xs text-muted-foreground">
       <Minus className="h-3 w-3" />
+      <span className="sr-only">No change</span>
     </span>
   )
 }
@@ -143,10 +144,13 @@ function PodiumPlace({
 
       {/* Name and score */}
       <div className="mt-3 text-center">
-        <p className={cn(
-          'font-semibold text-sm truncate max-w-20',
-          isCurrentUser && 'text-brand'
-        )}>
+        <p
+          className={cn(
+            'font-semibold text-sm truncate max-w-20',
+            isCurrentUser && 'text-brand'
+          )}
+          title={entry.userName || 'Anonymous'}
+        >
           {entry.userName || 'Anonymous'}
         </p>
         <p className="text-xs text-muted-foreground font-medium">

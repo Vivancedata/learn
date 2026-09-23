@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, after } from 'next/server'
 import prisma from '@/lib/db'
 import {
   apiSuccess,
@@ -37,23 +37,51 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify recipient exists
-    const recipient = await prisma.user.findUnique({
-      where: { id: recipientId },
-      select: { id: true, name: true, email: true, points: true },
-    })
+    // All validation lookups are independent, so run them in parallel; the
+    // checks below still report errors in the same order as before.
+    const [recipient, discussion, existingDiscussionPoint, reply, existingReplyPoint] =
+      await Promise.all([
+        prisma.user.findUnique({
+          where: { id: recipientId },
+          select: { id: true, name: true, email: true, points: true },
+        }),
+        discussionId
+          ? prisma.discussion.findUnique({
+              where: { id: discussionId },
+              select: { userId: true },
+            })
+          : null,
+        discussionId
+          ? prisma.communityPoint.findFirst({
+              where: {
+                giverId,
+                discussionId,
+              },
+            })
+          : null,
+        replyId
+          ? prisma.discussionReply.findUnique({
+              where: { id: replyId },
+              select: { userId: true },
+            })
+          : null,
+        replyId
+          ? prisma.communityPoint.findFirst({
+              where: {
+                giverId,
+                replyId,
+              },
+            })
+          : null,
+      ])
 
+    // Verify recipient exists
     if (!recipient) {
       throw new ApiError(HTTP_STATUS.NOT_FOUND, 'Recipient user not found')
     }
 
     // Verify the discussion or reply exists and belongs to the recipient
     if (discussionId) {
-      const discussion = await prisma.discussion.findUnique({
-        where: { id: discussionId },
-        select: { userId: true },
-      })
-
       if (!discussion) {
         throw new ApiError(HTTP_STATUS.NOT_FOUND, 'Discussion not found')
       }
@@ -66,14 +94,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if point already given for this discussion
-      const existingPoint = await prisma.communityPoint.findFirst({
-        where: {
-          giverId,
-          discussionId,
-        },
-      })
-
-      if (existingPoint) {
+      if (existingDiscussionPoint) {
         throw new ApiError(
           HTTP_STATUS.CONFLICT,
           'You have already given a point for this discussion'
@@ -82,11 +103,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (replyId) {
-      const reply = await prisma.discussionReply.findUnique({
-        where: { id: replyId },
-        select: { userId: true },
-      })
-
       if (!reply) {
         throw new ApiError(HTTP_STATUS.NOT_FOUND, 'Reply not found')
       }
@@ -99,14 +115,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if point already given for this reply
-      const existingPoint = await prisma.communityPoint.findFirst({
-        where: {
-          giverId,
-          replyId,
-        },
-      })
-
-      if (existingPoint) {
+      if (existingReplyPoint) {
         throw new ApiError(
           HTTP_STATUS.CONFLICT,
           'You have already given a point for this reply'
@@ -115,7 +124,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the community point and update recipient's total points
-    const [point] = await prisma.$transaction([
+    const [point, updatedRecipient] = await prisma.$transaction([
       prisma.communityPoint.create({
         data: {
           recipientId,
@@ -148,22 +157,20 @@ export async function POST(request: NextRequest) {
             increment: 1,
           },
         },
+        select: { points: true },
       }),
     ])
 
     // Award the recipient "helping others" XP so community recognition also
     // contributes to their level. The existing-point checks above ensure each
-    // point maps to at most one XP grant. Non-fatal.
-    try {
-      await awardHelpingOthersXp(recipientId, point.id)
-    } catch (xpError) {
-      void xpError
-    }
-
-    // Get updated point total
-    const updatedRecipient = await prisma.user.findUnique({
-      where: { id: recipientId },
-      select: { points: true },
+    // point maps to at most one XP grant. Non-fatal, and the response doesn't
+    // depend on it, so it runs after the response is sent.
+    after(async () => {
+      try {
+        await awardHelpingOthersXp(recipientId, point.id)
+      } catch (xpError) {
+        void xpError
+      }
     })
 
     return apiSuccess(

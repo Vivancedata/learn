@@ -48,6 +48,7 @@ jest.mock('@/lib/db', () => ({
 
 // Mock analytics to avoid side effects in tests
 jest.mock('@/lib/analytics-server', () => ({
+  flushAnalytics: jest.fn(),
   serverAnalytics: {
     trackQuizCompleted: jest.fn(),
     track: jest.fn(),
@@ -197,6 +198,10 @@ describe('Quiz API', () => {
       expect(data.data.xpAwarded).toBe(100)
       expect(prisma.$transaction).toHaveBeenCalled()
       expect(prisma.dailyActivity.upsert).toHaveBeenCalled()
+      // Achievements are evaluated in after(), once the response is built;
+      // course.count is only queried by runAchievementsCheck on this path
+      await (globalThis as unknown as { flushAfter: () => Promise<void> }).flushAfter()
+      expect(prisma.course.count).toHaveBeenCalled()
     })
 
     it('should not fail the submission when gamification side effects throw', async () => {

@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, after } from 'next/server'
 import { z } from 'zod'
 import prisma from '@/lib/db'
 import {
@@ -69,16 +69,22 @@ export async function POST(request: NextRequest) {
     const resetUrl = `${getAppUrl()}/reset-password?token=${resetToken}`
     const resetTemplate = passwordResetTemplate({ resetUrl })
 
-    try {
-      await sendEmail({
-        to: user.email,
-        subject: resetTemplate.subject,
-        text: resetTemplate.text,
-        html: resetTemplate.html,
-      })
-    } catch (_error) {
-      // Intentionally swallow errors to avoid leaking account existence.
-    }
+    // Send after responding: the response must not depend on delivery, and
+    // the send is the slowest step that runs only when the account exists, so
+    // awaiting it widened the response-time gap between the two cases.
+    const recipient = user.email
+    after(async () => {
+      try {
+        await sendEmail({
+          to: recipient,
+          subject: resetTemplate.subject,
+          text: resetTemplate.text,
+          html: resetTemplate.html,
+        })
+      } catch (_error) {
+        // Intentionally swallow errors to avoid leaking account existence.
+      }
+    })
 
     return apiSuccess({
       message: 'If an account with that email exists, a password reset link has been sent.',

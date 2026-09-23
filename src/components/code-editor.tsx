@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useEffect, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { escapeHtml, highlightPython } from '@/lib/python-highlight'
 
@@ -44,7 +44,7 @@ export function CodeEditor({
   language = 'python',
   readOnly = false,
   onCodeChange,
-  placeholder = '# Write your Python code here...',
+  placeholder = '# Write your Python code here…',
   className,
   minHeight = '200px',
   maxHeight = '500px',
@@ -52,24 +52,24 @@ export function CodeEditor({
   fontSize = 14,
 }: CodeEditorProps) {
   const [code, setCode] = useState(initialCode)
-  const [highlightedCode, setHighlightedCode] = useState('')
+  const [prevInitialCode, setPrevInitialCode] = useState(initialCode)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const highlightRef = useRef<HTMLPreElement>(null)
+  // Set by Escape so the next Tab moves focus instead of indenting.
+  const tabEscapesRef = useRef(false)
 
-  // Update highlighted code when code changes
-  useEffect(() => {
-    if (language === 'python') {
-      setHighlightedCode(highlightPython(code))
-    } else {
-      // For other languages, just escape HTML
-      setHighlightedCode(escapeHtml(code))
-    }
-  }, [code, language])
-
-  // Sync initial code
-  useEffect(() => {
+  // Sync initial code during render rather than in an effect, which cost an
+  // extra render pass per change.
+  if (initialCode !== prevInitialCode) {
+    setPrevInitialCode(initialCode)
     setCode(initialCode)
-  }, [initialCode])
+  }
+
+  // Derive highlighted code from the source; for non-Python, just escape HTML
+  const highlightedCode = useMemo(
+    () => (language === 'python' ? highlightPython(code) : escapeHtml(code)),
+    [code, language]
+  )
 
   // Generate line numbers
   const lineNumbers = code.split('\n').map((_, i) => i + 1)
@@ -95,6 +95,19 @@ export function CodeEditor({
   // Handle Tab key for indentation
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // Read-only code has nothing to indent: leave Tab and Enter to the browser
+      if (readOnly) return
+
+      // Escape, then Tab, leaves the editor so keyboard users are not trapped
+      if (e.key === 'Escape') {
+        tabEscapesRef.current = true
+        return
+      }
+      if (tabEscapesRef.current) {
+        tabEscapesRef.current = false
+        if (e.key === 'Tab') return
+      }
+
       if (e.key === 'Tab') {
         e.preventDefault()
         const textarea = textareaRef.current
@@ -139,13 +152,15 @@ export function CodeEditor({
         })
       }
     },
-    [code, onCodeChange]
+    [code, onCodeChange, readOnly]
   )
 
   return (
     <div
       className={cn(
         'relative rounded-lg border bg-[#1e1e2e] text-[#cdd6f4] overflow-hidden',
+        // The textarea hides its own outline, so show focus on the frame
+        'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background',
         'dark:bg-[#1e1e2e] dark:text-[#cdd6f4]',
         className
       )}
@@ -214,6 +229,7 @@ export function CodeEditor({
                 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
             }}
             aria-label={`${language} code editor`}
+            aria-description={readOnly ? undefined : 'Press Escape then Tab to move focus out of the editor'}
           />
         </div>
       </div>

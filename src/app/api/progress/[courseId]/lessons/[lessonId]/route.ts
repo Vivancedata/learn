@@ -19,29 +19,33 @@ export async function POST(
     const session = await requireAuth(request)
     const userId = session.userId
 
-    // Verify the lesson exists and belongs to the course
-    const lesson = await prisma.lesson.findUnique({
-      where: { id: lessonId },
-      include: {
-        section: {
-          include: {
-            course: true,
+    // Look up the lesson (to verify it belongs to the course) and the user's
+    // existing course progress in parallel -- neither depends on the other.
+    const [lesson, existingProgress] = await Promise.all([
+      prisma.lesson.findUnique({
+        where: { id: lessonId },
+        include: {
+          section: {
+            include: {
+              course: true,
+            },
           },
         },
-      },
-    })
+      }),
+      prisma.courseProgress.findFirst({
+        where: {
+          userId,
+          courseId,
+        },
+      }),
+    ])
 
     if (!lesson || lesson.section.course.id !== courseId) {
       throw new ApiError(HTTP_STATUS.NOT_FOUND, 'Lesson not found in this course')
     }
 
     // Get or create course progress
-    let progress = await prisma.courseProgress.findFirst({
-      where: {
-        userId,
-        courseId,
-      },
-    })
+    let progress = existingProgress
 
     if (!progress) {
       progress = await prisma.courseProgress.create({
@@ -83,29 +87,29 @@ export async function POST(
       },
     })
 
-    // Get updated progress stats
-    const updatedProgress = await prisma.courseProgress.findUnique({
-      where: { id: progress.id },
-      include: {
-        completedLessons: {
-          select: { id: true },
+    // Get updated progress stats and total lessons
+    const [updatedProgress, course] = await Promise.all([
+      prisma.courseProgress.findUnique({
+        where: { id: progress.id },
+        include: {
+          completedLessons: {
+            select: { id: true },
+          },
         },
-      },
-    })
-
-    // Get total lessons
-    const course = await prisma.course.findUnique({
-      where: { id: courseId },
-      include: {
-        sections: {
-          include: {
-            lessons: {
-              select: { id: true },
+      }),
+      prisma.course.findUnique({
+        where: { id: courseId },
+        include: {
+          sections: {
+            include: {
+              lessons: {
+                select: { id: true },
+              },
             },
           },
         },
-      },
-    })
+      }),
+    ])
 
     const totalLessons = course?.sections.reduce(
       (acc, section) => acc + section.lessons.length,

@@ -13,6 +13,13 @@ interface DayActivity {
   isFreezeDay?: boolean
 }
 
+// Hoisted: one formatter for every cell, in the viewer's own locale.
+const DAY_LABEL_FORMAT = new Intl.DateTimeFormat(undefined, {
+  weekday: 'short',
+  month: 'short',
+  day: 'numeric',
+})
+
 interface StreakCalendarProps {
   activities: DayActivity[]
   days?: 7 | 14 | 30
@@ -27,7 +34,7 @@ interface StreakCalendarProps {
  * - Green = active day with activity
  * - Gray = inactive day (no activity)
  * - Blue = freeze used to protect streak
- * Shows XP earned on hover/focus
+ * Per-day details are read out to screen readers (visually: colour only)
  */
 export function StreakCalendar({
   activities,
@@ -67,24 +74,18 @@ export function StreakCalendar({
   // Get day of week abbreviations
   const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
-  // Format date for display
-  const formatDate = (date: Date): string => {
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
+  // Computed once per render rather than once per cell
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const todayTime = today.getTime()
 
   // Get activity status and styling for a given date
   const getDayStatus = (date: Date) => {
     const key = date.toISOString().split('T')[0]
     const activity = activityMap.get(key)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
 
-    const isToday = date.getTime() === today.getTime()
-    const isFuture = date.getTime() > today.getTime()
+    const isToday = date.getTime() === todayTime
+    const isFuture = date.getTime() > todayTime
 
     if (isFuture) {
       return {
@@ -171,35 +172,34 @@ export function StreakCalendar({
           days === 14 && 'grid-cols-7',
           days === 30 && 'grid-cols-7'
         )}
-        role="grid"
+        role="list"
         aria-label="Activity calendar"
       >
         {dateRange.map((date, index) => {
           const { status, activity, className: dayClassName } = getDayStatus(date)
+          const description =
+            status === 'active' && activity
+              ? `${activity.lessonsCompleted} lessons, ${activity.quizzesTaken} quizzes, ${activity.xpEarned} XP, ${activity.timeSpentMinutes} minutes`
+              : status === 'freeze'
+                ? 'Streak freeze used'
+                : status === 'future'
+                  ? 'Future date'
+                  : 'No activity'
 
           return (
             <div
               key={index}
               className={cn(
-                'relative aspect-square rounded-lg border transition-all duration-200',
+                'relative aspect-square rounded-lg border transition-colors duration-200',
                 'flex items-center justify-center cursor-default',
-                'focus:outline-none focus:ring-2 focus:ring-brand/50',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
                 dayClassName
               )}
-              tabIndex={0}
-              role="gridcell"
-              aria-label={`${formatDate(date)}: ${
-                status === 'active'
-                  ? `${activity?.xpEarned || 0} XP earned`
-                  : status === 'freeze'
-                  ? 'Streak freeze used'
-                  : status === 'future'
-                  ? 'Future date'
-                  : 'No activity'
-              }`}
+              role="listitem"
             >
-              {/* Day number */}
+              {/* Day number (the full description below is what gets read) */}
               <span
+                aria-hidden="true"
                 className={cn(
                   'text-xs font-medium',
                   status === 'active' && 'text-green-700 dark:text-green-300',
@@ -211,13 +211,9 @@ export function StreakCalendar({
                 {date.getDate()}
               </span>
 
-              {/* Tooltip on hover - simple title attribute for accessibility */}
-              {status === 'active' && activity && (
-                <span className="sr-only">
-                  {activity.lessonsCompleted} lessons, {activity.quizzesTaken} quizzes,
-                  {activity.xpEarned} XP, {activity.timeSpentMinutes} minutes
-                </span>
-              )}
+              <span className="sr-only">
+                {`${DAY_LABEL_FORMAT.format(date)}: ${description}`}
+              </span>
             </div>
           )
         })}

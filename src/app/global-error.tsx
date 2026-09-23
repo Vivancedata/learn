@@ -34,6 +34,15 @@ export default function GlobalErrorPage({ error, reset }: GlobalErrorPageProps) 
 
   return (
     <html>
+      <head>
+        {/* Inline styles cannot express :hover, so the button states live here. */}
+        <style>{`
+          .global-error-primary { background-color: #2563eb; }
+          .global-error-primary:hover { background-color: #1d4ed8; }
+          .global-error-secondary { background-color: white; }
+          .global-error-secondary:hover { background-color: #f3f4f6; }
+        `}</style>
+      </head>
       <body style={{
         margin: 0,
         padding: 0,
@@ -70,6 +79,7 @@ export default function GlobalErrorPage({ error, reset }: GlobalErrorPageProps) 
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
+              aria-hidden="true"
             >
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
               <line x1="12" y1="9" x2="12" y2="13" />
@@ -108,7 +118,7 @@ export default function GlobalErrorPage({ error, reset }: GlobalErrorPageProps) 
                 color: '#6b7280',
                 margin: 0,
               }}>
-                Error ID: <code style={{
+                Error ID: <code translate="no" style={{
                   fontFamily: 'monospace',
                   color: '#374151',
                 }}>{error.digest}</code>
@@ -125,8 +135,8 @@ export default function GlobalErrorPage({ error, reset }: GlobalErrorPageProps) 
           }}>
             <button
               onClick={reset}
+              className="global-error-primary"
               style={{
-                backgroundColor: '#2563eb',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
@@ -139,21 +149,25 @@ export default function GlobalErrorPage({ error, reset }: GlobalErrorPageProps) 
               Try Again
             </button>
 
-            <button
-              onClick={() => window.location.href = '/'}
+            {/* A plain <a> on purpose: the root layout has crashed, so a full
+                page load is the recovery we want, not a client-side route. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+            <a
+              href="/"
+              className="global-error-secondary"
               style={{
-                backgroundColor: 'white',
+                display: 'inline-block',
                 color: '#374151',
                 border: '1px solid #d1d5db',
                 borderRadius: '8px',
                 padding: '12px 24px',
                 fontSize: '16px',
                 fontWeight: '500',
-                cursor: 'pointer',
+                textDecoration: 'none',
               }}
             >
               Go Home
-            </button>
+            </a>
           </div>
 
           {/* Contact Info */}

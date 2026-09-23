@@ -38,13 +38,13 @@ function FloatingButton({
         'transition-colors duration-default hover:bg-accent',
         'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
       )}
-      aria-label="Open AI Tutor chat"
+      aria-label={hasMessages ? 'Open AI Tutor chat, you have messages' : 'Open AI Tutor chat'}
     >
       <Bot className="w-6 h-6" aria-hidden="true" />
       {hasMessages && (
         <span
           className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full border-2 border-background"
-          aria-label="You have messages"
+          aria-hidden="true"
         />
       )}
     </Button>
@@ -133,10 +133,13 @@ function ChatPanel({
         'fixed z-50 flex flex-col',
         'bg-background/95 backdrop-blur-md',
         'border border-border rounded-xl shadow-elevation-3',
-        'transition-all duration-300 ease-out',
+        // No size transition: expanding animated width and height, which
+        // relays out the panel on every frame. The resize is now immediate.
         // Mobile: full screen drawer from bottom
         'sm:bottom-6 sm:right-6',
         'bottom-0 right-0 left-0 sm:left-auto',
+        // Keep the input clear of the home indicator on notched phones.
+        'pb-[env(safe-area-inset-bottom)] sm:pb-0',
         // Desktop: expandable panel
         isExpanded
           ? 'sm:w-[600px] sm:h-[700px] max-h-[90vh]'
@@ -177,14 +180,21 @@ function MessagesContainer({
    * Scroll to bottom when new messages arrive
    */
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    messagesEndRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' })
   }, [messages, isLoading])
 
   const hasMessages = messages.length > 0
 
   return (
-    <ScrollArea className="flex-1 px-4">
-      <div ref={scrollRef} className="py-4 space-y-4">
+    <ScrollArea className="flex-1 px-4 [&_[data-radix-scroll-area-viewport]]:overscroll-contain">
+      <div
+        ref={scrollRef}
+        className="py-4 space-y-4"
+        role="log"
+        aria-live="polite"
+        aria-label="Chat messages"
+      >
         {!hasMessages ? (
           <WelcomeMessage
             lessonTitle={context.lessonTitle}
@@ -365,8 +375,8 @@ export function ChatContainer() {
           isLoading={isLoading}
           placeholder={
             context.lessonTitle
-              ? `Ask about ${context.lessonTitle}...`
-              : 'Ask me anything about your course...'
+              ? `Ask about ${context.lessonTitle}…`
+              : 'Ask me anything about your course…'
           }
           showQuickActions={!hasMessages || messages[messages.length - 1]?.role === 'assistant'}
         />

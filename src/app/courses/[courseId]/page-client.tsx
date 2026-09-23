@@ -46,7 +46,10 @@ export default function CoursePage() {
   const { data, isLoading, error, mutate } = useSWR(
     ['course-page', courseId, user?.id ?? 'guest'] as const,
     async ([, targetCourseId, userId]) => {
-      const [coursePayload, discussionsPayload] = await Promise.all([
+      const isGuest = userId === 'guest'
+      // Progress requests only need the ids, so they start with the course
+      // fetch instead of waiting for it.
+      const [coursePayload, discussionsPayload, progressResponse, lessonsResponse] = await Promise.all([
         // One course, not the whole catalog. A 404 is a real answer here, not
         // a failure: it means the slug does not exist.
         fetch(`/api/courses/${encodeURIComponent(targetCourseId)}`).then(async (res) => {
@@ -58,19 +61,18 @@ export default function CoursePage() {
           if (!res.ok) throw new Error('Failed to load discussions')
           return (await res.json()) as { data?: { discussions?: ApiDiscussion[] } }
         }),
+        isGuest ? null : fetch(`/api/progress/user/${userId}`, { credentials: 'include' }),
+        isGuest
+          ? null
+          : fetch(`/api/progress/lessons?userId=${userId}&courseId=${targetCourseId}`, {
+              credentials: 'include',
+            }),
       ])
 
       let resolvedCourse = coursePayload.data ?? null
       let completedLessonIds: string[] = []
 
-      if (userId !== 'guest' && resolvedCourse) {
-        const [progressResponse, lessonsResponse] = await Promise.all([
-          fetch(`/api/progress/user/${userId}`, { credentials: 'include' }),
-          fetch(`/api/progress/lessons?userId=${userId}&courseId=${targetCourseId}`, {
-            credentials: 'include',
-          }),
-        ])
-
+      if (progressResponse && lessonsResponse && resolvedCourse) {
         if (progressResponse.ok) {
           const progressData = (await progressResponse.json()).data ?? {}
           const courseProgress = progressData.courses?.find(
@@ -194,7 +196,9 @@ export default function CoursePage() {
     ]
   }
   
-  const progress = course.progress ? (course.progress.completed / course.progress.total) * 100 : 0
+  const progress = course.progress && course.progress.total > 0
+    ? (course.progress.completed / course.progress.total) * 100
+    : 0
 
   // Sample success stories
   const successStories = [

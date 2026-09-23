@@ -81,8 +81,9 @@ export function MobileProvider({
 
     const ua = navigator.userAgent.toLowerCase()
 
-    // Check if mobile
-    const checkMobile = () => window.innerWidth < 768
+    // Mobile = below the md breakpoint (768px). A media query only fires when
+    // the boolean flips, unlike `resize`, which fires on every pixel.
+    const mobileQuery = window.matchMedia('(max-width: 767px)')
 
     // Check if touch device
     const checkTouch = () => {
@@ -101,22 +102,21 @@ export function MobileProvider({
 
     // Initial state
     setMobileState({
-      isMobile: checkMobile(),
+      isMobile: mobileQuery.matches,
       isTouchDevice: checkTouch(),
       isStandalone: checkStandalone(),
       isIOS: /iphone|ipad|ipod/.test(ua),
       isAndroid: /android/.test(ua)
     })
 
-    // Listen for resize events
-    const handleResize = () => {
+    // Listen for crossing the mobile breakpoint
+    const handleMobileChange = (e: MediaQueryListEvent) => {
       setMobileState(prev => ({
         ...prev,
-        isMobile: checkMobile()
+        isMobile: e.matches
       }))
     }
-
-    window.addEventListener('resize', handleResize)
+    mobileQuery.addEventListener('change', handleMobileChange)
 
     // Listen for display mode changes
     const mediaQuery = window.matchMedia('(display-mode: standalone)')
@@ -129,7 +129,7 @@ export function MobileProvider({
     mediaQuery.addEventListener('change', handleDisplayModeChange)
 
     return () => {
-      window.removeEventListener('resize', handleResize)
+      mobileQuery.removeEventListener('change', handleMobileChange)
       mediaQuery.removeEventListener('change', handleDisplayModeChange)
     }
   }, [])

@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, after } from 'next/server'
 import prisma from '@/lib/db'
 import {
   apiSuccess,
@@ -11,7 +11,7 @@ import {
 import { projectSubmissionSchema } from '@/lib/validations'
 import { requireOwnership } from '@/lib/authorization'
 import { getUserId } from '@/lib/auth'
-import { serverAnalytics } from '@/lib/analytics-server'
+import { serverAnalytics, flushAnalytics } from '@/lib/analytics-server'
 
 /**
  * POST /api/projects
@@ -33,10 +33,19 @@ export async function POST(request: NextRequest) {
     // Authorization: Users can only submit their own projects
     requireOwnership(request, userId, 'project submission')
 
-    // Verify the lesson exists and has a project
-    const lesson = await prisma.lesson.findUnique({
-      where: { id: lessonId },
-    })
+    // The lesson (to verify it exists and has a project) and any existing
+    // submission for it are independent lookups
+    const [lesson, existingSubmission] = await Promise.all([
+      prisma.lesson.findUnique({
+        where: { id: lessonId },
+      }),
+      prisma.projectSubmission.findFirst({
+        where: {
+          userId,
+          lessonId,
+        },
+      }),
+    ])
 
     if (!lesson) {
       throw new NotFoundError('Lesson')
@@ -49,14 +58,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user already submitted for this lesson
-    const existingSubmission = await prisma.projectSubmission.findFirst({
-      where: {
-        userId,
-        lessonId,
-      },
-    })
-
+    // Update the existing submission if the user already submitted
     if (existingSubmission) {
       // Update existing submission
       const updatedSubmission = await prisma.projectSubmission.update({
@@ -96,22 +98,25 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Get courseId for analytics (through the lesson's section)
-    const lessonWithCourse = await prisma.lesson.findUnique({
-      where: { id: lessonId },
-      include: {
-        section: {
-          select: { courseId: true },
+    // Analytics doesn't affect the response: look up the courseId (through
+    // the lesson's section), track, and flush after responding
+    after(async () => {
+      const lessonWithCourse = await prisma.lesson.findUnique({
+        where: { id: lessonId },
+        include: {
+          section: {
+            select: { courseId: true },
+          },
         },
-      },
-    })
+      })
 
-    // Track project submission with analytics
-    serverAnalytics.trackProjectSubmitted(userId, {
-      lesson_id: lessonId,
-      course_id: lessonWithCourse?.section?.courseId,
-      github_url: githubUrl,
-      has_live_demo: !!liveUrl,
+      serverAnalytics.trackProjectSubmitted(userId, {
+        lesson_id: lessonId,
+        course_id: lessonWithCourse?.section?.courseId,
+        github_url: githubUrl,
+        has_live_demo: !!liveUrl,
+      })
+      await flushAnalytics()
     })
 
     return apiSuccess(

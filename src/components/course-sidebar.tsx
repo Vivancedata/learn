@@ -18,8 +18,8 @@ export function CourseSidebar({ course, completedLessonIds = [] }: CourseSidebar
   const lessonId = params.lessonId as string
   
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(
-    // Initialize with all sections expanded
-    course.sections.reduce((acc, section) => {
+    // Initialize with all sections expanded (lazy: runs on first render only)
+    () => course.sections.reduce((acc, section) => {
       acc[section.id] = true
       return acc
     }, {} as Record<string, boolean>)
@@ -47,13 +47,19 @@ export function CourseSidebar({ course, completedLessonIds = [] }: CourseSidebar
     }
   }
   
+  const completedLessonIdSet = new Set(completedLessonIds)
+
   const isLessonCompleted = (lesson: Lesson) => {
-    if (completedLessonIds.length > 0) {
-      return completedLessonIds.includes(lesson.id)
+    if (completedLessonIdSet.size > 0) {
+      return completedLessonIdSet.has(lesson.id)
     }
     return lesson.completed || false
   }
   
+  const progressPercent = course.progress && course.progress.total > 0
+    ? (course.progress.completed / course.progress.total) * 100
+    : 0
+
   return (
     <div className="w-full">
       <div className="px-4 py-2">
@@ -73,6 +79,7 @@ export function CourseSidebar({ course, completedLessonIds = [] }: CourseSidebar
                 variant="ghost"
                 className="w-full justify-between font-medium"
                 onClick={() => toggleSection(section.id)}
+                aria-expanded={!!expandedSections[section.id]}
               >
                 <span>{section.title}</span>
                 {expandedSections[section.id] ? (
@@ -92,6 +99,7 @@ export function CourseSidebar({ course, completedLessonIds = [] }: CourseSidebar
                       <Link
                         key={lesson.id}
                         href={`/courses/${course.id}/${lesson.id}`}
+                        aria-current={isActive ? 'page' : undefined}
                         className={`
                           flex items-center gap-2 px-2 py-1.5 text-sm rounded-md
                           ${isActive ? 'bg-accent text-accent-foreground font-medium' : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'}
@@ -118,16 +126,14 @@ export function CourseSidebar({ course, completedLessonIds = [] }: CourseSidebar
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium">Your Progress</span>
           <span className="text-sm text-muted-foreground">
-            {course.progress ? `${Math.round((course.progress.completed / course.progress.total) * 100)}%` : '0%'}
+            {`${Math.round(progressPercent)}%`}
           </span>
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">
           <div 
             className="h-full bg-primary rounded-full"
             style={{ 
-              width: course.progress 
-                ? `${(course.progress.completed / course.progress.total) * 100}%` 
-                : '0%' 
+              width: `${progressPercent}%`
             }}
           />
         </div>

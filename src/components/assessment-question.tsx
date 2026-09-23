@@ -45,7 +45,7 @@ export function AssessmentQuestion({
               <Code className="h-3 w-3" />
               Code
             </div>
-            <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm font-mono">
+            <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm font-mono" translate="no">
               <code>{question.codeSnippet}</code>
             </pre>
           </div>
@@ -119,7 +119,7 @@ function QuestionInput({
         <TextInput
           value={(selectedAnswer as string | undefined) || ''}
           onChange={(value) => onAnswerChange(value)}
-          placeholder={questionType === 'CODE_OUTPUT' ? 'Enter the output...' : 'Enter your answer...'}
+          placeholder={questionType === 'CODE_OUTPUT' ? 'Enter the output…' : 'Enter your answer…'}
           disabled={disabled}
           showResult={showResult}
           isCorrect={isCorrect}
@@ -163,9 +163,10 @@ function SingleChoiceInput({
             type="button"
             onClick={() => onAnswerChange(option)}
             disabled={disabled}
+            aria-pressed={isSelected}
             className={cn(
-              'w-full flex items-start gap-3 p-4 rounded-lg border text-left transition-all',
-              'hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-brand/20',
+              'w-full flex items-start gap-3 p-4 rounded-lg border text-left transition-colors',
+              'hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
               isSelected && !showResult && 'border-brand bg-primary/5',
               isCorrectAnswer && 'border-success bg-success/10',
               isWrongSelected && 'border-destructive bg-destructive/10',
@@ -190,6 +191,8 @@ function SingleChoiceInput({
               isWrongSelected && 'text-destructive'
             )}>
               {option}
+              {isCorrectAnswer && <span className="sr-only"> (correct answer)</span>}
+              {isWrongSelected && <span className="sr-only"> (your answer, incorrect)</span>}
             </span>
           </button>
         )
@@ -240,9 +243,10 @@ function MultipleChoiceInput({
             type="button"
             onClick={() => toggleOption(option)}
             disabled={disabled}
+            aria-pressed={isSelected}
             className={cn(
-              'w-full flex items-start gap-3 p-4 rounded-lg border text-left transition-all',
-              'hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-brand/20',
+              'w-full flex items-start gap-3 p-4 rounded-lg border text-left transition-colors',
+              'hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
               isSelected && !showResult && 'border-brand bg-primary/5',
               isCorrectAnswer && isSelected && 'border-success bg-success/10',
               isWrongSelected && 'border-destructive bg-destructive/10',
@@ -271,6 +275,8 @@ function MultipleChoiceInput({
               isMissed && 'text-warning'
             )}>
               {option}
+              {isCorrectAnswer && isSelected && <span className="sr-only"> (correct)</span>}
+              {isWrongSelected && <span className="sr-only"> (incorrect)</span>}
               {isMissed && <span className="ml-2 text-xs">(missed)</span>}
             </span>
           </button>
@@ -303,13 +309,19 @@ function TextInput({
     <div className="space-y-2">
       <input
         type="text"
+        name="answer"
+        aria-label="Your answer"
+        autoComplete="off"
+        autoCapitalize="off"
+        autoCorrect="off"
+        spellCheck={false}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
         className={cn(
           'w-full px-4 py-3 rounded-lg border bg-background transition-colors',
-          'focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-brand',
           showResult && isCorrect && 'border-success bg-success/10',
           showResult && !isCorrect && 'border-destructive bg-destructive/10',
           disabled && 'cursor-not-allowed opacity-60'

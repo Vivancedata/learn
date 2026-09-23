@@ -17,7 +17,7 @@ export default async function ExercisePage({
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <div className="mx-auto max-w-3xl px-4 py-8">
       <p className="mb-1 text-sm text-muted-foreground">{exercise.track}</p>
 
       {exercise.instructions && (
@@ -39,11 +39,14 @@ export default async function ExercisePage({
           testCode={exercise.testCode}
         />
       ) : (
+        <>
+        <h1 className="mb-4 text-xl font-semibold">{exercise.title}</h1>
         <div className="rounded-md border border-border p-4 text-sm text-muted-foreground">
           In-browser running for {exercise.language.toUpperCase()} exercises is
           coming soon. For now, work through it locally with the provided tests.
         </div>
+        </>
       )}
-    </main>
+    </div>
   )
 }

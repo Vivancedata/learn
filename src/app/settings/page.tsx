@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,24 +19,16 @@ function SettingsContent() {
   const { user, refreshUser } = useAuth()
   const { theme, setTheme } = useTheme()
 
-  // Profile form state
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [githubUsername, setGithubUsername] = useState("")
+  // Profile form state, seeded from the signed-in user. ProtectedRoute only
+  // renders this once `user` is loaded, and remounts it after refreshUser().
+  const [name, setName] = useState(() => user?.name || "")
+  const email = user?.email || ""
+  const [githubUsername, setGithubUsername] = useState(() => user?.githubUsername || "")
 
   // UI state
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-
-  // Load user data on mount
-  useEffect(() => {
-    if (user) {
-      setName(user.name || "")
-      setEmail(user.email || "")
-      setGithubUsername(user.githubUsername || "")
-    }
-  }, [user])
 
   const handleSaveProfile = async () => {
     if (!user) return
@@ -103,7 +95,7 @@ function SettingsContent() {
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Appearance</CardTitle>
+            <CardTitle as="h2">Appearance</CardTitle>
             <CardDescription>
               Customize how VivanceData Learn looks on your device
             </CardDescription>
@@ -114,6 +106,7 @@ function SettingsContent() {
                 <Button
                   variant={theme === "light" ? "default" : "outline"}
                   onClick={() => setTheme("light")}
+                  aria-pressed={theme === "light"}
                   className="flex-1"
                 >
                   <Sun className="mr-2 h-4 w-4" />
@@ -122,6 +115,7 @@ function SettingsContent() {
                 <Button
                   variant={theme === "dark" ? "default" : "outline"}
                   onClick={() => setTheme("dark")}
+                  aria-pressed={theme === "dark"}
                   className="flex-1"
                 >
                   <Moon className="mr-2 h-4 w-4" />
@@ -130,6 +124,7 @@ function SettingsContent() {
                 <Button
                   variant={theme === "system" ? "default" : "outline"}
                   onClick={() => setTheme("system")}
+                  aria-pressed={theme === "system"}
                   className="flex-1"
                 >
                   <Globe className="mr-2 h-4 w-4" />
@@ -152,7 +147,7 @@ function SettingsContent() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Account</CardTitle>
+            <CardTitle as="h2">Account</CardTitle>
             <CardDescription>
               Manage your account settings
             </CardDescription>
@@ -165,8 +160,10 @@ function SettingsContent() {
                 </Label>
                 <Input
                   id="display-name"
+                  name="name"
                   type="text"
-                  placeholder="Your display name"
+                  autoComplete="name"
+                  placeholder="Your display name…"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   disabled={loading}
@@ -178,8 +175,11 @@ function SettingsContent() {
                 </Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
-                  placeholder="your@email.com"
+                  autoComplete="email"
+                  spellCheck={false}
+                  placeholder="your@email.com…"
                   value={email}
                   disabled
                   title="Email cannot be changed"
@@ -195,8 +195,11 @@ function SettingsContent() {
                 </Label>
                 <Input
                   id="github-username"
+                  name="githubUsername"
                   type="text"
-                  placeholder="Your GitHub username"
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="octocat…"
                   value={githubUsername}
                   onChange={(e) => setGithubUsername(e.target.value)}
                   disabled={loading}
@@ -206,7 +209,7 @@ function SettingsContent() {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
+                    Saving…
                   </>
                 ) : (
                   'Save Changes'
@@ -240,7 +243,7 @@ function SubscriptionCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle as="h2" className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
             Subscription
           </CardTitle>
@@ -258,7 +261,7 @@ function SubscriptionCard() {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle as="h2" className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
             Subscription
           </CardTitle>
@@ -296,7 +299,7 @@ function SubscriptionCard() {
                 <Calendar className="h-4 w-4" />
                 <span>
                   {willCancel ? 'Access until' : 'Renews on'}:{' '}
-                  {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US', {
+                  {new Date(subscription.currentPeriodEnd).toLocaleDateString(undefined, {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
@@ -325,7 +328,7 @@ function SubscriptionCard() {
               {portalLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Opening...
+                  Opening…
                 </>
               ) : (
                 <>

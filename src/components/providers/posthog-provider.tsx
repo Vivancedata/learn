@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import posthog from 'posthog-js'
 import { PostHogProvider as PHProvider, usePostHog } from 'posthog-js/react'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 
 /**
  * PostHog configuration
@@ -56,9 +56,12 @@ function initPostHog(): boolean {
  * Page view tracker component
  * Tracks page views with relevant context
  */
+const COURSE_PATH = /^\/courses\/([^/]+)/
+const LESSON_PATH = /^\/courses\/([^/]+)\/([^/]+)/
+const LEARNING_PATH = /^\/paths\/([^/]+)/
+
 function PostHogPageView(): null {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const posthogClient = usePostHog()
   const lastPathname = useRef<string | null>(null)
 
@@ -69,11 +72,12 @@ function PostHogPageView(): null {
     if (lastPathname.current === pathname) return
     lastPathname.current = pathname
 
-    // Build URL with search params
-    let url = window.origin + pathname
-    if (searchParams && searchParams.toString()) {
-      url = url + '?' + searchParams.toString()
-    }
+    // The query string is read here, when the view is recorded, rather than
+    // through useSearchParams(). That hook subscribed this component (mounted
+    // in the root layout) to every query change and, on statically rendered
+    // routes, opted everything under the layout's Suspense boundary out of
+    // server rendering whenever PostHog was configured.
+    const url = window.origin + pathname + window.location.search
 
     // Extract context from pathname
     const pageProperties: Record<string, string | undefined> = {
@@ -83,9 +87,9 @@ function PostHogPageView(): null {
     }
 
     // Add context for specific page types
-    const courseMatch = pathname.match(/^\/courses\/([^/]+)/)
-    const lessonMatch = pathname.match(/^\/courses\/([^/]+)\/([^/]+)/)
-    const pathMatch = pathname.match(/^\/paths\/([^/]+)/)
+    const courseMatch = pathname.match(COURSE_PATH)
+    const lessonMatch = pathname.match(LESSON_PATH)
+    const pathMatch = pathname.match(LEARNING_PATH)
 
     if (lessonMatch) {
       pageProperties.course_id = lessonMatch[1]
@@ -111,7 +115,7 @@ function PostHogPageView(): null {
 
     // Track page view
     posthogClient.capture('$pageview', pageProperties)
-  }, [pathname, searchParams, posthogClient])
+  }, [pathname, posthogClient])
 
   return null
 }

@@ -19,6 +19,7 @@ function RankChangeIndicator({ currentRank, previousRank }: { currentRank: numbe
     return (
       <span className="flex items-center gap-1 text-xs text-info" title="New entry">
         <Sparkles className="h-3 w-3" />
+        <span className="sr-only">New entry</span>
       </span>
     )
   }
@@ -27,7 +28,9 @@ function RankChangeIndicator({ currentRank, previousRank }: { currentRank: numbe
     return (
       <span className="flex items-center gap-1 text-xs text-success" title={`Up ${change.amount} places`}>
         <TrendingUp className="h-3 w-3" />
-        <span className="hidden sm:inline">{change.amount}</span>
+        <span className="sr-only">Up</span>
+        <span className="sr-only sm:not-sr-only">{change.amount}</span>
+        <span className="sr-only">{change.amount === 1 ? 'place' : 'places'}</span>
       </span>
     )
   }
@@ -36,7 +39,9 @@ function RankChangeIndicator({ currentRank, previousRank }: { currentRank: numbe
     return (
       <span className="flex items-center gap-1 text-xs text-destructive" title={`Down ${change.amount} places`}>
         <TrendingDown className="h-3 w-3" />
-        <span className="hidden sm:inline">{change.amount}</span>
+        <span className="sr-only">Down</span>
+        <span className="sr-only sm:not-sr-only">{change.amount}</span>
+        <span className="sr-only">{change.amount === 1 ? 'place' : 'places'}</span>
       </span>
     )
   }
@@ -44,6 +49,7 @@ function RankChangeIndicator({ currentRank, previousRank }: { currentRank: numbe
   return (
     <span className="flex items-center text-muted-foreground" title="No change">
       <Minus className="h-3 w-3" />
+      <span className="sr-only">No change</span>
     </span>
   )
 }
@@ -65,8 +71,9 @@ function LeaderboardRow({ entry, index }: { entry: LeaderboardEntry; index: numb
       className={cn(
         'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
         'hover:bg-accent/50',
-        entry.isCurrentUser && 'bg-primary/10 hover:bg-primary/15 ring-1 ring-brand/30',
-        index % 2 === 0 ? 'bg-muted/30' : ''
+        index % 2 === 0 ? 'bg-muted/30' : '',
+        // Last so tailwind-merge keeps the highlight over the zebra stripe.
+        entry.isCurrentUser && 'bg-primary/10 hover:bg-primary/15 ring-1 ring-brand/30'
       )}
     >
       {/* Rank */}
@@ -89,6 +96,7 @@ function LeaderboardRow({ entry, index }: { entry: LeaderboardEntry; index: numb
 
       {/* Avatar */}
       <div
+        aria-hidden="true"
         className={cn(
           'w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold',
           'bg-muted text-foreground',
@@ -110,12 +118,13 @@ function LeaderboardRow({ entry, index }: { entry: LeaderboardEntry; index: numb
       </div>
 
       {/* Streak indicator if present */}
-      {entry.metadata?.streakDays && entry.metadata.streakDays > 0 && (
-        <div className="flex items-center gap-1 text-orange-500" title={`${entry.metadata.streakDays} day streak`}>
+      {(entry.metadata?.streakDays ?? 0) > 0 ? (
+        <div className="flex items-center gap-1 text-orange-500" title={`${entry.metadata?.streakDays} day streak`}>
           <Flame className="h-4 w-4" />
-          <span className="text-sm font-medium">{entry.metadata.streakDays}</span>
+          <span className="text-sm font-medium">{entry.metadata?.streakDays}</span>
+          <span className="sr-only">day streak</span>
         </div>
-      )}
+      ) : null}
 
       {/* Score */}
       <div className="text-right">

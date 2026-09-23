@@ -155,7 +155,7 @@ function useCodePlaygroundContent({
       // Load Pyodide if not already loaded
       await loadPyodide(handleProgress)
 
-      setUiState((prev) => ({ ...prev, status: 'running', loadingMessage: 'Executing code...' }))
+      setUiState((prev) => ({ ...prev, status: 'running', loadingMessage: 'Executing code…' }))
 
         // Check if we have test cases
       if (testCases && testCases.length > 0) {
@@ -274,25 +274,21 @@ function useCodePlaygroundContent({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRun])
 
-  // Keyboard shortcut handler
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl/Cmd + Enter to run
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault()
-        if (status !== 'loading-pyodide' && status !== 'running') {
-          executeCode()
-        }
-      }
-      // Escape to exit fullscreen
-      if (e.key === 'Escape' && isFullscreen) {
-        setUiState((prev) => ({ ...prev, isFullscreen: false }))
+  // Keyboard shortcuts, scoped to this playground: a lesson can hold several,
+  // and a window listener made Ctrl+Enter run every one of them.
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Ctrl/Cmd + Enter to run
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault()
+      if (status !== 'loading-pyodide' && status !== 'running') {
+        executeCode()
       }
     }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [executeCode, status, isFullscreen])
+    // Escape to exit fullscreen
+    if (e.key === 'Escape' && isFullscreen) {
+      setUiState((prev) => ({ ...prev, isFullscreen: false }))
+    }
+  }
 
   const isLoading = status === 'loading-pyodide' || status === 'running'
 
@@ -303,10 +299,11 @@ function useCodePlaygroundContent({
         isFullscreen && 'fixed inset-4 z-50 m-0 rounded-xl',
         className
       )}
+      onKeyDown={handleKeyDown}
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-2 p-3 bg-muted/50 border-b">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" aria-live="polite">
           {title && <h3 className="font-semibold text-sm">{title}</h3>}
           {status === 'success' && (
             <span className="flex items-center gap-1 text-xs text-success">
@@ -334,14 +331,14 @@ function useCodePlaygroundContent({
             {isLoading ? (
               <>
                 <Spinner size="sm" />
-                <span className="hidden sm:inline">
-                  {status === 'loading-pyodide' ? 'Loading...' : 'Running...'}
+                <span className="sr-only sm:not-sr-only">
+                  {status === 'loading-pyodide' ? 'Loading…' : 'Running…'}
                 </span>
               </>
             ) : (
               <>
                 <Play className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Run</span>
+                <span className="sr-only sm:not-sr-only">Run</span>
               </>
             )}
           </Button>
@@ -353,6 +350,7 @@ function useCodePlaygroundContent({
             onClick={handleReset}
             disabled={isLoading}
             title="Reset code"
+            aria-label="Reset code"
           >
             <RotateCcw className="h-3.5 w-3.5" />
           </Button>
@@ -363,6 +361,7 @@ function useCodePlaygroundContent({
             variant="ghost"
             onClick={handleCopy}
             title="Copy code"
+            aria-label={copied ? 'Code copied' : 'Copy code'}
           >
             {copied ? (
               <Check className="h-3.5 w-3.5 text-success" />
@@ -377,6 +376,7 @@ function useCodePlaygroundContent({
             variant="ghost"
             onClick={handleDownload}
             title="Download code"
+            aria-label="Download code"
           >
             <Download className="h-3.5 w-3.5" />
           </Button>
@@ -387,6 +387,7 @@ function useCodePlaygroundContent({
             variant="ghost"
             onClick={toggleFullscreen}
             title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+            aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
           >
             {isFullscreen ? (
               <Minimize2 className="h-3.5 w-3.5" />
@@ -457,13 +458,14 @@ function useCodePlaygroundContent({
           <div
             className={cn(
               'flex-1 overflow-auto p-3',
-              isFullscreen ? 'max-h-none' : 'min-h-[100px] max-h-[300px]'
+              isFullscreen ? 'max-h-none overscroll-contain' : 'min-h-[100px] max-h-[300px]'
             )}
+            aria-live="polite"
           >
             {/* Empty state */}
             {status === 'idle' && !output && !error && (
               <div className="text-[#6c7086] italic text-sm">
-                Click &quot;Run&quot; or press Ctrl+Enter to execute your code...
+                Click “Run” or press Ctrl+Enter to execute your code…
               </div>
             )}
 

@@ -101,41 +101,42 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Use the streak freeze - update lastActivityDate to yesterday
-    // This effectively "fills in" the missed day
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        streakFreezes: { decrement: 1 },
-        lastActivityDate: yesterday,
-      },
-      select: {
-        id: true,
-        currentStreak: true,
-        longestStreak: true,
-        lastActivityDate: true,
-        streakFreezes: true,
-      },
-    })
-
-    // Create a placeholder activity record for the frozen day
-    await prisma.dailyActivity.upsert({
-      where: {
-        userId_date: {
+    // Use the streak freeze - update lastActivityDate to yesterday, which
+    // effectively "fills in" the missed day - and create a placeholder
+    // activity record for the frozen day. The two writes are independent.
+    const [updatedUser] = await Promise.all([
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          streakFreezes: { decrement: 1 },
+          lastActivityDate: yesterday,
+        },
+        select: {
+          id: true,
+          currentStreak: true,
+          longestStreak: true,
+          lastActivityDate: true,
+          streakFreezes: true,
+        },
+      }),
+      prisma.dailyActivity.upsert({
+        where: {
+          userId_date: {
+            userId,
+            date: yesterday,
+          },
+        },
+        create: {
           userId,
           date: yesterday,
+          xpEarned: 0,
+          lessonsCompleted: 0,
+          quizzesTaken: 0,
+          timeSpentMinutes: 0,
         },
-      },
-      create: {
-        userId,
-        date: yesterday,
-        xpEarned: 0,
-        lessonsCompleted: 0,
-        quizzesTaken: 0,
-        timeSpentMinutes: 0,
-      },
-      update: {}, // Don't update if already exists
-    })
+        update: {}, // Don't update if already exists
+      }),
+    ])
 
     return apiSuccess({
       userId: updatedUser.id,

@@ -18,6 +18,25 @@ type CheckoutSuccessAction = {
   sessionId: string | null
 }
 
+const PRO_FEATURES = [
+  'Unlimited access to all courses',
+  'All learning paths',
+  'Skill assessments to track your progress',
+  'Verified certificates for completed courses',
+  'Priority support from our team',
+  'Expert project feedback',
+  'Offline access to lessons',
+  'Early access to new content',
+]
+
+/**
+ * Checkout sessions whose subscription refresh has already started. Kept at
+ * module level so it survives remounts: `refreshUser()` flips the global auth
+ * `loading` flag, which makes `ProtectedRoute` unmount and remount this page --
+ * a per-mount effect would then schedule the refresh again, forever.
+ */
+const refreshedCheckoutSessions = new Set<string>()
+
 function checkoutSuccessReducer(
   _state: CheckoutSuccessState,
   action: CheckoutSuccessAction
@@ -37,9 +56,16 @@ function CheckoutSuccessContent() {
 
   useEffect(() => {
     const nextSessionId = new URLSearchParams(window.location.search).get('session_id')
+    const refreshKey = nextSessionId ?? ''
+
+    if (refreshedCheckoutSessions.has(refreshKey)) {
+      dispatch({ type: 'ready', sessionId: nextSessionId })
+      return
+    }
 
     // Refresh user data to get updated subscription status
     const refreshSubscription = async () => {
+      refreshedCheckoutSessions.add(refreshKey)
       try {
         await refreshUser()
       } catch (_error) {
@@ -57,9 +83,12 @@ function CheckoutSuccessContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Setting up your Pro account...</p>
+        <div role="status" className="text-center">
+          <div
+            className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand mx-auto mb-4"
+            aria-hidden="true"
+          ></div>
+          <p className="text-muted-foreground">Setting up your Pro account…</p>
         </div>
       </div>
     )
@@ -88,7 +117,7 @@ function CheckoutSuccessContent() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Crown className="h-5 w-5 text-brand" />
-            <CardTitle>Pro Features Unlocked</CardTitle>
+            <CardTitle as="h2">Pro Features Unlocked</CardTitle>
           </div>
           <CardDescription>
             You now have access to all premium features
@@ -96,16 +125,7 @@ function CheckoutSuccessContent() {
         </CardHeader>
         <CardContent>
           <ul className="space-y-3">
-            {[
-              'Unlimited access to all courses',
-              'All learning paths',
-              'Skill assessments to track your progress',
-              'Verified certificates for completed courses',
-              'Priority support from our team',
-              'Expert project feedback',
-              'Offline access to lessons',
-              'Early access to new content',
-            ].map((feature) => (
+            {PRO_FEATURES.map((feature) => (
               <li key={feature} className="flex items-start gap-2">
                 <CheckCircle2 className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />
                 <span>{feature}</span>
@@ -119,7 +139,7 @@ function CheckoutSuccessContent() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-brand" />
-            <CardTitle>Recommended Next Steps</CardTitle>
+            <CardTitle as="h2">Recommended Next Steps</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">

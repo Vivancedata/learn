@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 import * as Sentry from '@sentry/nextjs'
 import { analytics } from '@/lib/analytics'
@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refreshUser()
   }, [deferAuthBootstrap, refreshUser])
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     try {
       setLoading(true)
       setError(null)
@@ -121,10 +121,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credentials: 'include',
       })
 
-      const data = await response.json()
+      // A non-JSON error page (proxy 502, HTML 500) must not surface as a
+      // JSON parse error; fall back to a message the user can act on.
+      const data = await response.json().catch(() => null)
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed')
+      if (!response.ok || !data) {
+        throw new Error(data?.message || 'Login failed. Please try again in a moment.')
       }
 
       const loggedInUser = data.data.user
@@ -168,9 +170,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const signup = async (
+  const signup = useCallback(async (
     email: string,
     password: string,
     name?: string,
@@ -187,10 +189,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credentials: 'include',
       })
 
-      const data = await response.json()
+      const data = await response.json().catch(() => null)
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Signup failed')
+      if (!response.ok || !data) {
+        throw new Error(data?.message || 'Signup failed. Please try again in a moment.')
       }
 
       const newUser = data.data.user as User
@@ -237,9 +239,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -275,22 +277,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  // Stable value: the provider re-renders on every navigation (usePathname),
+  // which must not re-render every useAuth consumer.
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      error,
+      isAuthenticated,
+      login,
+      signup,
+      logout,
+      refreshUser,
+      clearError,
+    }),
+    [user, loading, error, isAuthenticated, login, signup, logout, refreshUser, clearError]
+  )
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        error,
-        isAuthenticated,
-        login,
-        signup,
-        logout,
-        refreshUser,
-        clearError,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )

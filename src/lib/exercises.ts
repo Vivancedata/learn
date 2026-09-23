@@ -43,9 +43,20 @@ function titleFromSlug(slug: string): string {
     .join(' ')
 }
 
-function exercisesRoot(): string {
-  return path.join(process.cwd(), 'exercises')
+// One literal path per track, so bundlers and output file tracing can see
+// exactly which directories are read (instead of `exercises/` + a variable).
+const TRACK_DIRS: Record<string, string> = {
+  'python-basics': path.join(process.cwd(), 'exercises/python-basics/exercises'),
+  'sql-fundamentals': path.join(process.cwd(), 'exercises/sql-fundamentals/exercises'),
 }
+
+// Exercise files ship with the deployment and never change at runtime, so in
+// production each one is read from disk once per server instance. Development
+// keeps re-reading so edits show up without a restart. Only found exercises
+// are cached: the key space of misses is attacker-controlled.
+const cacheEnabled = process.env.NODE_ENV === 'production'
+const exerciseCache = new Map<string, Promise<Exercise | null>>()
+let exerciseIndexCache: Promise<TrackSummary[]> | null = null
 
 /**
  * Load a single exercise's starter + test sources, or null if not found /
@@ -56,12 +67,35 @@ export async function getExercise(
   track: string,
   slug: string
 ): Promise<Exercise | null> {
+  if (!cacheEnabled) {
+    return loadExercise(track, slug)
+  }
+
+  const key = `${track}/${slug}`
+  const cached = exerciseCache.get(key)
+  if (cached) {
+    return cached
+  }
+
+  const loading = loadExercise(track, slug)
+  exerciseCache.set(key, loading)
+  const exercise = await loading
+  if (!exercise) {
+    exerciseCache.delete(key)
+  }
+  return exercise
+}
+
+async function loadExercise(
+  track: string,
+  slug: string
+): Promise<Exercise | null> {
   const language = TRACKS[track]
   if (!language || !SLUG_PATTERN.test(slug)) {
     return null
   }
 
-  const dir = path.join(exercisesRoot(), track, 'exercises', slug)
+  const dir = path.join(TRACK_DIRS[track], slug)
 
   let entries: string[]
   try {
@@ -123,40 +157,50 @@ export interface TrackSummary {
  * List every available exercise, grouped by track, for the index page.
  * Only directories that actually contain a `test_*.py` file are included.
  */
-export async function listExercises(): Promise<TrackSummary[]> {
-  const tracks: TrackSummary[] = []
-
-  for (const [track, language] of Object.entries(TRACKS)) {
-    const trackDir = path.join(exercisesRoot(), track, 'exercises')
-    let slugs: string[]
-    try {
-      slugs = (await fs.readdir(trackDir, { withFileTypes: true }))
-        .filter((d) => d.isDirectory() && SLUG_PATTERN.test(d.name))
-        .map((d) => d.name)
-        .sort()
-    } catch {
-      continue
-    }
-
-    const exercises: ExerciseSummary[] = []
-    for (const slug of slugs) {
-      const entries = await fs.readdir(path.join(trackDir, slug)).catch(() => [])
-      const hasTest = entries.some((f) => f.startsWith('test_') && f.endsWith('.py'))
-      if (!hasTest) continue
-      exercises.push({
-        track,
-        slug,
-        title: titleFromSlug(slug),
-        language,
-        runnable: language === 'python', // SQL grading isn't wired up yet
-      })
-    }
-
-    if (exercises.length > 0) {
-      tracks.push({ track, language, exercises })
-    }
+export function listExercises(): Promise<TrackSummary[]> {
+  if (!cacheEnabled) {
+    return loadExerciseIndex()
   }
+  exerciseIndexCache ??= loadExerciseIndex()
+  return exerciseIndexCache
+}
 
-  return tracks
+async function loadExerciseIndex(): Promise<TrackSummary[]> {
+  // Tracks, and the exercise folders within each, are read in parallel.
+  const tracks = await Promise.all(
+    Object.entries(TRACKS).map(async ([track, language]): Promise<TrackSummary | null> => {
+      const trackDir = TRACK_DIRS[track]
+      let slugs: string[]
+      try {
+        slugs = (await fs.readdir(trackDir, { withFileTypes: true }))
+          .filter((d) => d.isDirectory() && SLUG_PATTERN.test(d.name))
+          .map((d) => d.name)
+          .sort()
+      } catch {
+        return null
+      }
+
+      const entriesBySlug = await Promise.all(
+        slugs.map((slug) => fs.readdir(path.join(trackDir, slug)).catch(() => [] as string[]))
+      )
+
+      const exercises: ExerciseSummary[] = []
+      slugs.forEach((slug, i) => {
+        const hasTest = entriesBySlug[i].some((f) => f.startsWith('test_') && f.endsWith('.py'))
+        if (!hasTest) return
+        exercises.push({
+          track,
+          slug,
+          title: titleFromSlug(slug),
+          language,
+          runnable: language === 'python', // SQL grading isn't wired up yet
+        })
+      })
+
+      return exercises.length > 0 ? { track, language, exercises } : null
+    })
+  )
+
+  return tracks.filter((t): t is TrackSummary => t !== null)
 }
 

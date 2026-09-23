@@ -98,8 +98,10 @@ export function ProgressSummary({
             {/* Progress bar */}
             <div className="relative h-2 w-full rounded-full bg-muted overflow-hidden">
               <div
-                className="absolute inset-y-0 left-0 bg-brand rounded-full transition-all duration-500"
-                style={{ width: `${lessonProgress}%` }}
+                // Slides a full-width bar rather than growing its width, so the
+                // fill animates on the compositor; the track clips the rest.
+                className="absolute inset-0 bg-brand rounded-full transition-transform duration-500"
+                style={{ transform: `translateX(-${100 - lessonProgress}%)` }}
               />
             </div>
             <p className="text-sm text-muted-foreground">
