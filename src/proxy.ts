@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getAuthUser } from '@/lib/auth'
+import { getAuthUser, type AuthSession } from '@/lib/auth'
 import rateLimiter, { RATE_LIMITS, getRateLimitHeaders } from '@/lib/rate-limit'
 
 const PUBLIC_READONLY_API_PATTERNS = [
@@ -23,6 +23,41 @@ function isPublicReadonlyApi(request: NextRequest, pathname: string): boolean {
   }
 
   return PUBLIC_READONLY_API_PATTERNS.some((pattern) => pattern.test(pathname))
+}
+
+/**
+ * Identity headers that route handlers trust as the caller's identity.
+ * Only this proxy may set them, and only from a verified session.
+ */
+const IDENTITY_HEADERS = ['x-user-id', 'x-user-email', 'x-user-name'] as const
+
+/**
+ * Continue the request with client-supplied identity headers removed, then
+ * re-set them from the verified session (if any). A client can otherwise send
+ * `x-user-id: <someone's id>` on an anonymous request and be treated as that user.
+ */
+function forwardRequest(
+  request: NextRequest,
+  user: AuthSession | null = null
+): NextResponse {
+  const requestHeaders = new Headers(request.headers)
+  for (const name of IDENTITY_HEADERS) {
+    requestHeaders.delete(name)
+  }
+
+  if (user) {
+    requestHeaders.set('x-user-id', user.userId)
+    requestHeaders.set('x-user-email', user.email)
+    if (user.name) {
+      requestHeaders.set('x-user-name', user.name)
+    }
+  }
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
 }
 
 /**
@@ -111,7 +146,7 @@ export async function proxy(request: NextRequest) {
   // Apply rate limiting to auth endpoints (stricter)
   if (pathname.startsWith('/api/auth/')) {
     if (bypassAuthRateLimit) {
-      const response = NextResponse.next()
+      const response = forwardRequest(request)
       return addSecurityHeaders(response)
     }
 
@@ -138,20 +173,20 @@ export async function proxy(request: NextRequest) {
       )
     }
 
-    const response = NextResponse.next()
+    const response = forwardRequest(request)
     addRateLimitHeaders(response, rateLimitHeaders)
     return addSecurityHeaders(response)
   }
 
   // Skip rate limiting and auth for health/readiness endpoints
   if (pathname === '/api/health' || pathname === '/api/readiness') {
-    const response = NextResponse.next()
+    const response = forwardRequest(request)
     return addSecurityHeaders(response)
   }
 
   // Skip auth for Stripe webhook (Stripe authenticates via signature)
   if (pathname === '/api/stripe/webhook') {
-    const response = NextResponse.next()
+    const response = forwardRequest(request)
     return addSecurityHeaders(response)
   }
 
@@ -218,30 +253,13 @@ export async function proxy(request: NextRequest) {
       }
     }
 
-    let response: NextResponse
-    if (user) {
-      const requestHeaders = new Headers(request.headers)
-      requestHeaders.set('x-user-id', user.userId)
-      requestHeaders.set('x-user-email', user.email)
-      if (user.name) {
-        requestHeaders.set('x-user-name', user.name)
-      }
-
-      response = NextResponse.next({
-        request: {
-          headers: requestHeaders,
-        },
-      })
-    } else {
-      response = NextResponse.next()
-    }
-
+    const response = forwardRequest(request, user)
     addRateLimitHeaders(response, rateLimitHeaders)
     return addSecurityHeaders(response)
   }
 
   // Add security headers to all responses
-  const response = NextResponse.next()
+  const response = forwardRequest(request)
   return addSecurityHeaders(response)
 }
 
