@@ -70,7 +70,9 @@ export function PythonExercise({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-semibold">{title}</h2>
+        {/* The page's only heading of that rank: the exercise route renders no
+          * other title, so this is its h1. */}
+        <h1 className="text-xl font-semibold">{title}</h1>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleRun} disabled={disabled}>
             {busy === 'run' ? 'Running…' : 'Run'}
@@ -96,13 +98,35 @@ export function PythonExercise({
       <textarea
         value={code}
         onChange={(e) => setCode(e.target.value)}
+        name="code"
+        autoComplete="off"
+        autoCapitalize="off"
+        autoCorrect="off"
         spellCheck={false}
+        translate="no"
         aria-label={`${title} code editor`}
-        className="h-80 w-full resize-y rounded-md border border-border bg-muted/30 p-3 font-mono text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-ring"
+        className="h-80 w-full resize-y rounded-md border border-border bg-muted/30 p-3 font-mono text-sm leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
 
+      {/* Persistent live region: content inserted into a freshly mounted
+          region is not reliably announced. */}
+      <p className="sr-only" role="status">
+        {loadingRuntime
+          ? 'Loading the Python runtime…'
+          : busy === 'run'
+            ? 'Running…'
+            : busy === 'check'
+              ? 'Checking…'
+              : runOutput
+                ? 'Run finished. Output is below.'
+                : grade && !grade.compileError
+                  ? grade.allPassed
+                    ? `All ${grade.total} tests passed`
+                    : `${grade.passed} / ${grade.total} tests passing`
+                  : ''}
+      </p>
       {loadingRuntime && (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground" aria-hidden="true">
           Loading the Python runtime (first run only)…
         </p>
       )}
@@ -115,7 +139,7 @@ export function PythonExercise({
       {runOutput && (
         <div>
           <h3 className="mb-1 text-sm font-medium">Output</h3>
-          <pre className="overflow-x-auto rounded-md bg-muted p-3 text-sm">
+          <pre className="overflow-x-auto rounded-md bg-muted p-3 text-sm" translate="no">
             {runOutput.error
               ? runOutput.stdout + runOutput.error
               : runOutput.stdout || '(no output)'}
@@ -133,7 +157,7 @@ function GradeReport({ grade }: { grade: GradeResult }) {
     return (
       <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3" role="alert">
         <p className="mb-1 text-sm font-medium text-destructive">Your code couldn’t run</p>
-        <pre className="overflow-x-auto text-xs">{grade.compileError}</pre>
+        <pre className="overflow-x-auto text-xs" translate="no">{grade.compileError}</pre>
       </div>
     )
   }
@@ -142,7 +166,6 @@ function GradeReport({ grade }: { grade: GradeResult }) {
     <div className="space-y-2">
       <p
         className={`text-sm font-medium ${grade.allPassed ? 'text-green-600' : 'text-amber-600'}`}
-        role="status"
       >
         {grade.allPassed
           ? `All ${grade.total} tests passed 🎉`
@@ -152,7 +175,8 @@ function GradeReport({ grade }: { grade: GradeResult }) {
         {grade.results.map((r) => (
           <li key={r.name} className="flex items-start gap-2 text-sm">
             <span aria-hidden>{r.status === 'passed' ? '✅' : '❌'}</span>
-            <span className="font-mono">{r.name}</span>
+            <span className="sr-only">{r.status === 'passed' ? 'Passed:' : 'Failed:'}</span>
+            <span className="font-mono" translate="no">{r.name}</span>
             {r.message && (
               <span className="text-muted-foreground">— {r.message}</span>
             )}

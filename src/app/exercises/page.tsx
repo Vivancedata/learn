@@ -12,7 +12,7 @@ export default async function ExercisesIndexPage() {
   const tracks = await listExercises()
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <div className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="text-2xl font-semibold">Practice exercises</h1>
       <p className="mt-1 text-muted-foreground">
         Write code and get instant, auto-graded feedback in your browser.
@@ -46,6 +46,6 @@ export default async function ExercisesIndexPage() {
           </section>
         ))}
       </div>
-    </main>
+    </div>
   )
 }

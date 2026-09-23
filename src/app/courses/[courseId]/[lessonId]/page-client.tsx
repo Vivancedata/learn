@@ -70,14 +70,27 @@ interface TransformedDiscussion {
 
 type AuthUser = ReturnType<typeof useAuth>["user"]
 
+/**
+ * Only h2/h3 get an `id` from the markdown components below, so only those
+ * levels can be linked. Lines inside fenced code blocks are skipped: a Python
+ * `# comment` is not a heading.
+ */
 function extractTableOfContents(content: string): TableOfContentsItem[] {
-  const headings = content.match(/^#{1,6}\s+.+$/gm) || []
-  return headings.map(heading => {
-    const level = heading.match(/^#+/)?.[0].length || 1
-    const title = heading.replace(/^#+\s+/, '')
+  const items: TableOfContentsItem[] = []
+  let inFence = false
+  for (const line of content.split('\n')) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence
+      continue
+    }
+    if (inFence) continue
+    const match = /^(#{2,3})\s+(.+)$/.exec(line)
+    if (!match) continue
+    const title = match[2]
     const id = title.toLowerCase().replace(/[^\w]+/g, '-')
-    return { id, title, level }
-  })
+    items.push({ id, title, level: match[1].length })
+  }
+  return items
 }
 
 /**
@@ -90,11 +103,11 @@ function createMarkdownComponents(): Components {
     h1: ({ children, ...props }) => <h1 className="mt-2" {...props}>{children}</h1>,
     h2: ({ children, ...props }) => {
       const id = String(children).toLowerCase().replace(/[^\w]+/g, '-')
-      return <h2 id={id} {...props}>{children}</h2>
+      return <h2 id={id} {...props} className="scroll-mt-24">{children}</h2>
     },
     h3: ({ children, ...props }) => {
       const id = String(children).toLowerCase().replace(/[^\w]+/g, '-')
-      return <h3 id={id} {...props}>{children}</h3>
+      return <h3 id={id} {...props} className="scroll-mt-24">{children}</h3>
     },
     // Handle pre tags - pass through to let code handle it
     pre: ({ children }) => <>{children}</>,
@@ -142,6 +155,7 @@ function LessonPrimaryContent({
   signInHref,
   markdownComponents,
   completionLoading,
+  actionError,
   isCompleted,
   onMarkComplete,
   onQuizComplete,
@@ -158,6 +172,7 @@ function LessonPrimaryContent({
   signInHref: string
   markdownComponents: Components
   completionLoading: boolean
+  actionError: string | null
   isCompleted: boolean
   onMarkComplete: () => void
   onQuizComplete: (result: { score: number; selectedAnswers: number[] }) => Promise<void>
@@ -186,7 +201,7 @@ function LessonPrimaryContent({
             {completionLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
+                Saving…
               </>
             ) : !user ? (
               "Sign In to Save Progress"
@@ -201,6 +216,12 @@ function LessonPrimaryContent({
           </Button>
         </div>
       </div>
+
+      {actionError && (
+        <p role="alert" className="text-sm text-destructive">
+          {actionError}
+        </p>
+      )}
 
       <Card>
         <CardContent className="prose prose-slate dark:prose-invert max-w-none p-6">
@@ -306,7 +327,7 @@ function LessonSidebar({ tableOfContents }: { tableOfContents: TableOfContentsIt
                 href={`#${item.id}`}
                 className={`
                   block text-sm py-1 text-muted-foreground hover:text-foreground transition-colors
-                  ${item.level === 1 ? "font-medium" : "pl-4"}
+                  ${item.level === 2 ? "font-medium" : "pl-4"}
                 `}
               >
                 {item.title}
@@ -354,7 +375,7 @@ function LessonContent() {
   const { data, isLoading, error: loadError, mutate } = useSWR(
     ['lesson-page', courseId, lessonId, user?.id ?? 'guest'] as const,
     async ([, targetCourseId, targetLessonId, userId]) => {
-      const [coursesPayload, lessonPayload, discussionsPayload] = await Promise.all([
+      const [coursesPayload, lessonPayload, discussionsPayload, completedLessonIds] = await Promise.all([
         fetch('/api/courses').then(async (res) => {
           if (!res.ok) throw new Error('Failed to load course information')
           return (await res.json()) as { data?: Course[] }
@@ -367,6 +388,19 @@ function LessonContent() {
           if (!res.ok) throw new Error('Failed to load discussions')
           return (await res.json()) as { data?: { discussions?: DiscussionData[] } }
         }),
+        // Progress only needs the ids, so it runs alongside the other fetches.
+        userId === 'guest'
+          ? Promise.resolve<string[]>([])
+          : fetch(
+              `/api/progress/lessons?userId=${userId}&courseId=${targetCourseId}`,
+              { credentials: 'include' }
+            ).then(async (progressResponse): Promise<string[]> => {
+              if (!progressResponse.ok) return []
+              const progressPayload = await progressResponse.json()
+              return progressPayload.data?.completedLessons?.map(
+                (progressLesson: { id: string }) => progressLesson.id
+              ) || []
+            }),
       ])
 
       const course = (coursesPayload.data || []).find((c) => c.id === targetCourseId) || null
@@ -391,20 +425,7 @@ function LessonContent() {
         })) || [],
       })) as TransformedDiscussion[]
 
-      let completedLessonIds: string[] = []
-      if (userId !== 'guest') {
-        const progressResponse = await fetch(
-          `/api/progress/lessons?userId=${userId}&courseId=${targetCourseId}`,
-          { credentials: 'include' }
-        )
-
-        if (progressResponse.ok) {
-          const progressPayload = await progressResponse.json()
-          completedLessonIds = progressPayload.data?.completedLessons?.map(
-            (progressLesson: { id: string }) => progressLesson.id
-          ) || []
-        }
-      }
+      // completedLessonIds is fetched in parallel above.
 
       if (lesson && !lesson.knowledgeCheck) {
         parseKnowledgeCheck(lesson.content)
@@ -446,7 +467,9 @@ function LessonContent() {
     return <LessonSkeleton />
   }
 
-  const displayError = loadError instanceof Error ? loadError.message : actionError
+  // Only a failed load replaces the page. A failed save (actionError) is shown
+  // inline next to the lesson so the content stays readable.
+  const displayError = loadError instanceof Error ? loadError.message : null
 
   if (displayError || !course || !lesson) {
     return (
@@ -583,6 +606,7 @@ function LessonContent() {
               signInHref={signInHref}
               markdownComponents={markdownComponents}
               completionLoading={completionLoading}
+              actionError={actionError}
               isCompleted={isCompleted}
               onMarkComplete={handleMarkComplete}
               onQuizComplete={handleQuizComplete}

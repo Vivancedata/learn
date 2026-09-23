@@ -78,7 +78,7 @@ export function CourseCertificate({ course, progress }: CourseCertificateProps) 
       
       <CardContent className="space-y-6">
         {error && (
-          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
             {error}
           </div>
         )}
@@ -94,6 +94,9 @@ export function CourseCertificate({ course, progress }: CourseCertificateProps) 
               <h4 className="text-sm font-medium">Requirements</h4>
               <ul className="space-y-2">
                 <li className="flex items-start gap-2 text-sm">
+                  <span className="sr-only">
+                    {requirementsStatus.lessons ? "Complete:" : "Not complete:"}
+                  </span>
                   {requirementsStatus.lessons ? (
                     <CheckCircle className="h-4 w-4 mt-0.5 text-green-600 dark:text-green-400" />
                   ) : (
@@ -108,6 +111,9 @@ export function CourseCertificate({ course, progress }: CourseCertificateProps) 
                 </li>
                 
                 <li className="flex items-start gap-2 text-sm">
+                  <span className="sr-only">
+                    {requirementsStatus.projects ? "Complete:" : "Not complete:"}
+                  </span>
                   {requirementsStatus.projects ? (
                     <CheckCircle className="h-4 w-4 mt-0.5 text-green-600 dark:text-green-400" />
                   ) : (
@@ -122,6 +128,9 @@ export function CourseCertificate({ course, progress }: CourseCertificateProps) 
                 </li>
                 
                 <li className="flex items-start gap-2 text-sm">
+                  <span className="sr-only">
+                    {requirementsStatus.quizzes ? "Complete:" : "Not complete:"}
+                  </span>
                   {requirementsStatus.quizzes ? (
                     <CheckCircle className="h-4 w-4 mt-0.5 text-green-600 dark:text-green-400" />
                   ) : (
@@ -159,11 +168,11 @@ export function CourseCertificate({ course, progress }: CourseCertificateProps) 
               <div>
                 <h3 className="text-xl font-bold">Certificate of Completion</h3>
                 <p className="text-muted-foreground">This certifies that</p>
-                <p className="text-lg font-medium my-2">Your Name</p>
+                <p className="text-lg font-medium my-2">{user?.name || user?.email || "Your Name"}</p>
                 <p className="text-muted-foreground">has successfully completed</p>
                 <p className="text-lg font-medium my-2">{course.title}</p>
                 <p className="text-sm text-muted-foreground mt-4">
-                  {new Date().toLocaleDateString('en-US', { 
+                  {new Date().toLocaleDateString(undefined, { 
                     year: 'numeric', 
                     month: 'long', 
                     day: 'numeric' 
@@ -192,7 +201,7 @@ export function CourseCertificate({ course, progress }: CourseCertificateProps) 
         {allRequirementsMet && (
           <Button onClick={handleDownload} disabled={!allRequirementsMet || downloading}>
             <Download className="mr-2 h-4 w-4" />
-            {downloading ? "Preparing..." : "Download Certificate"}
+            {downloading ? "Preparing…" : "Download Certificate"}
           </Button>
         )}
       </CardFooter>

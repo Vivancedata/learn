@@ -7,8 +7,16 @@ import { Button } from "@/components/ui/button"
 import { CourseCatalogEntry } from "@/types/course"
 import { useAuth } from "@/hooks/useAuth"
 
+interface CourseProgressRow {
+  courseId: string
+  completedLessons: number
+  totalLessons: number
+  lastAccessed: string
+}
+
 export default function CoursesPage() {
   const { user } = useAuth()
+  const userId = user?.id
   const [courses, setCourses] = useState<CourseCatalogEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [failed, setFailed] = useState(false)
@@ -24,40 +32,46 @@ export default function CoursesPage() {
       setFailed(false)
 
       try {
-        const coursesRes = await fetch('/api/courses')
+        // Both requests are independent, so start them together. A failed
+        // progress request only drops the progress overlay, never the catalog.
+        const coursesPromise = fetch('/api/courses')
+        const progressPromise = userId
+          ? fetch(`/api/progress/user/${userId}`, { credentials: 'include' }).catch(() => null)
+          : Promise.resolve(null)
+
+        const coursesRes = await coursesPromise
         if (!coursesRes.ok) throw new Error('Failed to load courses')
         const coursesData = await coursesRes.json()
         const loadedCourses: CourseCatalogEntry[] = coursesData.data || []
 
-        if (user) {
-          const progressResponse = await fetch(`/api/progress/user/${user.id}`, {
-            credentials: 'include',
+        const progressResponse = await progressPromise
+        if (progressResponse?.ok) {
+          const progressData = (await progressResponse.json()).data ?? {}
+          const progressByCourseId = new Map<string, CourseProgressRow>(
+            (progressData.courses ?? []).map((progress: CourseProgressRow) => [
+              progress.courseId,
+              progress,
+            ])
+          )
+          const coursesWithProgress = loadedCourses.map((course) => {
+            const courseProgress = progressByCourseId.get(course.id)
+
+            if (courseProgress) {
+              return {
+                ...course,
+                progress: {
+                  completed: courseProgress.completedLessons,
+                  total: courseProgress.totalLessons,
+                  lastAccessed: courseProgress.lastAccessed,
+                },
+              }
+            }
+
+            return course
           })
 
-          if (progressResponse.ok) {
-            const progressData = (await progressResponse.json()).data ?? {}
-            const coursesWithProgress = loadedCourses.map((course) => {
-              const courseProgress = progressData.courses?.find(
-                (progress: { courseId: string }) => progress.courseId === course.id
-              )
-
-              if (courseProgress) {
-                return {
-                  ...course,
-                  progress: {
-                    completed: courseProgress.completedLessons,
-                    total: courseProgress.totalLessons,
-                    lastAccessed: courseProgress.lastAccessed,
-                  },
-                }
-              }
-
-              return course
-            })
-
-            if (!cancelled) setCourses(coursesWithProgress)
-            return
-          }
+          if (!cancelled) setCourses(coursesWithProgress)
+          return
         }
 
         if (!cancelled) setCourses(loadedCourses)
@@ -76,7 +90,7 @@ export default function CoursesPage() {
     return () => {
       cancelled = true
     }
-  }, [user, reloadKey])
+  }, [userId, reloadKey])
 
   return (
     <div className="space-y-8">
