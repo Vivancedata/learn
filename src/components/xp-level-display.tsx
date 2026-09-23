@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Zap, Trophy, TrendingUp, Shield, Crown, Gem } from 'lucide-react'
 
 interface XpData {
@@ -35,6 +36,18 @@ interface XpLevelDisplayProps {
   className?: string
   variant?: 'full' | 'compact' | 'minimal'
   showTransactions?: boolean
+}
+
+/** Tier icon; module-level so it is not a new component type every render. */
+function TierIcon({ tier }: { tier: string }) {
+  switch (tier) {
+    case 'gold':
+      return <Crown className="h-4 w-4" />
+    case 'diamond':
+      return <Gem className="h-4 w-4" />
+    default:
+      return <Shield className="h-4 w-4" />
+  }
 }
 
 /**
@@ -75,18 +88,6 @@ export function XpLevelDisplay({
     fetchXpData()
   }, [fetchXpData])
 
-  // Get tier icon component
-  const TierIcon = ({ tier }: { tier: string }) => {
-    switch (tier) {
-      case 'gold':
-        return <Crown className="h-4 w-4" />
-      case 'diamond':
-        return <Gem className="h-4 w-4" />
-      default:
-        return <Shield className="h-4 w-4" />
-    }
-  }
-
   if (loading) {
     return <XpLevelDisplaySkeleton variant={variant} className={className} />
   }
@@ -98,6 +99,17 @@ export function XpLevelDisplay({
           <div className="text-center text-muted-foreground">
             <Zap className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p>{error || 'Unable to load XP data'}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => {
+                setLoading(true)
+                void fetchXpData()
+              }}
+            >
+              Try Again
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -258,10 +270,10 @@ export function XpLevelDisplay({
               {xpData.recentTransactions.slice(0, 5).map((transaction) => (
                 <div
                   key={transaction.id}
-                  className="flex items-center justify-between p-2 rounded bg-muted/30 text-sm"
+                  className="flex items-center justify-between gap-2 p-2 rounded bg-muted/30 text-sm"
                 >
-                  <span className="text-muted-foreground">{transaction.description}</span>
-                  <span className="font-medium text-green-600 dark:text-green-400">
+                  <span className="min-w-0 truncate text-muted-foreground">{transaction.description}</span>
+                  <span className="shrink-0 font-medium text-green-600 dark:text-green-400">
                     +{transaction.amount} XP
                   </span>
                 </div>

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { RecommendationReason } from '@/components/recommendation-reason'
 import { cn } from '@/lib/utils'
@@ -94,7 +94,7 @@ export function RecommendationCard({
   return (
     <Card
       className={cn(
-        'relative group transition-all duration-300',
+        'relative group transition-[box-shadow,transform] duration-300',
         'hover:shadow-elevation-2 hover:-translate-y-1',
         className
       )}
@@ -109,9 +109,10 @@ export function RecommendationCard({
           'flex items-center justify-center',
           'bg-muted/80 hover:bg-muted',
           'text-muted-foreground hover:text-foreground',
-          'opacity-0 group-hover:opacity-100',
-          'transition-all duration-200',
-          'focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+          // Touch screens have no hover, so keep the control visible there.
+          'opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100',
+          'transition-[opacity,background-color,color] duration-200',
+          'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
           isDismissing && 'cursor-not-allowed opacity-50'
         )}
         aria-label="Dismiss recommendation"
@@ -142,8 +143,6 @@ export function RecommendationCard({
             'bg-primary/10 text-brand',
             'text-xs font-semibold'
           )}
-          role="status"
-          aria-label={`${matchPercentage}% match`}
         >
           {matchPercentage}% match
         </div>
@@ -152,7 +151,7 @@ export function RecommendationCard({
       <Link
         href={`/courses/${courseId}`}
         onClick={handleClick}
-        className="block focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-xl"
+        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
       >
         <CardHeader className={cn('pb-3', showMatchScore && 'pt-10')}>
           {/* Path indicator */}
@@ -227,7 +226,9 @@ export function RecommendationCard({
         </CardContent>
 
         <CardFooter className="pt-0">
-          <Button className="w-full" variant="default">
+          {/* A span, not a <button>: the whole card is already a link, and a
+              button nested inside <a> is invalid interactive content. */}
+          <span className={cn(buttonVariants({ variant: 'default' }), 'w-full')}>
             Start Learning
             <svg
               className="w-4 h-4 ml-2"
@@ -243,7 +244,7 @@ export function RecommendationCard({
                 d="M13 7l5 5m0 0l-5 5m5-5H6"
               />
             </svg>
-          </Button>
+          </span>
         </CardFooter>
       </Link>
     </Card>

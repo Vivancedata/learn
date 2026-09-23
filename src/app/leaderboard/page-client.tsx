@@ -1,6 +1,6 @@
 'use client'
 
-import { useReducer, useEffect, useCallback } from 'react'
+import { useReducer, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -124,7 +124,12 @@ function LeaderboardContent() {
     refreshing,
   } = state
 
+  // Only the most recent request may write state; switching filters quickly
+  // must not let a slower, older response overwrite the current one.
+  const latestRequestRef = useRef(0)
+
   const fetchLeaderboard = useCallback(async (showRefreshing = false) => {
+    const requestId = ++latestRequestRef.current
     dispatch({ type: 'fetchStart', refreshing: showRefreshing })
 
     try {
@@ -143,8 +148,10 @@ function LeaderboardContent() {
       }
 
       const result: ApiResponse<LeaderboardResponse> = await response.json()
+      if (requestId !== latestRequestRef.current) return
       dispatch({ type: 'fetchSuccess', data: result.data })
     } catch (_err) {
+      if (requestId !== latestRequestRef.current) return
       dispatch({
         type: 'fetchError',
         error: 'Failed to load leaderboard. Please try again.',
@@ -234,6 +241,7 @@ function LeaderboardContent() {
                   variant={selectedPeriod === period ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => dispatch({ type: 'setPeriod', period })}
+                  aria-pressed={selectedPeriod === period}
                   className="min-w-20"
                 >
                   {leaderboardPeriodLabels[period]}
@@ -252,6 +260,7 @@ function LeaderboardContent() {
                   variant={selectedType === type ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => dispatch({ type: 'setType', leaderboardType: type })}
+                  aria-pressed={selectedType === type}
                   className="gap-2"
                 >
                   {typeIcons[type]}
@@ -269,7 +278,7 @@ function LeaderboardContent() {
         <div className="flex items-center justify-center min-h-[40vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Loading leaderboard...</p>
+            <p className="mt-4 text-muted-foreground">Loading leaderboard…</p>
           </div>
         </div>
       )}

@@ -102,8 +102,6 @@ export function RecommendationReason({
         colors.badge,
         className
       )}
-      role="status"
-      aria-label={`Recommendation reason: ${reason}`}
     >
       {showIcon && (
         <svg

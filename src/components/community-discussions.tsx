@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar } from "@/components/ui/avatar"
-import { MessageSquare, ThumbsUp, Reply, MoreHorizontal, Loader2, AlertCircle } from "lucide-react"
+import { MessageSquare, ThumbsUp, Reply, Loader2, AlertCircle } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { GivePointButton } from "@/components/give-point-button"
 import { PointsBadge } from "@/components/helper-badge"
@@ -16,6 +16,8 @@ import {
   CommunityDiscussionsProps,
   Discussion,
 } from "@/types/discussion"
+
+const relativeTimeFormat = new Intl.RelativeTimeFormat(undefined, { numeric: "always" })
 
 function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRefresh }: CommunityDiscussionsProps) {
   const { user } = useAuth()
@@ -200,11 +202,11 @@ function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRef
       if (diffDay > 30) {
         return date.toLocaleDateString()
       } else if (diffDay > 0) {
-        return `${diffDay} day${diffDay > 1 ? 's' : ''} ago`
+        return relativeTimeFormat.format(-diffDay, "day")
       } else if (diffHour > 0) {
-        return `${diffHour} hour${diffHour > 1 ? 's' : ''} ago`
+        return relativeTimeFormat.format(-diffHour, "hour")
       } else if (diffMin > 0) {
-        return `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`
+        return relativeTimeFormat.format(-diffMin, "minute")
       } else {
         return 'just now'
       }
@@ -229,7 +231,7 @@ function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRef
       
       <CardContent className="space-y-6">
         {error && (
-          <div className="bg-destructive/10 text-destructive p-3 rounded-md flex items-start gap-2">
+          <div className="bg-destructive/10 text-destructive p-3 rounded-md flex items-start gap-2" role="alert">
             <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
             <p className="text-sm">{error}</p>
           </div>
@@ -238,7 +240,8 @@ function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRef
         {user ? (
           <div className="space-y-4">
             <Textarea
-              placeholder="Share your thoughts or ask a question..."
+              aria-label="Start a discussion"
+              placeholder="Share your thoughts or ask a question…"
               value={newDiscussion}
               onChange={(e) =>
                 setDiscussionState((prev) => ({ ...prev, newDiscussion: e.target.value }))
@@ -251,7 +254,7 @@ function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRef
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Posting...
+                    Posting…
                   </>
                 ) : (
                   'Post'
@@ -287,17 +290,18 @@ function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRef
                           {discussion.username}
                           <PointsBadge points={discussion.userPoints} />
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <time
+                          className="block text-xs text-muted-foreground"
+                          dateTime={discussion.createdAt}
+                          suppressHydrationWarning
+                        >
                           {formatDate(discussion.createdAt)}
-                        </div>
+                        </time>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
                   </div>
 
-                  <p className="text-sm mb-3">{discussion.content}</p>
+                  <p className="text-sm mb-3 break-words">{discussion.content}</p>
 
                   <div className="flex items-center gap-4">
                     <Button
@@ -305,6 +309,7 @@ function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRef
                       size="sm"
                       className="flex items-center gap-1 h-auto py-1"
                       onClick={() => handleLike(discussion.id, "discussion")}
+                      aria-label={`Like, ${discussion.likes} ${discussion.likes === 1 ? "like" : "likes"}`}
                       disabled={!user}
                       title={!user ? 'Sign in to like posts' : undefined}
                     >
@@ -349,6 +354,7 @@ function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRef
                         size="sm" 
                         className="flex items-center gap-1 h-auto py-1"
                         onClick={() => toggleReplies(discussion.id)}
+                        aria-expanded={!!expandedReplies[discussion.id]}
                       >
                         <MessageSquare className="h-4 w-4" />
                         <span className="text-xs">
@@ -362,7 +368,8 @@ function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRef
                 {replyingTo === discussion.id && (
                   <div className="pl-6 space-y-2">
                     <Textarea
-                      placeholder="Write a reply..."
+                      aria-label={`Reply to ${discussion.username}`}
+                      placeholder="Write a reply…"
                       value={replyContent}
                       onChange={(e) =>
                         setDiscussionState((prev) => ({ ...prev, replyContent: e.target.value }))
@@ -387,7 +394,7 @@ function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRef
                         {replyLoading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Posting...
+                            Posting…
                           </>
                         ) : (
                           'Reply'
@@ -413,14 +420,18 @@ function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRef
                                 {reply.username}
                                 <PointsBadge points={reply.userPoints} />
                               </div>
-                              <div className="text-xs text-muted-foreground">
+                              <time
+                                className="block text-xs text-muted-foreground"
+                                dateTime={reply.createdAt}
+                                suppressHydrationWarning
+                              >
                                 {formatDate(reply.createdAt)}
-                              </div>
+                              </time>
                             </div>
                           </div>
                         </div>
 
-                        <p className="text-sm mb-2">{reply.content}</p>
+                        <p className="text-sm mb-2 break-words">{reply.content}</p>
 
                         <div className="flex items-center gap-4">
                           <Button
@@ -428,6 +439,7 @@ function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRef
                             size="sm"
                             className="flex items-center gap-1 h-auto py-1"
                             onClick={() => handleLike(reply.id, "reply")}
+                            aria-label={`Like, ${reply.likes} ${reply.likes === 1 ? "like" : "likes"}`}
                             disabled={!user}
                             title={!user ? 'Sign in to like posts' : undefined}
                           >

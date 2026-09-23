@@ -41,13 +41,20 @@ interface SolutionsResponse {
   }
 }
 
+// Reader's locale, not a hardcoded 'en-US'. Built once, not per card.
+const submittedDateFormatter = new Intl.DateTimeFormat(undefined, {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+})
+
 interface StudentSolutionsProps {
   lessonId: string
   courseId: string
 }
 
 export function StudentSolutions({ lessonId, courseId }: StudentSolutionsProps) {
-  const { user, loading: authLoading } = useAuth()
+  const { user } = useAuth()
   const [solutions, setSolutions] = useState<Solution[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -154,11 +161,7 @@ export function StudentSolutions({ lessonId, courseId }: StudentSolutionsProps) 
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
+    return submittedDateFormatter.format(new Date(dateString))
   }
 
   const extractRepoName = (githubUrl: string) => {
@@ -174,8 +177,9 @@ export function StudentSolutions({ lessonId, courseId }: StudentSolutionsProps) 
     }
   }
 
-  // Show loading skeleton
-  if (loading && !authLoading) {
+  // Show loading skeleton (also while auth resolves, so the empty state
+  // never flashes before the first fetch lands)
+  if (loading) {
     return (
       <Card>
         <CardHeader>
@@ -190,7 +194,7 @@ export function StudentSolutions({ lessonId, courseId }: StudentSolutionsProps) 
         <CardContent>
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-muted-foreground">Loading solutions...</span>
+            <span className="ml-2 text-muted-foreground">Loading solutions…</span>
           </div>
         </CardContent>
       </Card>
@@ -288,15 +292,15 @@ export function StudentSolutions({ lessonId, courseId }: StudentSolutionsProps) 
               className="border rounded-lg p-4 space-y-3 hover:border-brand/50 transition-colors"
             >
               {/* User info */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <div className="w-8 h-8 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
                     <span className="text-sm font-medium text-brand">
                       {solution.user.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">{solution.user.name}</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{solution.user.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {formatDate(solution.submittedAt)}
                     </p>
@@ -305,8 +309,10 @@ export function StudentSolutions({ lessonId, courseId }: StudentSolutionsProps) 
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`h-8 px-2 ${solution.isLikedByUser ? 'text-destructive' : ''}`}
+                  className={`h-8 shrink-0 px-2 ${solution.isLikedByUser ? 'text-destructive' : ''}`}
                   onClick={() => handleLike(solution.id)}
+                  aria-pressed={solution.isLikedByUser}
+                  aria-label={`Like ${solution.user.name}'s solution (${solution.likesCount} like${solution.likesCount !== 1 ? 's' : ''})`}
                   disabled={!user || likingIds.has(solution.id) || solution.user.id === user?.id}
                   title={
                     !user
@@ -341,7 +347,7 @@ export function StudentSolutions({ lessonId, courseId }: StudentSolutionsProps) 
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 text-xs"
+                  className="h-8 min-w-0 max-w-full text-xs"
                   asChild
                 >
                   <a
@@ -349,9 +355,11 @@ export function StudentSolutions({ lessonId, courseId }: StudentSolutionsProps) 
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <GithubIcon className="h-3.5 w-3.5 mr-1" />
-                    {extractRepoName(solution.githubUrl)}
-                    <ExternalLink className="h-3 w-3 ml-1" />
+                    <GithubIcon className="h-3.5 w-3.5 mr-1 shrink-0" />
+                    <span className="truncate" translate="no">
+                      {extractRepoName(solution.githubUrl)}
+                    </span>
+                    <ExternalLink className="h-3 w-3 ml-1 shrink-0" />
                   </a>
                 </Button>
                 {solution.liveUrl && (
@@ -388,7 +396,7 @@ export function StudentSolutions({ lessonId, courseId }: StudentSolutionsProps) 
               {loadingMore ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Loading...
+                  Loading…
                 </>
               ) : (
                 'Load More Solutions'

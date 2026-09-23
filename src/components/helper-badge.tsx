@@ -50,6 +50,7 @@ export function HelperBadge({
         >
           <Star className={size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'} />
           {points}
+          <span className="sr-only"> community point{points !== 1 ? 's' : ''}</span>
         </span>
       )
     }
@@ -123,6 +124,7 @@ export function PointsBadge({
         <Star className="h-3 w-3" />
       )}
       {points}
+      <span className="sr-only"> community point{points !== 1 ? 's' : ''}</span>
     </span>
   )
 }
