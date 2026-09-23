@@ -14,6 +14,8 @@ interface ChatMessageProps {
   isLatest?: boolean
 }
 
+const relativeTime = new Intl.RelativeTimeFormat(undefined, { style: 'narrow' })
+
 /**
  * Format timestamp for display
  */
@@ -23,10 +25,10 @@ function formatTimestamp(date: Date): string {
   const diffMins = Math.floor(diffMs / 60000)
 
   if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffMins < 60) return relativeTime.format(-diffMins, 'minute')
 
   const diffHours = Math.floor(diffMins / 60)
-  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffHours < 24) return relativeTime.format(-diffHours, 'hour')
 
   return date.toLocaleDateString(undefined, {
     month: 'short',
@@ -105,10 +107,11 @@ const markdownComponents: Components = {
  */
 function TypingIndicator() {
   return (
-    <div className="flex items-center gap-1 px-3 py-2">
-      <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-      <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-      <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+    <div className="flex items-center gap-1 px-3 py-2" role="status">
+      <span className="sr-only">AI Tutor is typing…</span>
+      <span aria-hidden="true" className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+      <span aria-hidden="true" className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+      <span aria-hidden="true" className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
     </div>
   )
 }
@@ -159,12 +162,11 @@ function ChatMessageComponent({
   )
 
   return (
-    <div
+    <article
       className={cn(
         'flex gap-3 animate-fade-in',
         isUser ? 'flex-row-reverse' : 'flex-row'
       )}
-      role="article"
       aria-label={`${isUser ? 'Your' : 'AI Tutor'} message`}
     >
       {/* Avatar */}
@@ -191,7 +193,7 @@ function ChatMessageComponent({
           ) : isUser ? (
             <p className="whitespace-pre-wrap break-words">{message.content}</p>
           ) : (
-            <div className="prose prose-sm dark:prose-invert max-w-none">
+            <div className="prose prose-sm dark:prose-invert max-w-none break-words">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={markdownComponents}
@@ -214,7 +216,7 @@ function ChatMessageComponent({
           </span>
         )}
       </div>
-    </div>
+    </article>
   )
 }
 

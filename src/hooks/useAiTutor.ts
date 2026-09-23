@@ -42,7 +42,7 @@ export function useAiTutor() {
   const askForExplanation = useCallback(async () => {
     const topic = context.lessonTitle || context.currentTopic || 'this concept'
     await sendMessage(`Can you explain ${topic} in simpler terms?`)
-  }, [context, sendMessage])
+  }, [context.lessonTitle, context.currentTopic, sendMessage])
 
   /**
    * Ask for a hint
@@ -50,7 +50,7 @@ export function useAiTutor() {
   const askForHint = useCallback(async () => {
     const topic = context.lessonTitle || 'the current topic'
     await sendMessage(`Give me a hint about ${topic}`)
-  }, [context, sendMessage])
+  }, [context.lessonTitle, sendMessage])
 
   /**
    * Ask for an example
@@ -58,47 +58,9 @@ export function useAiTutor() {
   const askForExample = useCallback(async () => {
     const topic = context.lessonTitle || context.currentTopic || 'this'
     await sendMessage(`Show me a practical example of ${topic}`)
-  }, [context, sendMessage])
+  }, [context.lessonTitle, context.currentTopic, sendMessage])
 
-  /**
-   * Ask what to learn next
-   */
-  const askWhatNext = useCallback(async () => {
-    await sendMessage('What should I learn next?')
-  }, [sendMessage])
-
-  /**
-   * Get the last few messages for preview
-   */
-  const recentMessages = useMemo(() => {
-    return messages.slice(-5)
-  }, [messages])
-
-  /**
-   * Check if there are any messages
-   */
-  const hasMessages = useMemo(() => messages.length > 0, [messages])
-
-  /**
-   * Get the last message
-   */
-  const lastMessage = useMemo(() => {
-    return messages[messages.length - 1] || null
-  }, [messages])
-
-  /**
-   * Get only user messages
-   */
-  const userMessages = useMemo(() => {
-    return messages.filter((msg) => msg.role === 'user')
-  }, [messages])
-
-  /**
-   * Get only assistant messages
-   */
-  const assistantMessages = useMemo(() => {
-    return messages.filter((msg) => msg.role === 'assistant')
-  }, [messages])
+  const hasMessages = messages.length > 0
 
   /**
    * Generate suggested questions based on context
@@ -146,11 +108,7 @@ export function useAiTutor() {
     isExpanded,
     error,
     context,
-    recentMessages,
     hasMessages,
-    lastMessage,
-    userMessages,
-    assistantMessages,
     suggestedQuestions,
 
     // Actions
@@ -166,22 +124,7 @@ export function useAiTutor() {
     askForExplanation,
     askForHint,
     askForExample,
-    askWhatNext,
   }
-}
-
-/**
- * Hook to set lesson context when entering a lesson page
- */
-export function useLessonTutorContext(lessonContext: TutorContext | null) {
-  const { setLessonContext } = useTutorContext()
-
-  // Update context when lesson changes
-  useMemo(() => {
-    if (lessonContext) {
-      setLessonContext(lessonContext)
-    }
-  }, [lessonContext, setLessonContext])
 }
 
 /**
