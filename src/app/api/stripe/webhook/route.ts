@@ -109,13 +109,20 @@ export async function POST(request: NextRequest) {
         },
       })
     } catch (error) {
-      // Error is recorded in webhook event - don't fail the webhook
+      // Record the error, then answer 5xx so Stripe retries: a 2xx would mark
+      // the event delivered and a transient failure would never be repaired.
+      // Retries are safe - the event stays unprocessed and handlers upsert.
       await prisma.webhookEvent.update({
         where: { stripeEventId: event.id },
         data: {
           error: error instanceof Error ? error.message : 'Unknown error',
         },
       })
+
+      return NextResponse.json(
+        { error: 'Webhook handler failed' },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({ received: true })
