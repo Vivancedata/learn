@@ -4,6 +4,7 @@ import { use, useCallback, useEffect, useReducer, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AssessmentQuestion } from '@/components/assessment-question'
 import { AssessmentTimer } from '@/components/assessment-timer'
 import {
@@ -23,21 +24,14 @@ import {
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { AssessmentQuestion as AssessmentQuestionType } from '@/types/assessment'
-
-interface AssessmentStartResponse {
-  data: {
-    attemptId: string
-    assessmentId: string
-    assessmentSlug: string
-    name: string
-    timeLimit: number
-    passingScore: number
-    totalQuestions: number
-    startedAt: string
-    questions: (Omit<AssessmentQuestionType, 'correctAnswer'> & { correctAnswer: undefined })[]
-  }
-}
+import {
+  assessmentTakeReducer,
+  createInitialAssessmentTakeState,
+  type AnswerValue,
+  type AssessmentData,
+  type AssessmentQuestionData,
+  type AssessmentStartResponse,
+} from './take-reducer'
 
 interface SubmitResponse {
   data: {
@@ -56,158 +50,6 @@ interface SubmitResponse {
       explanation: string
     }[]
     skillLevel: string
-  }
-}
-
-type AnswerValue = string | string[] | number
-type AssessmentData = AssessmentStartResponse['data']
-type AssessmentQuestionData = AssessmentData['questions'][number]
-
-interface AssessmentTakeState {
-  assessmentData: AssessmentData | null
-  currentQuestionIndex: number
-  answers: Record<string, AnswerValue>
-  flaggedQuestions: Set<number>
-  loading: boolean
-  error: string | null
-  isSubmitting: boolean
-  showSubmitModal: boolean
-  showSidebar: boolean
-}
-
-type AssessmentTakeAction =
-  | { type: 'startRequested' }
-  | { type: 'startSucceeded'; assessmentData: AssessmentData }
-  | { type: 'startFailed'; error: string }
-  | { type: 'answerChanged'; questionId: string; answer: AnswerValue }
-  | { type: 'flagToggled'; questionIndex: number }
-  | { type: 'questionSelected'; questionIndex: number }
-  | { type: 'previousQuestion' }
-  | { type: 'nextQuestion'; totalQuestions: number }
-  | { type: 'submitModalOpened' }
-  | { type: 'submitModalClosed' }
-  | { type: 'sidebarOpened' }
-  | { type: 'sidebarClosed' }
-  | { type: 'submissionStarted' }
-  | { type: 'submissionFailed'; error: string }
-
-function createInitialAssessmentTakeState(): AssessmentTakeState {
-  return {
-    assessmentData: null,
-    currentQuestionIndex: 0,
-    answers: {},
-    flaggedQuestions: new Set(),
-    loading: true,
-    error: null,
-    isSubmitting: false,
-    showSubmitModal: false,
-    showSidebar: false,
-  }
-}
-
-function assessmentTakeReducer(
-  state: AssessmentTakeState,
-  action: AssessmentTakeAction
-): AssessmentTakeState {
-  switch (action.type) {
-    case 'startRequested':
-      return {
-        ...state,
-        loading: true,
-        error: null,
-      }
-    case 'startSucceeded':
-      return {
-        ...state,
-        assessmentData: action.assessmentData,
-        loading: false,
-      }
-    case 'startFailed':
-      return {
-        ...state,
-        loading: false,
-        error: action.error,
-      }
-    case 'answerChanged':
-      return {
-        ...state,
-        answers: {
-          ...state.answers,
-          [action.questionId]: action.answer,
-        },
-      }
-    case 'flagToggled': {
-      const flaggedQuestions = new Set(state.flaggedQuestions)
-
-      if (flaggedQuestions.has(action.questionIndex)) {
-        flaggedQuestions.delete(action.questionIndex)
-      } else {
-        flaggedQuestions.add(action.questionIndex)
-      }
-
-      return {
-        ...state,
-        flaggedQuestions,
-      }
-    }
-    case 'questionSelected':
-      return {
-        ...state,
-        currentQuestionIndex: action.questionIndex,
-        showSidebar: false,
-      }
-    case 'previousQuestion':
-      if (state.currentQuestionIndex === 0) {
-        return state
-      }
-
-      return {
-        ...state,
-        currentQuestionIndex: state.currentQuestionIndex - 1,
-      }
-    case 'nextQuestion':
-      if (state.currentQuestionIndex >= action.totalQuestions - 1) {
-        return state
-      }
-
-      return {
-        ...state,
-        currentQuestionIndex: state.currentQuestionIndex + 1,
-      }
-    case 'submitModalOpened':
-      return {
-        ...state,
-        showSubmitModal: true,
-      }
-    case 'submitModalClosed':
-      return {
-        ...state,
-        showSubmitModal: false,
-      }
-    case 'sidebarOpened':
-      return {
-        ...state,
-        showSidebar: true,
-      }
-    case 'sidebarClosed':
-      return {
-        ...state,
-        showSidebar: false,
-      }
-    case 'submissionStarted':
-      return {
-        ...state,
-        isSubmitting: true,
-        showSubmitModal: false,
-      }
-    case 'submissionFailed':
-      return {
-        ...state,
-        isSubmitting: false,
-        error: action.error,
-      }
-    default:
-      return state
   }
 }
 
@@ -817,6 +659,25 @@ function AssessmentTakeContent({
       />
 
       <div className="container py-6">
+        {state.submitError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+              <span>
+                {state.submitError} Your answers are still here.
+              </span>
+              <Button
+                size="sm"
+                onClick={() => {
+                  void submitAssessment()
+                }}
+                disabled={state.isSubmitting}
+              >
+                Retry submission
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         <div className="grid gap-6 lg:grid-cols-4">
           <div className="lg:col-span-3">
             <AssessmentQuestionCard
