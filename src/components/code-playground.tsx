@@ -436,18 +436,18 @@ function useCodePlaygroundContent({
           {isLoading && loadingMessage && (
             <div className="flex items-center gap-2 p-3 bg-[#181825] border-b border-[#313244] text-sm">
               <Spinner size="sm" />
-              <span className="text-[#6c7086]">{loadingMessage}</span>
+              <span className="text-[#9399b2]">{loadingMessage}</span>
             </div>
           )}
 
           {/* Output Header */}
           <div className="flex items-center justify-between px-3 py-2 bg-[#181825] border-b border-[#313244]">
-            <div className="flex items-center gap-2 text-[#6c7086]">
+            <div className="flex items-center gap-2 text-[#9399b2]">
               <Terminal className="h-3.5 w-3.5" />
               <span className="text-xs font-medium">Output</span>
             </div>
             {executionTime !== null && (
-              <span className="flex items-center gap-1 text-xs text-[#6c7086]">
+              <span className="flex items-center gap-1 text-xs text-[#9399b2]">
                 <Clock className="h-3 w-3" />
                 {executionTime.toFixed(0)}ms
               </span>
@@ -464,7 +464,7 @@ function useCodePlaygroundContent({
           >
             {/* Empty state */}
             {status === 'idle' && !output && !error && (
-              <div className="text-[#6c7086] italic text-sm">
+              <div className="text-[#9399b2] italic text-sm">
                 Click “Run” or press Ctrl+Enter to execute your code…
               </div>
             )}
@@ -486,7 +486,7 @@ function useCodePlaygroundContent({
             {/* Test Results */}
             {testResults && testResults.length > 0 && (
               <div className="mt-4 pt-4 border-t border-[#313244]">
-                <h4 className="text-xs font-medium text-[#6c7086] mb-2">Test Results</h4>
+                <h4 className="text-xs font-medium text-[#9399b2] mb-2">Test Results</h4>
                 <div className="space-y-2">
                   {testResults.map((result) => (
                     <div
@@ -506,7 +506,7 @@ function useCodePlaygroundContent({
                           {result.name}
                         </div>
                         {!result.passed && result.expected && result.actual && (
-                          <div className="text-xs text-[#6c7086] mt-1">
+                          <div className="text-xs text-[#9399b2] mt-1">
                             Expected: <code className="text-[#f5c2e7]">{result.expected}</code>
                             <br />
                             Got: <code className="text-[#f38ba8]">{result.actual}</code>

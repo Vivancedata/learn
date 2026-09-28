@@ -273,7 +273,7 @@ export function XpLevelDisplay({
                   className="flex items-center justify-between gap-2 p-2 rounded bg-muted/30 text-sm"
                 >
                   <span className="min-w-0 truncate text-muted-foreground">{transaction.description}</span>
-                  <span className="shrink-0 font-medium text-green-600 dark:text-green-400">
+                  <span className="shrink-0 font-medium text-green-700 dark:text-green-400">
                     +{transaction.amount} XP
                   </span>
                 </div>

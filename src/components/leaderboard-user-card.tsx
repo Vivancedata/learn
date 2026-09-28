@@ -147,7 +147,7 @@ export function LeaderboardUserCard({
             </div>
           )}
           {userRank.rank === 1 && (
-            <div className="flex items-center gap-2 text-sm text-amber-500 font-medium">
+            <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400 font-medium">
               <Trophy className="h-4 w-4" />
               <span>You are the leader!</span>
             </div>
