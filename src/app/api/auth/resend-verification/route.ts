@@ -9,7 +9,7 @@ import {
   HTTP_STATUS,
 } from '@/lib/api-errors'
 import { createEmailVerificationToken } from '@/lib/email-verification'
-import { sendEmail, isEmailServiceConfigured } from '@/lib/email'
+import { sendEmail } from '@/lib/email'
 import { verificationEmailTemplate } from '@/lib/email-templates'
 import { checkRateLimitAsync, getClientIdentifier, RATE_LIMITS } from '@/lib/rate-limit'
 import { getAppUrl } from '@/lib/app-url'
@@ -107,7 +107,11 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    const shouldExpose = process.env.NODE_ENV !== 'production' || !isEmailServiceConfigured()
+    // Only outside production. This route takes any email or userId and the
+    // code is exchanged for a session by /api/auth/verify-email, so returning
+    // it in production (even with email unconfigured) lets anyone who knows
+    // an address take over that unverified account.
+    const shouldExpose = process.env.NODE_ENV !== 'production'
 
     return apiSuccess({
       message: 'If an account exists, a verification code has been sent.',
