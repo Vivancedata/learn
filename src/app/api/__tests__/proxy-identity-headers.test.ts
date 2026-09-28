@@ -142,6 +142,7 @@ describe('proxy identity headers', () => {
     'http://localhost/api/auth/me',
     'http://localhost/api/health',
     'http://localhost/api/stripe/webhook',
+    'http://localhost/api/webhooks/resend',
     'http://localhost/dashboard',
   ])('strips spoofed x-user-* headers outside the API auth branch: %s', async (url) => {
     const request = new NextRequest(url, { headers: SPOOFED_HEADERS })
@@ -163,6 +164,17 @@ describe('proxy identity headers', () => {
 
     expect(downstream.headers.get('x-user-id')).toBeNull()
   })
+
+  it.each(['/api/stripe/webhook', '/api/webhooks/resend'])(
+    'lets signature-verified webhooks through without a session: %s',
+    async (path) => {
+      const request = new NextRequest(`http://localhost${path}`, { method: 'POST' })
+
+      const response = await proxy(request)
+
+      expect(response.status).not.toBe(401)
+    }
+  )
 
   it('still rejects anonymous requests to protected routes', async () => {
     const request = new NextRequest('http://localhost/api/progress/lessons', {

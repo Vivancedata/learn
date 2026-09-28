@@ -184,8 +184,9 @@ export async function proxy(request: NextRequest) {
     return addSecurityHeaders(response)
   }
 
-  // Skip auth for Stripe webhook (Stripe authenticates via signature)
-  if (pathname === '/api/stripe/webhook') {
+  // Skip auth for webhooks: the route handlers verify the provider signature
+  // (Stripe signature / Svix for Resend), and providers never hold a session.
+  if (pathname === '/api/stripe/webhook' || pathname === '/api/webhooks/resend') {
     const response = forwardRequest(request)
     return addSecurityHeaders(response)
   }
