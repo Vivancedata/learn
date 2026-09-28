@@ -98,3 +98,53 @@ describe('POST /api/streaks/freeze', () => {
     expect(mockRow.streakFreezes).toBe(1)
   })
 })
+
+describe('POST /api/streaks/freeze rejections', () => {
+  function daysAgo(days: number) {
+    const date = new Date()
+    date.setHours(0, 0, 0, 0)
+    date.setDate(date.getDate() - days)
+    return date
+  }
+
+  beforeEach(() => {
+    Object.assign(mockRow, { streakFreezes: 1, currentStreak: 5, lastActivityDate: daysAgo(2) })
+  })
+
+  it.each([
+    ['no freezes are left', { streakFreezes: 0 }, /No streak freezes available/],
+    ['there is no streak to protect', { currentStreak: 0 }, /No active streak/],
+    ['the user was active today', { lastActivityDate: daysAgo(0) }, /already active today/],
+    ['the streak is still alive from yesterday', { lastActivityDate: daysAgo(1) }, /still active/],
+    ['more than one day was missed', { lastActivityDate: daysAgo(4) }, /Too much time has passed/],
+  ])('refuses when %s, without spending a freeze', async (_case, state, message) => {
+    Object.assign(mockRow, state)
+    const freezesBefore = mockRow.streakFreezes
+
+    const response = await useStreakFreeze(freezeRequest())
+    const body = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(JSON.stringify(body)).toMatch(message)
+    expect(mockRow.streakFreezes).toBe(freezesBefore)
+  })
+
+  it('applies a freeze for a streak with no recorded activity date', async () => {
+    mockRow.lastActivityDate = null
+
+    const response = await useStreakFreeze(freezeRequest())
+
+    expect(response.status).toBe(200)
+    expect(mockRow.streakFreezes).toBe(0)
+  })
+
+  it('answers 404 for an unknown user', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const prisma = require('@/lib/db').default
+    prisma.user.findUnique.mockResolvedValueOnce(null)
+
+    const response = await useStreakFreeze(freezeRequest())
+
+    expect(response.status).toBe(404)
+  })
+})
