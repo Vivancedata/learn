@@ -87,7 +87,9 @@ export function AssessmentTimer({
         className
       )}
       role="timer"
-      aria-label={`Time remaining: ${formatTime(remainingSeconds)}`}
+      // Static name: the visible countdown is the value. A label rewritten
+      // every second is re-announced by some screen readers.
+      aria-label="Time remaining"
     >
       {isCritical ? (
         <AlertTriangle className="h-5 w-5" aria-hidden="true" />

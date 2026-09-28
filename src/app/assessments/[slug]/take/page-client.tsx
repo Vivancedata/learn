@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useCallback, useEffect, useReducer, useRef } from 'react'
+import { use, useCallback, useEffect, useEffectEvent, useReducer, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -67,24 +67,62 @@ function getQuestionStatuses(
   })
 }
 
-/** Close an open overlay on Escape. */
-function useEscapeToClose(isOpen: boolean, onClose: () => void) {
+/**
+ * Modal dialog behaviour: move focus into the dialog on open, keep Tab inside
+ * it, close on Escape, and hand focus back to the trigger on close.
+ */
+function useModalDialog(isOpen: boolean, onClose: () => void) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const close = useEffectEvent(onClose)
+
   useEffect(() => {
     if (!isOpen) return
 
+    const dialog = dialogRef.current
+    const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const focusable = () =>
+      Array.from(
+        dialog?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), [tabindex]'
+        ) ?? []
+      ).filter((element) => element.tabIndex >= 0)
+
+    focusable()[0]?.focus()
+
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') {
+        close()
+        return
+      }
+      if (event.key !== 'Tab') return
+
+      const elements = focusable()
+      if (elements.length === 0) return
+      const first = elements[0]
+      const last = elements[elements.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
 
     document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      trigger?.focus()
+    }
+  }, [isOpen])
+
+  return dialogRef
 }
 
 function LoadingState() {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center">
-      <Loader2 className="mb-4 h-12 w-12 animate-spin text-brand" />
+    <div className="flex min-h-[60vh] flex-col items-center justify-center" role="status">
+      <Loader2 className="mb-4 h-12 w-12 animate-spin text-brand" aria-hidden="true" />
       <p className="text-muted-foreground">Loading assessment…</p>
     </div>
   )
@@ -136,7 +174,7 @@ function AssessmentHeader({
       <div className="container py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <h1 className="hidden max-w-xs truncate text-lg font-semibold sm:block">
+            <h1 className="sr-only max-w-xs truncate text-lg font-semibold sm:not-sr-only sm:block">
               {assessmentData.name}
             </h1>
             <AssessmentNavigationCompact
@@ -311,7 +349,7 @@ function MobileQuestionSidebar({
   onQuestionClick: (index: number) => void
   onClose: () => void
 }) {
-  useEscapeToClose(isOpen, onClose)
+  const dialogRef = useModalDialog(isOpen, onClose)
 
   if (!isOpen) {
     return null
@@ -319,6 +357,7 @@ function MobileQuestionSidebar({
 
   return (
     <div
+      ref={dialogRef}
       className="fixed inset-0 z-50 lg:hidden"
       role="dialog"
       aria-modal="true"
@@ -327,6 +366,7 @@ function MobileQuestionSidebar({
       <button
         type="button"
         aria-label="Close question sidebar"
+        tabIndex={-1}
         className="absolute inset-0 bg-background/80 backdrop-blur-sm"
         onClick={onClose}
       />
@@ -369,7 +409,7 @@ function SubmitConfirmationModal({
   onClose: () => void
   onSubmit: () => void
 }) {
-  useEscapeToClose(isOpen, onClose)
+  const dialogRef = useModalDialog(isOpen, onClose)
 
   if (!isOpen) {
     return null
@@ -377,6 +417,7 @@ function SubmitConfirmationModal({
 
   return (
     <div
+      ref={dialogRef}
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
@@ -385,6 +426,7 @@ function SubmitConfirmationModal({
       <button
         type="button"
         aria-label="Close submit confirmation"
+        tabIndex={-1}
         className="absolute inset-0 bg-background/80 backdrop-blur-sm"
         onClick={onClose}
       />
@@ -450,9 +492,13 @@ function SubmittingOverlay({ isSubmitting }: { isSubmitting: boolean }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+      role="status"
+      aria-busy="true"
+    >
       <div className="text-center">
-        <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-brand" />
+        <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-brand" aria-hidden="true" />
         <p className="text-lg font-medium">Submitting your assessment…</p>
         <p className="text-muted-foreground">Please wait</p>
       </div>
