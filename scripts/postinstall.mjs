@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync } from "node:fs";
+import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 
@@ -28,8 +29,12 @@ if (
   });
 }
 
-const command = process.platform === "win32" ? "npx.cmd" : "npx";
-const result = spawnSync(command, ["prisma", "generate"], {
+// Run the Prisma CLI through the current Node binary rather than `npx`.
+// Spawning `npx.cmd` without a shell fails with EINVAL on Windows since the
+// CVE-2024-27980 fix, which silently broke `npm install` there.
+const require = createRequire(import.meta.url);
+const prismaCli = require.resolve("prisma/build/index.js");
+const result = spawnSync(process.execPath, [prismaCli, "generate"], {
   stdio: "inherit",
   env: {
     ...process.env,
@@ -37,6 +42,10 @@ const result = spawnSync(command, ["prisma", "generate"], {
     XDG_CACHE_HOME: localCacheHome,
   },
 });
+
+if (result.error) {
+  console.error(`postinstall: failed to run prisma generate: ${result.error.message}`);
+}
 
 if (typeof result.status === "number") {
   process.exit(result.status);
