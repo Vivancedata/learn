@@ -165,7 +165,10 @@ describe('Quiz API', () => {
       })
       // Not yet awarded -> XP path executes
       ;(prisma.xpTransaction.findFirst as jest.Mock).mockResolvedValue(null)
-      ;(prisma.$transaction as jest.Mock).mockResolvedValue([])
+      // awardXp runs an interactive transaction against the same client
+      ;(prisma.$transaction as jest.Mock).mockImplementation(async (arg: unknown) =>
+        typeof arg === 'function' ? arg(prisma) : []
+      )
       ;(prisma.dailyActivity.upsert as jest.Mock).mockResolvedValue({
         date: new Date(),
         xpEarned: 100,
@@ -175,6 +178,7 @@ describe('Quiz API', () => {
       })
       ;(prisma.user.update as jest.Mock).mockResolvedValue({
         id: TEST_USER_ID,
+        totalXp: 100,
         currentStreak: 1,
         longestStreak: 1,
         lastActivityDate: new Date(),

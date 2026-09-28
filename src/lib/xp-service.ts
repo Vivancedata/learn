@@ -79,48 +79,56 @@ export async function awardXp(
   sourceId?: string,
   description?: string
 ): Promise<XpAwardResult> {
-  // Get current user stats
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { totalXp: true, level: true },
-  })
+  // Increment atomically instead of writing back a total read earlier: two
+  // awards landing together (e.g. lesson complete + quiz pass) would each
+  // read the same total and the second write would erase the first award.
+  const { previousLevel, newTotalXp, newLevel, xpToNextLevel } = await prisma.$transaction(
+    async (tx) => {
+      const current = await tx.user.findUnique({
+        where: { id: userId },
+        select: { level: true },
+      })
 
-  if (!user) {
-    throw new Error('User not found')
-  }
+      if (!current) {
+        throw new Error('User not found')
+      }
 
-  const previousLevel = user.level
-  const previousXp = user.totalXp
-  const newTotalXp = previousXp + amount
+      await tx.xpTransaction.create({
+        data: {
+          userId,
+          amount,
+          source,
+          sourceId,
+          description: description || getXpDescription(source),
+        },
+      })
 
-  // Calculate new level
-  const newLevel = calculateLevelFromXp(newTotalXp)
-  const xpToNextLevel = calculateXpToNextLevel(newTotalXp)
+      const incremented = await tx.user.update({
+        where: { id: userId },
+        data: { totalXp: { increment: amount } },
+        select: { totalXp: true },
+      })
+
+      const total = incremented.totalXp
+      const level = calculateLevelFromXp(total)
+      const toNext = calculateXpToNextLevel(total)
+
+      await tx.user.update({
+        where: { id: userId },
+        data: { level, xpToNextLevel: toNext },
+      })
+
+      return {
+        previousLevel: current.level,
+        newTotalXp: total,
+        newLevel: level,
+        xpToNextLevel: toNext,
+      }
+    }
+  )
+
   const levelProgress = calculateLevelProgress(newTotalXp)
   const leveledUp = newLevel > previousLevel
-
-  // Create transaction and update user in a single transaction
-  await prisma.$transaction([
-    // Record the XP transaction
-    prisma.xpTransaction.create({
-      data: {
-        userId,
-        amount,
-        source,
-        sourceId,
-        description: description || getXpDescription(source),
-      },
-    }),
-    // Update user's XP and level
-    prisma.user.update({
-      where: { id: userId },
-      data: {
-        totalXp: newTotalXp,
-        level: newLevel,
-        xpToNextLevel,
-      },
-    }),
-  ])
 
   return {
     success: true,

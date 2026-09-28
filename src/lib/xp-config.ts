@@ -70,6 +70,9 @@ export function calculateCumulativeXpForLevel(level: number): number {
  * Calculate level from total XP
  */
 export function calculateLevelFromXp(totalXp: number): number {
+  // NaN compares false against everything, so the loop below would never end.
+  if (!Number.isFinite(totalXp)) return 1
+
   let level = 1
   let cumulativeXp = 0
 
