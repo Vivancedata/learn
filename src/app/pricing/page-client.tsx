@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,6 +16,7 @@ const usd = new Intl.NumberFormat('en-US', {
 })
 
 export default function PricingPageClient() {
+  const router = useRouter()
   const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('year')
   const [loading, setLoading] = useState<string | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
@@ -34,7 +36,7 @@ export default function PricingPageClient() {
         error instanceof Error &&
         /unauthorized|authentication|required|sign in/i.test(error.message)
       ) {
-        window.location.href = '/sign-in?redirect=/pricing'
+        router.push(`/sign-in?redirect=${encodeURIComponent('/pricing')}`)
         return
       }
 
