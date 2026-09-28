@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -233,7 +233,7 @@ function AssessmentsFiltersPanel({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
+        <CardTitle as="h2" className="text-lg flex items-center gap-2">
           <Filter className="h-5 w-5" />
           Filter Assessments
         </CardTitle>
@@ -497,7 +497,12 @@ function AssessmentsCatalogContent() {
   const currentDifficulty = (searchParams.get('difficulty') || '') as CourseDifficulty | ''
   const currentPage = Number.parseInt(searchParams.get('page') || '1', 10)
 
+  // Filter changes (and the server-snapshot -> URL hydration on deep links)
+  // fire overlapping requests; only the latest may write to state.
+  const latestRequestRef = useRef(0)
+
   const fetchAssessments = useCallback(async () => {
+    const requestId = ++latestRequestRef.current
     setState((previousState) => ({
       ...previousState,
       loading: true,
@@ -524,6 +529,7 @@ function AssessmentsCatalogContent() {
       }
 
       const data: AssessmentsResponse = await response.json()
+      if (requestId !== latestRequestRef.current) return
       setState((previousState) => ({
         ...previousState,
         assessments: data.data.assessments,
@@ -532,6 +538,7 @@ function AssessmentsCatalogContent() {
         loading: false,
       }))
     } catch (_error) {
+      if (requestId !== latestRequestRef.current) return
       setState((previousState) => ({
         ...previousState,
         error: 'Failed to load assessments. Please try again.',

@@ -62,6 +62,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  // Whether the session has been resolved at least once. Pages in
+  // DEFERRED_AUTH_PATHS skip the check, so arriving at a protected page from
+  // one of them must read as "loading" until refreshUser has run - otherwise
+  // the first render sees loading=false, user=null and bounces to sign-in.
+  const [sessionResolved, setSessionResolved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const deferAuthBootstrap = shouldDeferAuthBootstrap(pathname)
 
@@ -95,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null)
       syncSentryUser(null)
     } finally {
+      setSessionResolved(true)
       setLoading(false)
     }
   }, [])
@@ -131,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const loggedInUser = data.data.user
       setUser(loggedInUser)
+      setSessionResolved(true)
       syncSentryUser(loggedInUser)
 
       Sentry.addBreadcrumb({
@@ -197,6 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const newUser = data.data.user as User
       setUser(newUser)
+      setSessionResolved(true)
       syncSentryUser(newUser)
 
       Sentry.addBreadcrumb({
@@ -281,10 +289,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Stable value: the provider re-renders on every navigation (usePathname),
   // which must not re-render every useAuth consumer.
+  const exposedLoading = loading || (!deferAuthBootstrap && !sessionResolved)
+
   const value = useMemo(
     () => ({
       user,
-      loading,
+      loading: exposedLoading,
       error,
       isAuthenticated,
       login,
@@ -293,7 +303,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshUser,
       clearError,
     }),
-    [user, loading, error, isAuthenticated, login, signup, logout, refreshUser, clearError]
+    [user, exposedLoading, error, isAuthenticated, login, signup, logout, refreshUser, clearError]
   )
 
   return (

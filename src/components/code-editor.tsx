@@ -170,7 +170,7 @@ export function CodeEditor({
         {/* Line Numbers */}
         {showLineNumbers && (
           <div
-            className="flex-shrink-0 select-none bg-[#181825] text-[#6c7086] text-right py-3 px-2 border-r border-[#313244] overflow-hidden"
+            className="flex-shrink-0 select-none bg-[#181825] text-[#9399b2] text-right py-3 px-2 border-r border-[#313244] overflow-hidden"
             style={{ fontSize }}
             aria-hidden="true"
           >
@@ -198,7 +198,7 @@ export function CodeEditor({
             dangerouslySetInnerHTML={{
               __html:
                 highlightedCode ||
-                `<span class="text-[#6c7086]">${escapeHtml(placeholder)}</span>`,
+                `<span class="text-[#9399b2]">${escapeHtml(placeholder)}</span>`,
             }}
           />
 

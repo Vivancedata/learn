@@ -7,7 +7,8 @@ import crypto from 'crypto'
 import prisma from '@/lib/db'
 
 export async function createEmailVerificationToken(userId: string) {
-  const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
+  // CSPRNG: this code is exchanged for a session by /api/auth/verify-email.
+  const verificationCode = crypto.randomInt(100000, 1000000).toString()
   const codeHash = crypto.createHash('sha256').update(verificationCode).digest('hex')
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
 

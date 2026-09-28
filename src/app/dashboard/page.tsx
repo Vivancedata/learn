@@ -274,7 +274,7 @@ function useDashboardContentView() {
       {showGettingStarted && (
         <Card className="border-brand/30 bg-gradient-to-br from-primary/10 via-background to-secondary/20">
           <CardHeader>
-            <CardTitle>Start Here: Your First 30 Minutes</CardTitle>
+            <CardTitle as="h2">Start Here: Your First 30 Minutes</CardTitle>
             <CardDescription>
               Follow this quick sequence to build momentum on day one.
             </CardDescription>

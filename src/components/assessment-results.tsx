@@ -113,7 +113,7 @@ export function AssessmentResults({
             )}
           </div>
 
-          <CardTitle className="text-2xl">
+          <CardTitle as="h1" className="text-2xl">
             {passed ? 'Assessment Passed!' : 'Assessment Complete'}
           </CardTitle>
           <CardDescription className="text-base">

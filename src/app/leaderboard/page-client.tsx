@@ -221,7 +221,7 @@ function LeaderboardContent() {
         <CardHeader className="pb-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle className="text-lg">Filter Leaderboard</CardTitle>
+              <CardTitle as="h2" className="text-lg">Filter Leaderboard</CardTitle>
               <CardDescription>Choose time period and category</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -317,7 +317,7 @@ function LeaderboardContent() {
             <Card>
               <CardContent className="p-12 text-center">
                 <Trophy className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No entries yet</h3>
+                <h2 className="text-lg font-semibold mb-2">No entries yet</h2>
                 <p className="text-muted-foreground">
                   Be the first to appear on the {leaderboardTypeLabels[selectedType].toLowerCase()} leaderboard!
                 </p>

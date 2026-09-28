@@ -1,9 +1,10 @@
 'use client'
 
-import { use, useCallback, useEffect, useReducer, useRef } from 'react'
+import { use, useCallback, useEffect, useEffectEvent, useReducer, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AssessmentQuestion } from '@/components/assessment-question'
 import { AssessmentTimer } from '@/components/assessment-timer'
 import {
@@ -23,21 +24,14 @@ import {
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { AssessmentQuestion as AssessmentQuestionType } from '@/types/assessment'
-
-interface AssessmentStartResponse {
-  data: {
-    attemptId: string
-    assessmentId: string
-    assessmentSlug: string
-    name: string
-    timeLimit: number
-    passingScore: number
-    totalQuestions: number
-    startedAt: string
-    questions: (Omit<AssessmentQuestionType, 'correctAnswer'> & { correctAnswer: undefined })[]
-  }
-}
+import {
+  assessmentTakeReducer,
+  createInitialAssessmentTakeState,
+  type AnswerValue,
+  type AssessmentData,
+  type AssessmentQuestionData,
+  type AssessmentStartResponse,
+} from './take-reducer'
 
 interface SubmitResponse {
   data: {
@@ -59,158 +53,6 @@ interface SubmitResponse {
   }
 }
 
-type AnswerValue = string | string[] | number
-type AssessmentData = AssessmentStartResponse['data']
-type AssessmentQuestionData = AssessmentData['questions'][number]
-
-interface AssessmentTakeState {
-  assessmentData: AssessmentData | null
-  currentQuestionIndex: number
-  answers: Record<string, AnswerValue>
-  flaggedQuestions: Set<number>
-  loading: boolean
-  error: string | null
-  isSubmitting: boolean
-  showSubmitModal: boolean
-  showSidebar: boolean
-}
-
-type AssessmentTakeAction =
-  | { type: 'startRequested' }
-  | { type: 'startSucceeded'; assessmentData: AssessmentData }
-  | { type: 'startFailed'; error: string }
-  | { type: 'answerChanged'; questionId: string; answer: AnswerValue }
-  | { type: 'flagToggled'; questionIndex: number }
-  | { type: 'questionSelected'; questionIndex: number }
-  | { type: 'previousQuestion' }
-  | { type: 'nextQuestion'; totalQuestions: number }
-  | { type: 'submitModalOpened' }
-  | { type: 'submitModalClosed' }
-  | { type: 'sidebarOpened' }
-  | { type: 'sidebarClosed' }
-  | { type: 'submissionStarted' }
-  | { type: 'submissionFailed'; error: string }
-
-function createInitialAssessmentTakeState(): AssessmentTakeState {
-  return {
-    assessmentData: null,
-    currentQuestionIndex: 0,
-    answers: {},
-    flaggedQuestions: new Set(),
-    loading: true,
-    error: null,
-    isSubmitting: false,
-    showSubmitModal: false,
-    showSidebar: false,
-  }
-}
-
-function assessmentTakeReducer(
-  state: AssessmentTakeState,
-  action: AssessmentTakeAction
-): AssessmentTakeState {
-  switch (action.type) {
-    case 'startRequested':
-      return {
-        ...state,
-        loading: true,
-        error: null,
-      }
-    case 'startSucceeded':
-      return {
-        ...state,
-        assessmentData: action.assessmentData,
-        loading: false,
-      }
-    case 'startFailed':
-      return {
-        ...state,
-        loading: false,
-        error: action.error,
-      }
-    case 'answerChanged':
-      return {
-        ...state,
-        answers: {
-          ...state.answers,
-          [action.questionId]: action.answer,
-        },
-      }
-    case 'flagToggled': {
-      const flaggedQuestions = new Set(state.flaggedQuestions)
-
-      if (flaggedQuestions.has(action.questionIndex)) {
-        flaggedQuestions.delete(action.questionIndex)
-      } else {
-        flaggedQuestions.add(action.questionIndex)
-      }
-
-      return {
-        ...state,
-        flaggedQuestions,
-      }
-    }
-    case 'questionSelected':
-      return {
-        ...state,
-        currentQuestionIndex: action.questionIndex,
-        showSidebar: false,
-      }
-    case 'previousQuestion':
-      if (state.currentQuestionIndex === 0) {
-        return state
-      }
-
-      return {
-        ...state,
-        currentQuestionIndex: state.currentQuestionIndex - 1,
-      }
-    case 'nextQuestion':
-      if (state.currentQuestionIndex >= action.totalQuestions - 1) {
-        return state
-      }
-
-      return {
-        ...state,
-        currentQuestionIndex: state.currentQuestionIndex + 1,
-      }
-    case 'submitModalOpened':
-      return {
-        ...state,
-        showSubmitModal: true,
-      }
-    case 'submitModalClosed':
-      return {
-        ...state,
-        showSubmitModal: false,
-      }
-    case 'sidebarOpened':
-      return {
-        ...state,
-        showSidebar: true,
-      }
-    case 'sidebarClosed':
-      return {
-        ...state,
-        showSidebar: false,
-      }
-    case 'submissionStarted':
-      return {
-        ...state,
-        isSubmitting: true,
-        showSubmitModal: false,
-      }
-    case 'submissionFailed':
-      return {
-        ...state,
-        isSubmitting: false,
-        error: action.error,
-      }
-    default:
-      return state
-  }
-}
-
 function getQuestionStatuses(
   questions: AssessmentData['questions'],
   currentQuestionIndex: number,
@@ -225,24 +67,62 @@ function getQuestionStatuses(
   })
 }
 
-/** Close an open overlay on Escape. */
-function useEscapeToClose(isOpen: boolean, onClose: () => void) {
+/**
+ * Modal dialog behaviour: move focus into the dialog on open, keep Tab inside
+ * it, close on Escape, and hand focus back to the trigger on close.
+ */
+function useModalDialog(isOpen: boolean, onClose: () => void) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const close = useEffectEvent(onClose)
+
   useEffect(() => {
     if (!isOpen) return
 
+    const dialog = dialogRef.current
+    const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const focusable = () =>
+      Array.from(
+        dialog?.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), [tabindex]'
+        ) ?? []
+      ).filter((element) => element.tabIndex >= 0)
+
+    focusable()[0]?.focus()
+
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') {
+        close()
+        return
+      }
+      if (event.key !== 'Tab') return
+
+      const elements = focusable()
+      if (elements.length === 0) return
+      const first = elements[0]
+      const last = elements[elements.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
 
     document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      trigger?.focus()
+    }
+  }, [isOpen])
+
+  return dialogRef
 }
 
 function LoadingState() {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center">
-      <Loader2 className="mb-4 h-12 w-12 animate-spin text-brand" />
+    <div className="flex min-h-[60vh] flex-col items-center justify-center" role="status">
+      <Loader2 className="mb-4 h-12 w-12 animate-spin text-brand" aria-hidden="true" />
       <p className="text-muted-foreground">Loading assessment…</p>
     </div>
   )
@@ -294,7 +174,7 @@ function AssessmentHeader({
       <div className="container py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <h1 className="hidden max-w-xs truncate text-lg font-semibold sm:block">
+            <h1 className="sr-only max-w-xs truncate text-lg font-semibold sm:not-sr-only sm:block">
               {assessmentData.name}
             </h1>
             <AssessmentNavigationCompact
@@ -469,7 +349,7 @@ function MobileQuestionSidebar({
   onQuestionClick: (index: number) => void
   onClose: () => void
 }) {
-  useEscapeToClose(isOpen, onClose)
+  const dialogRef = useModalDialog(isOpen, onClose)
 
   if (!isOpen) {
     return null
@@ -477,6 +357,7 @@ function MobileQuestionSidebar({
 
   return (
     <div
+      ref={dialogRef}
       className="fixed inset-0 z-50 lg:hidden"
       role="dialog"
       aria-modal="true"
@@ -485,6 +366,7 @@ function MobileQuestionSidebar({
       <button
         type="button"
         aria-label="Close question sidebar"
+        tabIndex={-1}
         className="absolute inset-0 bg-background/80 backdrop-blur-sm"
         onClick={onClose}
       />
@@ -527,7 +409,7 @@ function SubmitConfirmationModal({
   onClose: () => void
   onSubmit: () => void
 }) {
-  useEscapeToClose(isOpen, onClose)
+  const dialogRef = useModalDialog(isOpen, onClose)
 
   if (!isOpen) {
     return null
@@ -535,6 +417,7 @@ function SubmitConfirmationModal({
 
   return (
     <div
+      ref={dialogRef}
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
@@ -543,6 +426,7 @@ function SubmitConfirmationModal({
       <button
         type="button"
         aria-label="Close submit confirmation"
+        tabIndex={-1}
         className="absolute inset-0 bg-background/80 backdrop-blur-sm"
         onClick={onClose}
       />
@@ -608,9 +492,13 @@ function SubmittingOverlay({ isSubmitting }: { isSubmitting: boolean }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+      role="status"
+      aria-busy="true"
+    >
       <div className="text-center">
-        <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-brand" />
+        <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-brand" aria-hidden="true" />
         <p className="text-lg font-medium">Submitting your assessment…</p>
         <p className="text-muted-foreground">Please wait</p>
       </div>
@@ -817,6 +705,25 @@ function AssessmentTakeContent({
       />
 
       <div className="container py-6">
+        {state.submitError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+              <span>
+                {state.submitError} Your answers are still here.
+              </span>
+              <Button
+                size="sm"
+                onClick={() => {
+                  void submitAssessment()
+                }}
+                disabled={state.isSubmitting}
+              >
+                Retry submission
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         <div className="grid gap-6 lg:grid-cols-4">
           <div className="lg:col-span-3">
             <AssessmentQuestionCard

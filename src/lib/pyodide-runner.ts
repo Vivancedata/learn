@@ -382,7 +382,7 @@ export interface TestResult {
 export async function runPythonWithTests(
   code: string,
   testCases: Array<{ name: string; test: string; expected: string }>
-): Promise<{ results: TestResult[]; allPassed: boolean }> {
+): Promise<{ results: TestResult[]; allPassed: boolean; initialResult: PythonExecutionResult }> {
   const results: TestResult[] = []
 
   // First run the user's code
@@ -395,6 +395,7 @@ export async function runPythonWithTests(
         error: initialResult.error || 'Unknown error',
       }],
       allPassed: false,
+      initialResult,
     }
   }
 
@@ -424,5 +425,6 @@ export async function runPythonWithTests(
   return {
     results,
     allPassed: results.every(r => r.passed),
+    initialResult,
   }
 }

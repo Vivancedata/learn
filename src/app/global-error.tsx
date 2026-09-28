@@ -33,7 +33,7 @@ export default function GlobalErrorPage({ error, reset }: GlobalErrorPageProps) 
   }, [error])
 
   return (
-    <html>
+    <html lang="en">
       <head>
         {/* Inline styles cannot express :hover, so the button states live here. */}
         <style>{`

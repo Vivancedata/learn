@@ -223,8 +223,8 @@ function useNotificationPreferencesContent() {
 
         {success && (
           <Alert className="border-green-500/50 bg-green-500/10">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <AlertDescription className="text-green-500">{success}</AlertDescription>
+            <CheckCircle2 className="h-4 w-4 text-green-700 dark:text-green-400" aria-hidden="true" />
+            <AlertDescription className="text-green-800 dark:text-green-300">{success}</AlertDescription>
           </Alert>
         )}
 

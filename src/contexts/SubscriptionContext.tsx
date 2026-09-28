@@ -38,7 +38,7 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 // ============================================================================
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, loading: authLoading } = useAuth()
   const userId = user?.id
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [loading, setLoading] = useState(true)
@@ -102,13 +102,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const plan: 'free' | 'pro' = isPro ? 'pro' : 'free'
 
+  // Until auth resolves, "no subscription" only means "not known yet":
+  // settling early flashed upgrade prompts at Pro users on every load.
+  const exposedLoading = loading || authLoading
+
   const contextValue = useMemo(
     () => ({
       subscription,
       isSubscribed,
       isPro,
       plan,
-      loading,
+      loading: exposedLoading,
       error,
       refresh: fetchSubscription,
       isTrialing,
@@ -120,7 +124,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       isSubscribed,
       isPro,
       plan,
-      loading,
+      exposedLoading,
       error,
       fetchSubscription,
       isTrialing,

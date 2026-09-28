@@ -119,7 +119,7 @@ function LeaderboardRow({ entry, index }: { entry: LeaderboardEntry; index: numb
 
       {/* Streak indicator if present */}
       {(entry.metadata?.streakDays ?? 0) > 0 ? (
-        <div className="flex items-center gap-1 text-orange-500" title={`${entry.metadata?.streakDays} day streak`}>
+        <div className="flex items-center gap-1 text-orange-700 dark:text-orange-400" title={`${entry.metadata?.streakDays} day streak`}>
           <Flame className="h-4 w-4" />
           <span className="text-sm font-medium">{entry.metadata?.streakDays}</span>
           <span className="sr-only">day streak</span>

@@ -327,20 +327,27 @@ export function RecommendationsSection({
 
           {/* Carousel indicators */}
           {recommendations.length > itemsPerView && (
-            <div className="flex justify-center gap-1.5 mt-4">
+            <div className="flex justify-center mt-2">
               {Array.from({ length: maxIndex + 1 }).map((_, index) => (
                 <button
                   key={index}
+                  type="button"
                   onClick={() => setCarouselIndex(index)}
-                  className={cn(
-                    'w-2 h-2 rounded-full transition-colors duration-200',
-                    index === carouselIndex
-                      ? 'bg-primary w-4'
-                      : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                  )}
+                  // 24px hit area (WCAG 2.5.8) around the small visual dot
+                  className="group flex h-6 min-w-6 items-center justify-center px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
                   aria-label={`Go to slide ${index + 1}`}
                   aria-current={index === carouselIndex ? 'true' : 'false'}
-                />
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'h-2 w-2 rounded-full transition-colors duration-200',
+                      index === carouselIndex
+                        ? 'bg-primary w-4'
+                        : 'bg-muted-foreground/30 group-hover:bg-muted-foreground/50'
+                    )}
+                  />
+                </button>
               ))}
             </div>
           )}

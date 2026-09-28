@@ -202,7 +202,7 @@ export function StreakPanel({
                 {streakData.currentStreak > 0 && streakData.currentStreak === streakData.longestStreak && (
                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-yellow-500/20 border border-yellow-400/50">
                     <Trophy className="h-4 w-4 text-yellow-500" />
-                    <span className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
+                    <span className="text-sm font-medium text-yellow-800 dark:text-yellow-400">
                       Personal Best!
                     </span>
                   </div>

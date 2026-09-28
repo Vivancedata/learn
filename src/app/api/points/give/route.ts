@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       await Promise.all([
         prisma.user.findUnique({
           where: { id: recipientId },
-          select: { id: true, name: true, email: true, points: true },
+          select: { id: true, name: true, points: true },
         }),
         discussionId
           ? prisma.discussion.findUnique({
@@ -138,14 +138,12 @@ export async function POST(request: NextRequest) {
             select: {
               id: true,
               name: true,
-              email: true,
             },
           },
           giver: {
             select: {
               id: true,
               name: true,
-              email: true,
             },
           },
         },
