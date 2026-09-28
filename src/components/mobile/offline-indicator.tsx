@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { WifiOff, RefreshCw, CheckCircle } from 'lucide-react'
 
@@ -34,24 +34,39 @@ export function OfflineIndicator({
 }: OfflineIndicatorProps) {
   const [connectionState, setConnectionState] = useState<ConnectionState>('online')
   const [isVisible, setIsVisible] = useState(false)
+  // The pending "reconnected" auto-hide. It must be cancelled if the
+  // connection drops again, or it hides the banner while still offline.
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearHideTimer = useCallback(() => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current)
+      hideTimerRef.current = null
+    }
+  }, [])
 
   // Handle connection state changes
   const handleOnline = useCallback(() => {
+    clearHideTimer()
     setConnectionState('reconnected')
     setIsVisible(true)
 
     if (autoHide) {
-      setTimeout(() => {
+      hideTimerRef.current = setTimeout(() => {
+        hideTimerRef.current = null
         setIsVisible(false)
         setConnectionState('online')
       }, autoHideDelay)
     }
-  }, [autoHide, autoHideDelay])
+  }, [autoHide, autoHideDelay, clearHideTimer])
 
   const handleOffline = useCallback(() => {
+    clearHideTimer()
     setConnectionState('offline')
     setIsVisible(true)
-  }, [])
+  }, [clearHideTimer])
+
+  useEffect(() => clearHideTimer, [clearHideTimer])
 
   // Set up event listeners
   useEffect(() => {
