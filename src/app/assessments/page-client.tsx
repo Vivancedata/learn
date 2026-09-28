@@ -233,7 +233,7 @@ function AssessmentsFiltersPanel({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
+        <CardTitle as="h2" className="text-lg flex items-center gap-2">
           <Filter className="h-5 w-5" />
           Filter Assessments
         </CardTitle>

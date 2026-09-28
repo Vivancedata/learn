@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
               <Mail className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
-            <CardTitle>Check Your Email</CardTitle>
+            <CardTitle as="h1">Check Your Email</CardTitle>
             <CardDescription>
               We have sent a password reset link to your email address
             </CardDescription>
@@ -92,6 +92,7 @@ export default function ForgotPasswordPage() {
               <p>
                 Did not receive the email? Check your spam folder or{' '}
                 <button
+                  type="button"
                   onClick={() => {
                     setSuccess(false)
                     setEmail('')
@@ -121,7 +122,7 @@ export default function ForgotPasswordPage() {
     <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Forgot Password</CardTitle>
+          <CardTitle as="h1">Forgot Password</CardTitle>
           <CardDescription>
             Enter your email address and we will send you a link to reset your password
           </CardDescription>
@@ -148,6 +149,7 @@ export default function ForgotPasswordPage() {
                 autoComplete="email"
                 spellCheck={false}
                 aria-describedby={error ? 'error-message' : undefined}
+                aria-invalid={error ? true : undefined}
                 required
               />
             </div>

@@ -164,8 +164,8 @@ function VerifyEmailContent() {
         <form onSubmit={handleCodeSubmit}>
           <CardContent className="space-y-4">
             {error && (
-              <Alert variant="destructive" role="alert">
-                <AlertCircle className="h-4 w-4" />
+              <Alert variant="destructive" role="alert" id="code-error">
+                <AlertCircle className="h-4 w-4" aria-hidden="true" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -197,8 +197,11 @@ function VerifyEmailContent() {
                 disabled={isVerifying}
                 className="text-center text-2xl tracking-widest font-mono"
                 autoComplete="one-time-code"
+                spellCheck={false}
+                aria-describedby={error ? 'code-hint code-error' : 'code-hint'}
+                aria-invalid={error ? true : undefined}
               />
-              <p className="text-xs text-muted-foreground text-center">
+              <p id="code-hint" className="text-xs text-muted-foreground text-center">
                 Check your email inbox for the 6-digit code
               </p>
             </div>

@@ -111,7 +111,7 @@ function AssessmentResultsContent({
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Results Not Found</h2>
+        <h1 className="text-xl font-semibold mb-2">Results Not Found</h1>
         <p className="text-muted-foreground mb-4 text-center max-w-md">
           {error || 'We could not find your assessment results. Please take the assessment first.'}
         </p>

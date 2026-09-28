@@ -195,7 +195,7 @@ function ResetPasswordForm() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
               <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
             </div>
-            <CardTitle>Invalid Reset Link</CardTitle>
+            <CardTitle as="h1">Invalid Reset Link</CardTitle>
             <CardDescription>
               The password reset link is invalid or missing a token
             </CardDescription>
@@ -218,7 +218,7 @@ function ResetPasswordForm() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
               <KeyRound className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
-            <CardTitle>Password Reset Successfully</CardTitle>
+            <CardTitle as="h1">Password Reset Successfully</CardTitle>
             <CardDescription>
               Your password has been changed. You can now sign in with your new password.
             </CardDescription>
@@ -246,7 +246,7 @@ function ResetPasswordForm() {
     <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Reset Password</CardTitle>
+          <CardTitle as="h1">Reset Password</CardTitle>
           <CardDescription>Enter your new password below</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -269,22 +269,25 @@ function ResetPasswordForm() {
                 onChange={(e) => dispatch({ type: 'setPassword', value: e.target.value })}
                 disabled={isSubmitting}
                 autoComplete="new-password"
-                aria-describedby="password-requirements"
+                aria-describedby={error ? 'password-requirements error-message' : 'password-requirements'}
+                aria-invalid={error ? true : undefined}
                 required
               />
 
+              {/* Live regions stay mounted: one inserted with its content is not reliably announced */}
+              <div id="password-requirements" aria-live="polite">
               {password && (
-                <div id="password-requirements" aria-live="polite" className="mt-2 space-y-1 text-xs">
+                <div className="mt-2 space-y-1 text-xs">
                   <div className="flex items-center gap-2">
                     {passwordStrength.hasMinLength ? (
-                      <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-400" />
+                      <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-400" aria-hidden="true" />
                     ) : (
-                      <XCircle className="h-3 w-3 text-muted-foreground" />
+                      <XCircle className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
                     )}
                     <span
                       className={
                         passwordStrength.hasMinLength
-                          ? 'text-green-600 dark:text-green-400'
+                          ? 'text-green-700 dark:text-green-400'
                           : 'text-muted-foreground'
                       }
                     >
@@ -294,14 +297,14 @@ function ResetPasswordForm() {
                   </div>
                   <div className="flex items-center gap-2">
                     {passwordStrength.hasUpperCase ? (
-                      <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-400" />
+                      <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-400" aria-hidden="true" />
                     ) : (
-                      <XCircle className="h-3 w-3 text-muted-foreground" />
+                      <XCircle className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
                     )}
                     <span
                       className={
                         passwordStrength.hasUpperCase
-                          ? 'text-green-600 dark:text-green-400'
+                          ? 'text-green-700 dark:text-green-400'
                           : 'text-muted-foreground'
                       }
                     >
@@ -311,14 +314,14 @@ function ResetPasswordForm() {
                   </div>
                   <div className="flex items-center gap-2">
                     {passwordStrength.hasLowerCase ? (
-                      <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-400" />
+                      <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-400" aria-hidden="true" />
                     ) : (
-                      <XCircle className="h-3 w-3 text-muted-foreground" />
+                      <XCircle className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
                     )}
                     <span
                       className={
                         passwordStrength.hasLowerCase
-                          ? 'text-green-600 dark:text-green-400'
+                          ? 'text-green-700 dark:text-green-400'
                           : 'text-muted-foreground'
                       }
                     >
@@ -328,14 +331,14 @@ function ResetPasswordForm() {
                   </div>
                   <div className="flex items-center gap-2">
                     {passwordStrength.hasNumber ? (
-                      <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-400" />
+                      <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-400" aria-hidden="true" />
                     ) : (
-                      <XCircle className="h-3 w-3 text-muted-foreground" />
+                      <XCircle className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
                     )}
                     <span
                       className={
                         passwordStrength.hasNumber
-                          ? 'text-green-600 dark:text-green-400'
+                          ? 'text-green-700 dark:text-green-400'
                           : 'text-muted-foreground'
                       }
                     >
@@ -345,6 +348,7 @@ function ResetPasswordForm() {
                   </div>
                 </div>
               )}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -358,24 +362,27 @@ function ResetPasswordForm() {
                 onChange={(e) => dispatch({ type: 'setConfirmPassword', value: e.target.value })}
                 disabled={isSubmitting}
                 autoComplete="new-password"
-                aria-describedby="password-match"
+                aria-describedby={error ? 'password-match error-message' : 'password-match'}
+                aria-invalid={(confirmPassword && !passwordsMatch) || error ? true : undefined}
                 required
               />
+              <div id="password-match" aria-live="polite">
               {confirmPassword && (
-                <div id="password-match" aria-live="polite" className="flex items-center gap-2 mt-1 text-xs">
+                <div className="flex items-center gap-2 mt-1 text-xs">
                   {passwordsMatch ? (
                     <>
-                      <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-400" />
-                      <span className="text-green-600 dark:text-green-400">Passwords match</span>
+                      <CheckCircle2 className="h-3 w-3 text-green-600 dark:text-green-400" aria-hidden="true" />
+                      <span className="text-green-700 dark:text-green-400">Passwords match</span>
                     </>
                   ) : (
                     <>
-                      <XCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
+                      <XCircle className="h-3 w-3 text-red-600 dark:text-red-400" aria-hidden="true" />
                       <span className="text-red-600 dark:text-red-400">Passwords do not match</span>
                     </>
                   )}
                 </div>
               )}
+              </div>
             </div>
           </CardContent>
 
