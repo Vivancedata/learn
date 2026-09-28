@@ -102,15 +102,33 @@ export async function POST(request: NextRequest) {
     }
 
     // Use the streak freeze - update lastActivityDate to yesterday, which
-    // effectively "fills in" the missed day - and create a placeholder
-    // activity record for the frozen day. The two writes are independent.
+    // effectively "fills in" the missed day. The write is conditional on the
+    // state checked above (a freeze left, lastActivityDate unchanged) so a
+    // double-submitted request cannot spend two freezes on the same gap.
+    const { count } = await prisma.user.updateMany({
+      where: {
+        id: userId,
+        streakFreezes: { gt: 0 },
+        lastActivityDate: user.lastActivityDate,
+      },
+      data: {
+        streakFreezes: { decrement: 1 },
+        lastActivityDate: yesterday,
+      },
+    })
+
+    if (count === 0) {
+      throw new ApiError(
+        HTTP_STATUS.CONFLICT,
+        'Your streak changed while applying the freeze. Refresh and try again.'
+      )
+    }
+
+    // Read the result back and create a placeholder activity record for the
+    // frozen day. The two operations are independent.
     const [updatedUser] = await Promise.all([
-      prisma.user.update({
+      prisma.user.findUnique({
         where: { id: userId },
-        data: {
-          streakFreezes: { decrement: 1 },
-          lastActivityDate: yesterday,
-        },
         select: {
           id: true,
           currentStreak: true,
@@ -137,6 +155,10 @@ export async function POST(request: NextRequest) {
         update: {}, // Don't update if already exists
       }),
     ])
+
+    if (!updatedUser) {
+      throw new NotFoundError('User')
+    }
 
     return apiSuccess({
       userId: updatedUser.id,
