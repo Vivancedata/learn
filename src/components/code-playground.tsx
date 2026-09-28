@@ -159,11 +159,11 @@ function useCodePlaygroundContent({
 
         // Check if we have test cases
       if (testCases && testCases.length > 0) {
-        const { results, allPassed } = await runPythonWithTests(code, testCases)
+        // Show the output of the run the tests were checked against rather
+        // than executing the user's code a second time.
+        const { results, allPassed, initialResult } = await runPythonWithTests(code, testCases)
         setUiState((prev) => ({ ...prev, testResults: results }))
 
-        // Get output from first code execution
-        const initialResult = await runPython(code, handleProgress)
         setUiState((prev) => ({
           ...prev,
           output: initialResult.output,
