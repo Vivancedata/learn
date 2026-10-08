@@ -10,7 +10,7 @@ export function createSimpleCertificatePdf(input: {
   skills: string[]
 }) {
   const title = 'Certificate of Completion'
-  const subtitle = 'VivanceData Learning Platform'
+  const subtitle = 'Vivancedata Learning Platform'
   const lines = [
     'This certifies that',
     input.recipientName,

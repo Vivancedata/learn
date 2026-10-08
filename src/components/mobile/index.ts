@@ -1,7 +1,7 @@
 /**
  * Mobile Components
  *
- * This module exports all mobile-specific components for the VivanceData PWA.
+ * This module exports all mobile-specific components for the Vivancedata PWA.
  * These components are optimized for touch devices and provide native-like UX.
  */
 

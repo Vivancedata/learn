@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import AssessmentTakePageClient from './page-client'
 
 export const metadata: Metadata = {
-  title: 'Take Assessment | Vivance',
+  title: 'Take Assessment | Vivancedata',
   description: 'Complete your assessment and measure your skill level.',
 }
 

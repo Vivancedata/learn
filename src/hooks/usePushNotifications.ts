@@ -288,7 +288,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
         body: JSON.stringify({
           userId,
           title: 'Test Notification',
-          body: 'This is a test notification from VivanceData Learning!',
+          body: 'This is a test notification from Vivancedata Learning!',
           tag: 'test',
           url: '/settings',
         }),

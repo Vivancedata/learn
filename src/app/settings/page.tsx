@@ -97,7 +97,7 @@ function SettingsContent() {
           <CardHeader>
             <CardTitle as="h2">Appearance</CardTitle>
             <CardDescription>
-              Customize how VivanceData Learn looks on your device
+              Customize how Vivancedata Learn looks on your device
             </CardDescription>
           </CardHeader>
           <CardContent>

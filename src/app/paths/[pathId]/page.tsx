@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ProgressCircle } from "@/components/ui/progress-circle"
 import { Button } from "@/components/ui/button"
 import { CourseCatalogEntry, Path } from "@/types/course"
+import { courseDurationMinutes, formatMinutes } from "@/lib/course-duration"
 import { useAuth } from "@/hooks/useAuth"
 
 interface CourseProgressRow {
@@ -148,7 +149,8 @@ export default function PathPage() {
   ).length
 
   const progress = totalCourses > 0 ? (completedCourses / totalCourses) * 100 : 0
-  const totalHours = pathCourses.reduce((acc, course) => acc + course.durationHours, 0)
+  const pathMinutes = pathCourses.reduce((acc, course) => acc + (courseDurationMinutes(course) ?? 0), 0)
+  const durationLabel = formatMinutes(pathMinutes)
 
   return (
     <div className="space-y-8">
@@ -180,9 +182,11 @@ export default function PathPage() {
             <div>
               <span className="font-medium">{totalCourses}</span> courses
             </div>
-            <div>
-              <span className="font-medium">{totalHours || path.estimatedHours}</span> total hours
-            </div>
+            {durationLabel && (
+              <div>
+                <span className="font-medium">{durationLabel}</span> of lessons
+              </div>
+            )}
             <div>
               <span className="font-medium">{completedCourses}</span> completed
             </div>

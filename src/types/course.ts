@@ -17,6 +17,7 @@ export interface CourseCardData {
   durationHours: number
   prerequisites?: string[]
   lessonCount?: number
+  sections?: { lessons: { duration?: string }[] }[]
   progress?: CourseProgressSummary
 }
 
@@ -136,13 +137,6 @@ export interface Path {
   prerequisites?: string[]
   estimatedHours?: number
   difficulty?: string
-  successStories?: {
-    name: string
-    role: string
-    company: string
-    testimonial: string
-    imageUrl?: string
-  }[]
   certificate?: {
     title: string
     description: string
