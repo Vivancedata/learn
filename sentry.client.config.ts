@@ -29,11 +29,6 @@ if (SENTRY_DSN) {
     // sessions when an error occurs.
     replaysOnErrorSampleRate: 1.0,
 
-    // Set profilesSampleRate to 1.0 to profile every transaction
-    // Since profilesSampleRate is relative to tracesSampleRate,
-    // the final profiling rate can be computed as tracesSampleRate * profilesSampleRate
-    profilesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-
     // Disable in development to reduce noise, or enable for testing
     enabled: process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_SENTRY_DEBUG === 'true',
 

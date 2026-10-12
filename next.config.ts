@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next'
 import path from 'node:path'
 import { createRequire } from 'node:module'
-import { withSentryConfig } from '@sentry/nextjs'
+import { withSentryConfig } from '@sentry/nextjs/config'
 
 /**
  * Turbopack refuses to compile files outside its root, so the root has to
