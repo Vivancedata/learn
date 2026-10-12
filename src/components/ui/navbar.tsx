@@ -49,7 +49,7 @@ export function Navbar() {
             <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <span className="text-2xl font-bold text-foreground">
-            VivanceData{" "}
+            Vivancedata{" "}
             <span className="font-normal text-muted-foreground">Learn</span>
           </span>
         </Link>
