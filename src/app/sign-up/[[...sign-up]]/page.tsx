@@ -99,6 +99,7 @@ export default function SignUpPage() {
                 type="text"
                 autoComplete="name"
                 placeholder="Your name…"
+                className="placeholder:text-muted-foreground"
                 value={formData.name}
                 onChange={handleChange}
                 disabled={loading}
@@ -116,6 +117,7 @@ export default function SignUpPage() {
                 autoComplete="email"
                 spellCheck={false}
                 placeholder="your@email.com…"
+                className="placeholder:text-muted-foreground"
                 value={formData.email}
                 onChange={handleChange}
                 disabled={loading}
@@ -134,6 +136,7 @@ export default function SignUpPage() {
                 autoComplete="new-password"
                 aria-describedby={formData.password ? "password-requirements" : undefined}
                 placeholder="••••••••"
+                className="placeholder:text-muted-foreground"
                 value={formData.password}
                 onChange={handleChange}
                 disabled={loading}
@@ -197,6 +200,7 @@ export default function SignUpPage() {
                 autoComplete="off"
                 spellCheck={false}
                 placeholder="your-github-username…"
+                className="placeholder:text-muted-foreground"
                 value={formData.githubUsername}
                 onChange={handleChange}
                 disabled={loading}

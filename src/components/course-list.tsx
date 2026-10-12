@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ProgressCircle } from "@/components/ui/progress-circle"
-import { DIFFICULTY_BADGE_CLASSES } from "@/lib/difficulty"
+import { DifficultyBadge } from "@/components/difficulty-badge"
 import Link from "next/link"
 
 interface CourseListProps {
@@ -30,12 +30,7 @@ export function CourseList({ courses }: CourseListProps) {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <Badge
-                variant="outline"
-                className={DIFFICULTY_BADGE_CLASSES[course.difficulty]}
-              >
-                {course.difficulty}
-              </Badge>
+              <DifficultyBadge difficulty={course.difficulty} />
               <span className="text-sm text-muted-foreground">
                 {course.durationHours} hours
               </span>
