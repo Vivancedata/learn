@@ -5,6 +5,10 @@ const eslintConfig = [
   ...nextCoreWebVitals,
   ...nextTypescript,
   {
+    // Stated, not "detect": eslint-plugin-react's detection calls
+    // context.getFilename(), which ESLint 10 removed, so every file crashed
+    // on `react/display-name`. Keep in step with the react major in package.json.
+    settings: { react: { version: "19" } },
     rules: {
       // Ignore variables prefixed with underscore (common convention for unused params)
       "@typescript-eslint/no-unused-vars": [
