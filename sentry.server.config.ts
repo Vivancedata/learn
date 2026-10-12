@@ -20,9 +20,6 @@ if (SENTRY_DSN) {
     // In production, consider lowering this to 0.1 (10%) to reduce costs
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
-    // Set profilesSampleRate to 1.0 to profile every transaction
-    profilesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-
     // Disable in development to reduce noise, or enable for testing
     enabled: process.env.NODE_ENV === 'production' || process.env.SENTRY_DEBUG === 'true',
 
