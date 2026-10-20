@@ -29,9 +29,11 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
   const [feedback, setFeedback] = useState<string | null>(null)
   const [submissionId, setSubmissionId] = useState<string | null>(null)
 
+  const userId = user?.id
+
   // Fetch existing submission for this lesson on mount
   const fetchExistingSubmission = useCallback(async () => {
-    if (!user?.id || !lessonId) {
+    if (!userId || !lessonId) {
       setFetchingExisting(false)
       return
     }
@@ -39,7 +41,7 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
     try {
       setFetchingExisting(true)
       const response = await fetch(
-        `/api/projects?userId=${encodeURIComponent(user.id)}&lessonId=${encodeURIComponent(lessonId)}`,
+        `/api/projects?userId=${encodeURIComponent(userId)}&lessonId=${encodeURIComponent(lessonId)}`,
         {
           credentials: 'include',
         }
@@ -65,9 +67,8 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
     } finally {
       setFetchingExisting(false)
     }
-  }, [user?.id, lessonId])
+  }, [userId, lessonId])
 
-  const userId = user?.id
   useEffect(() => {
     if (!authLoading && userId) {
       fetchExistingSubmission()

@@ -536,8 +536,10 @@ function AssessmentTakeContent({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [state.assessmentData])
 
+  const userId = user?.id
+
   const startAssessment = useCallback(async () => {
-    if (!user?.id) {
+    if (!userId) {
       return
     }
 
@@ -550,7 +552,7 @@ function AssessmentTakeContent({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({ userId }),
       })
 
       if (!response.ok) {
@@ -566,14 +568,14 @@ function AssessmentTakeContent({
         error: 'Failed to start assessment. Please try again.',
       })
     }
-  }, [slug, user?.id])
+  }, [slug, userId])
 
   useEffect(() => {
     void startAssessment()
   }, [startAssessment])
 
   const submitAssessment = useCallback(async () => {
-    if (!user?.id || !state.assessmentData || submittedRef.current || state.isSubmitting) {
+    if (!userId || !state.assessmentData || submittedRef.current || state.isSubmitting) {
       return
     }
 
@@ -594,7 +596,7 @@ function AssessmentTakeContent({
         },
         body: JSON.stringify({
           attemptId: state.assessmentData.attemptId,
-          userId: user.id,
+          userId,
           answers: state.answers,
           timeSpent,
         }),
@@ -625,7 +627,7 @@ function AssessmentTakeContent({
         error: 'Failed to submit assessment. Please try again.',
       })
     }
-  }, [router, slug, state.answers, state.assessmentData, state.isSubmitting, user?.id])
+  }, [router, slug, state.answers, state.assessmentData, state.isSubmitting, userId])
 
   const handleTimeUp = useCallback(() => {
     if (!submittedRef.current) {
