@@ -20,13 +20,11 @@ if (SENTRY_DSN) {
     // In production, consider lowering this to 0.1 (10%) to reduce costs
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
-    // Session Replay
-    // This sets the sample rate to be 10%. You may want this to be 100% while in development
-    // and sample at a lower rate in production.
-    replaysSessionSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-
-    // If the entire session is not sampled, use the below sample rate to sample
-    // sessions when an error occurs.
+    // Session Replay: no ambient session sampling. A replay is kept only when
+    // an error occurs, with all text and inputs masked and media blocked.
+    // The privacy policy (/privacy) describes exactly this; changing these
+    // values needs a policy update and, for ambient replays, consent.
+    replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 1.0,
 
     // Disable in development to reduce noise, or enable for testing
@@ -65,10 +63,10 @@ if (SENTRY_DSN) {
     // Configure integrations
     integrations: [
       Sentry.replayIntegration({
-        // Mask all text content for privacy
-        maskAllText: false,
-        // Block all media elements
-        blockAllMedia: false,
+        // Mask all text and inputs, block images and video
+        maskAllText: true,
+        maskAllInputs: true,
+        blockAllMedia: true,
       }),
       Sentry.browserTracingIntegration({
         // Trace interactions for performance monitoring

@@ -7,6 +7,8 @@ import { analytics } from '@/lib/analytics'
 
 const DEFERRED_AUTH_PATHS = [
   '/pricing',
+  '/privacy',
+  '/terms',
   '/sign-in',
   '/sign-up',
   '/forgot-password',

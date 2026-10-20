@@ -18,15 +18,11 @@ type CheckoutSuccessAction = {
   sessionId: string | null
 }
 
+// Only features the code backs; see SUBSCRIPTION_PLANS in lib/stripe-client.
 const PRO_FEATURES = [
-  'Unlimited access to all courses',
-  'All learning paths',
   'Skill assessments to track your progress',
-  'Verified certificates for completed courses',
-  'Priority support from our team',
-  'Expert project feedback',
-  'Offline access to lessons',
-  'Early access to new content',
+  'Course certificates with a verification code',
+  'Unlimited AI tutor messages',
 ]
 
 /**

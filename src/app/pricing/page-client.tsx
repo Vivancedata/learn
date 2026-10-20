@@ -15,11 +15,103 @@ const usd = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 0,
 })
 
-export default function PricingPageClient() {
+function FreePlanCard() {
+  return (
+    <Card className="relative">
+      <CardHeader>
+        <div className="mb-2 flex items-center gap-2">
+          <Zap className="h-5 w-5 text-muted-foreground" />
+          <CardTitle as="h2">{SUBSCRIPTION_PLANS.FREE.name}</CardTitle>
+        </div>
+        <CardDescription>{SUBSCRIPTION_PLANS.FREE.description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-6">
+          <span className="text-4xl font-bold">{SUBSCRIPTION_PLANS.FREE.priceDisplay}</span>
+          <span className="text-muted-foreground">/{SUBSCRIPTION_PLANS.FREE.interval}</span>
+        </div>
+
+        <ul className="mb-6 space-y-3">
+          {SUBSCRIPTION_PLANS.FREE.features.map((feature) => (
+            <li key={feature} className="flex items-start gap-2">
+              <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
+              <span>{feature}</span>
+            </li>
+          ))}
+          {SUBSCRIPTION_PLANS.FREE.limitations.map((limitation) => (
+            <li key={limitation} className="flex items-start gap-2 text-muted-foreground">
+              <X className="mt-0.5 h-5 w-5 flex-shrink-0" />
+              <span>{limitation}</span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+      <CardFooter>
+        <Button variant="outline" className="w-full" asChild>
+          <Link href="/sign-up">Get Started Free</Link>
+        </Button>
+      </CardFooter>
+    </Card>
+  )
+}
+
+/**
+ * Shown instead of the Pro plan while the paid tier is switched off
+ * (src/lib/pro-tier.ts). No price, no button, no feature promises.
+ */
+function ProComingSoonCard() {
+  return (
+    <Card className="relative" data-testid="pro-coming-soon">
+      <CardHeader>
+        <div className="mb-2 flex items-center gap-2">
+          <Crown className="h-5 w-5 text-muted-foreground" />
+          <CardTitle as="h2">Pro</CardTitle>
+          <Badge variant="secondary">Coming soon</Badge>
+        </div>
+        <CardDescription>Not on sale yet</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground">
+          A paid plan is in the works. Until it launches there is nothing to
+          pay for here. Skill assessments and course certificates will be
+          part of Pro.
+        </p>
+      </CardContent>
+    </Card>
+  )
+}
+
+export default function PricingPageClient({ proEnabled }: { proEnabled: boolean }) {
   const router = useRouter()
   const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('year')
   const [loading, setLoading] = useState<string | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+
+  if (!proEnabled) {
+    return (
+      <>
+        <div className="mx-auto mb-20 grid max-w-4xl gap-8 md:grid-cols-2">
+          <FreePlanCard />
+          <ProComingSoonCard />
+        </div>
+
+        <div className="rounded-2xl bg-primary/5 p-12 text-center">
+          <h2 className="mb-4 text-3xl font-bold">Start Learning</h2>
+          <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
+            Build practical AI and data skills with structured paths and hands-on projects.
+          </p>
+          <div className="flex flex-col justify-center gap-4 sm:flex-row">
+            <Button size="lg" asChild>
+              <Link href="/sign-up">Create a Free Account</Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link href="/courses">Browse Courses</Link>
+            </Button>
+          </div>
+        </div>
+      </>
+    )
+  }
 
   const handleSubscribe = async (planId: string) => {
     setLoading(planId)
@@ -91,41 +183,7 @@ export default function PricingPageClient() {
       </div>
 
       <div className="mx-auto mb-20 grid max-w-4xl gap-8 md:grid-cols-2">
-        <Card className="relative">
-          <CardHeader>
-            <div className="mb-2 flex items-center gap-2">
-              <Zap className="h-5 w-5 text-muted-foreground" />
-              <CardTitle as="h2">{SUBSCRIPTION_PLANS.FREE.name}</CardTitle>
-            </div>
-            <CardDescription>{SUBSCRIPTION_PLANS.FREE.description}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-6">
-              <span className="text-4xl font-bold">{SUBSCRIPTION_PLANS.FREE.priceDisplay}</span>
-              <span className="text-muted-foreground">/{SUBSCRIPTION_PLANS.FREE.interval}</span>
-            </div>
-
-            <ul className="mb-6 space-y-3">
-              {SUBSCRIPTION_PLANS.FREE.features.map((feature) => (
-                <li key={feature} className="flex items-start gap-2">
-                  <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
-                  <span>{feature}</span>
-                </li>
-              ))}
-              {SUBSCRIPTION_PLANS.FREE.limitations.map((limitation) => (
-                <li key={limitation} className="flex items-start gap-2 text-muted-foreground">
-                  <X className="mt-0.5 h-5 w-5 flex-shrink-0" />
-                  <span>{limitation}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-          <CardFooter>
-            <Button variant="outline" className="w-full" asChild>
-              <Link href="/sign-up">Get Started Free</Link>
-            </Button>
-          </CardFooter>
-        </Card>
+        <FreePlanCard />
 
         <Card className="relative border-brand shadow-lg">
           {currentPlan.popular && (
@@ -172,7 +230,7 @@ export default function PricingPageClient() {
                   Processing…
                 </span>
               ) : (
-                'Start Free Trial'
+                'Subscribe to Pro'
               )}
             </Button>
           </CardFooter>
@@ -189,18 +247,17 @@ export default function PricingPageClient() {
         <h2 className="mb-4 text-3xl font-bold">Ready to Accelerate Your Career?</h2>
         <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
           Build practical AI and data skills with structured paths and hands-on projects.
-          Start your 7-day free trial today.
         </p>
         <div className="flex flex-col justify-center gap-4 sm:flex-row">
           <Button size="lg" onClick={() => handleSubscribe('pro')} disabled={loading === 'pro'}>
-            {loading === 'pro' ? 'Processing…' : 'Start Free Trial'}
+            {loading === 'pro' ? 'Processing…' : 'Subscribe to Pro'}
           </Button>
           <Button size="lg" variant="outline" asChild>
             <Link href="/courses">Browse Courses</Link>
           </Button>
         </div>
         <p className="mt-4 text-sm text-muted-foreground">
-          No credit card required for free plan. Cancel Pro anytime.
+          No credit card required for the free plan. Cancel Pro anytime.
         </p>
       </div>
     </>

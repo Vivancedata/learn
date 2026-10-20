@@ -1,13 +1,23 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import Link from 'next/link'
 import posthog from 'posthog-js'
 import { PostHogProvider as PHProvider, usePostHog } from 'posthog-js/react'
 import { usePathname } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import {
+  getAnalyticsConsent,
+  setAnalyticsConsent,
+  subscribeToAnalyticsConsent,
+  type AnalyticsConsent,
+} from '@/lib/analytics-consent'
 
 /**
  * PostHog configuration
- * Initialize PostHog with the API key and host from environment variables
+ * Initialize PostHog with the API key and host from environment variables.
+ * Only called after the visitor has allowed analytics (see ConsentBanner);
+ * until then nothing is loaded, stored or sent from the browser.
  */
 function initPostHog(): boolean {
   const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY
@@ -30,9 +40,10 @@ function initPostHog(): boolean {
     capture_pageleave: true,
     // Persistence settings
     persistence: 'localStorage+cookie',
-    // Session recording (optional - can be enabled in PostHog dashboard)
-    disable_session_recording: false,
-    // Autocapture settings
+    // Session recording stays off even with consent: the privacy policy
+    // says sessions are not recorded. Turning this on needs a policy update.
+    disable_session_recording: true,
+    // Clicks and form interactions (never input values), only after consent
     autocapture: true,
     // Privacy settings
     respect_dnt: true, // Respect Do Not Track browser setting
@@ -121,6 +132,37 @@ function PostHogPageView(): null {
 }
 
 /**
+ * Asks once whether PostHog may run in this browser. Nothing analytics-related
+ * loads until the visitor answers "Allow".
+ */
+function ConsentBanner({ onChoice }: { onChoice: (consent: AnalyticsConsent) => void }) {
+  return (
+    <div
+      role="region"
+      aria-label="Analytics consent"
+      className="fixed inset-x-4 bottom-20 z-[60] mx-auto max-w-xl rounded-lg border border-border bg-background p-4 shadow-lg md:bottom-4"
+    >
+      <p className="text-sm text-muted-foreground">
+        May we use PostHog analytics to see which pages and lessons get used?
+        It sets a cookie and records page views and clicks, not what you type,
+        and never a recording of your session.{' '}
+        <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
+          Privacy policy
+        </Link>
+      </p>
+      <div className="mt-3 flex gap-2">
+        <Button size="sm" onClick={() => onChoice('granted')}>
+          Allow
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => onChoice('denied')}>
+          No thanks
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+/**
  * PostHog Provider Props
  */
 interface PostHogProviderProps {
@@ -131,33 +173,52 @@ interface PostHogProviderProps {
  * PostHog Provider Component
  * Wraps the application with PostHog analytics tracking
  *
- * Features:
- * - Automatic page view tracking with context
- * - Feature flag support
- * - User identification
- * - Event tracking
+ * - PostHog is initialised only after the visitor allows analytics; the
+ *   choice is stored in localStorage (src/lib/analytics-consent.ts).
+ * - Page views and autocapture run only with consent; session recording is
+ *   always off.
+ * - Withdrawing consent (privacy page) opts PostHog out and clears its
+ *   storage.
  *
  * Analytics is non-blocking - tracking failures won't affect user experience
  */
 export function PostHogProvider({ children }: PostHogProviderProps) {
-  const initialized = useRef(false)
+  const enabled = Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY)
+  // undefined during server render and hydration; null = no answer given.
+  const consent = useSyncExternalStore(
+    subscribeToAnalyticsConsent,
+    getAnalyticsConsent,
+    () => undefined
+  )
+  // Child effects run before this component's, so the page-view tracker is
+  // mounted only once init has actually happened.
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    if (!initialized.current) {
-      initPostHog()
-      initialized.current = true
+    if (!enabled) return
+    if (consent === 'granted') {
+      if (initPostHog()) {
+        if (posthog.has_opted_out_capturing()) posthog.opt_in_capturing()
+        setLoaded(true)
+      }
+    } else if (posthog.__loaded) {
+      // Consent withdrawn after PostHog had loaded in this page view.
+      posthog.opt_out_capturing()
+      posthog.reset()
+      setLoaded(false)
     }
-  }, [])
+  }, [enabled, consent])
 
   // If PostHog key is not configured, render children without provider
-  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+  if (!enabled) {
     return <>{children}</>
   }
 
   return (
     <PHProvider client={posthog}>
-      <PostHogPageView />
+      {consent === 'granted' && loaded && <PostHogPageView />}
       {children}
+      {consent === null && <ConsentBanner onChoice={setAnalyticsConsent} />}
     </PHProvider>
   )
 }

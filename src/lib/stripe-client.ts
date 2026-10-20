@@ -10,18 +10,18 @@ export const SUBSCRIPTION_PLANS = {
     price: 0,
     priceDisplay: '$0',
     interval: 'forever',
+    // Only what the app actually does for a free account today: course
+    // access is not limited, and assessments and certificates are gated to
+    // Pro by their API routes.
     features: [
-      'Access to 3 free courses',
-      'Basic lesson content',
-      'Community discussions',
+      'Every course and learning path',
+      'Lessons, quizzes and exercises',
       'Course progress tracking',
-      'Email support',
+      'Community discussions',
     ],
     limitations: [
-      'Limited course access',
       'No skill assessments',
-      'No certificates',
-      'No priority support',
+      'No course certificates',
     ],
   },
   PRO_MONTHLY: {
@@ -32,15 +32,14 @@ export const SUBSCRIPTION_PLANS = {
     priceDisplay: '$19',
     interval: 'month',
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_MONTHLY || '',
+    // Keep this list to features the code backs: assessments and
+    // certificates are Pro-gated server-side, and Pro lifts the AI tutor's
+    // daily message limit.
     features: [
-      'Unlimited course access',
-      'All learning paths',
+      'Everything in Free',
       'Skill assessments',
-      'Verified certificates',
-      'Priority support',
-      'Project feedback',
-      'Offline access',
-      'Early access to new content',
+      'Course certificates with a verification code',
+      'Unlimited AI tutor messages',
     ],
     popular: false,
   },
@@ -53,15 +52,14 @@ export const SUBSCRIPTION_PLANS = {
     interval: 'year',
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_YEARLY || '',
     savings: '38',
+    // Keep this list to features the code backs: assessments and
+    // certificates are Pro-gated server-side, and Pro lifts the AI tutor's
+    // daily message limit.
     features: [
-      'Unlimited course access',
-      'All learning paths',
+      'Everything in Free',
       'Skill assessments',
-      'Verified certificates',
-      'Priority support',
-      'Project feedback',
-      'Offline access',
-      'Early access to new content',
+      'Course certificates with a verification code',
+      'Unlimited AI tutor messages',
     ],
     popular: true,
   },
