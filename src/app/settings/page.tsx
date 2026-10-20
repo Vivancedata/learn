@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { useTheme } from "next-themes"
 import { NotificationPreferences } from "@/components/notification-preferences"
 import Link from "next/link"
+import { isProTierEnabled } from "@/lib/pro-tier"
 
 function SettingsContent() {
   const { user, refreshUser } = useAuth()
@@ -346,38 +347,38 @@ function SubscriptionCard() {
             <div className="p-4 bg-muted rounded-lg">
               <p className="font-medium">Free Plan</p>
               <p className="text-sm text-muted-foreground">
-                Limited to {3} courses
+                Every course and learning path
               </p>
             </div>
 
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Upgrade to Pro for:</p>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                  Unlimited course access
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                  Skill assessments
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                  Verified certificates
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                  Priority support
-                </li>
-              </ul>
-            </div>
+            {isProTierEnabled() && (
+              <>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Upgrade to Pro for:</p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-success" />
+                      Skill assessments
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-success" />
+                      Course certificates
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-success" />
+                      Unlimited AI tutor messages
+                    </li>
+                  </ul>
+                </div>
 
-            <Button asChild className="w-full">
-              <Link href="/pricing">
-                <Crown className="mr-2 h-4 w-4" />
-                Upgrade to Pro
-              </Link>
-            </Button>
+                <Button asChild className="w-full">
+                  <Link href="/pricing">
+                    <Crown className="mr-2 h-4 w-4" />
+                    Upgrade to Pro
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         )}
       </CardContent>

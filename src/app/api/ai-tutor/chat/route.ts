@@ -14,6 +14,7 @@ import {
 } from '@/lib/api-errors'
 import { chatMessageSchema } from '@/lib/validations'
 import { getAuthenticatedUserId } from '@/lib/authorization'
+import { isProTierEnabled } from '@/lib/pro-tier'
 import {
   chat,
   checkDailyLimit,
@@ -58,7 +59,9 @@ export async function POST(request: NextRequest) {
       throw new ApiError(
         HTTP_STATUS.FORBIDDEN,
         `You have reached your daily limit of ${limitCheck.limit} messages. ` +
-          'Upgrade to Pro for unlimited AI tutor access.',
+          (isProTierEnabled()
+            ? 'Upgrade to Pro for unlimited AI tutor access.'
+            : 'The limit resets tomorrow.'),
         { remaining: limitCheck.remaining, limit: limitCheck.limit }
       )
     }
