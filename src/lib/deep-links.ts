@@ -1,5 +1,5 @@
 /**
- * Deep Link Handler for VivanceData
+ * Deep Link Handler for Vivancedata
  *
  * Handles deep links into the app from:
  * - Custom URL scheme: vivancedata://
@@ -315,7 +315,7 @@ export function generatePathLink(pathId: string, useUniversalLink: boolean = tru
 // ============================================================================
 
 /**
- * Check if a URL is a valid VivanceData deep link
+ * Check if a URL is a valid Vivancedata deep link
  */
 export function isValidDeepLink(url: string): boolean {
   const result = parseDeepLink(url)

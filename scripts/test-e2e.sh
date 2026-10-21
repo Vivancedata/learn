@@ -101,26 +101,19 @@ assert_contains "$open_output" "Page URL: ${BASE_URL}/pricing" "pricing page sho
 heading_output=$("${PW[@]}" eval "() => document.querySelector('h1')?.textContent?.trim()")
 assert_contains "$heading_output" "\"Invest in Your Future\"" "pricing heading should render"
 
-interval_before=$("${PW[@]}" eval "() => document.querySelector('[data-testid=\"pro-interval\"]')?.textContent")
-assert_contains "$interval_before" "\"/year\"" "default interval should be yearly"
+# Pro is off unless NEXT_PUBLIC_PRO_TIER_ENABLED=true at build time
+# (src/lib/pro-tier.ts); the e2e build leaves it unset.
+coming_soon=$("${PW[@]}" eval "() => Boolean(document.querySelector('[data-testid=\"pro-coming-soon\"]'))")
+assert_contains "$coming_soon" "true" "pricing should show Pro as coming soon while the tier is off"
 
-savings_before=$("${PW[@]}" eval "() => Boolean(document.querySelector('[data-testid=\"yearly-savings\"]'))")
-assert_contains "$savings_before" "true" "yearly savings badge should be visible by default"
+no_checkout=$("${PW[@]}" eval "() => Boolean(document.querySelector('[data-testid=\"billing-toggle\"]') || document.querySelector('[data-testid=\"pro-price\"]'))")
+assert_contains "$no_checkout" "false" "pricing should not show a Pro price or billing toggle while the tier is off"
 
-toggle_result=$("${PW[@]}" eval "() => { const toggle = document.querySelector('[data-testid=\"billing-toggle\"]'); if (!toggle) return 'missing'; toggle.click(); return 'clicked'; }")
-assert_contains "$toggle_result" "\"clicked\"" "billing toggle should be clickable"
+privacy_open=$("${PW[@]}" goto "${BASE_URL}/privacy")
+assert_contains "$privacy_open" "Page URL: ${BASE_URL}/privacy" "privacy page should load"
 
-interval_after=$("${PW[@]}" eval "() => document.querySelector('[data-testid=\"pro-interval\"]')?.textContent")
-assert_contains "$interval_after" "\"/month\"" "interval should switch to monthly"
-
-savings_after=$("${PW[@]}" eval "() => Boolean(document.querySelector('[data-testid=\"yearly-savings\"]'))")
-assert_contains "$savings_after" "false" "yearly badge should hide on monthly"
-
-faq_expand=$("${PW[@]}" eval "async () => { const button = [...document.querySelectorAll('button')].find((el) => el.textContent?.includes('Is there a free trial?')); if (!button) return 'missing'; button.click(); await new Promise((resolve) => setTimeout(resolve, 75)); return button.getAttribute('aria-expanded'); }")
-assert_contains "$faq_expand" "\"true\"" "faq item should expand when clicked"
-
-faq_answer=$("${PW[@]}" eval "() => document.body.textContent?.includes('7-day free trial')")
-assert_contains "$faq_answer" "true" "expanded faq answer should be visible"
+terms_open=$("${PW[@]}" goto "${BASE_URL}/terms")
+assert_contains "$terms_open" "Page URL: ${BASE_URL}/terms" "terms page should load"
 
 echo "Running authentication and curriculum assertions..."
 guest_assessments_open=$("${PW[@]}" goto "${BASE_URL}/assessments")

@@ -246,7 +246,13 @@ export interface UserTraits {
  */
 class Analytics {
   private isEnabled(): boolean {
-    return typeof window !== 'undefined' && !!process.env.NEXT_PUBLIC_POSTHOG_KEY
+    // posthog.__loaded is only true once the visitor has allowed analytics
+    // and PostHogProvider has initialised it; before that, send nothing.
+    return (
+      typeof window !== 'undefined' &&
+      !!process.env.NEXT_PUBLIC_POSTHOG_KEY &&
+      Boolean(posthog.__loaded)
+    )
   }
 
   /**

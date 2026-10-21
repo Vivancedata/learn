@@ -21,12 +21,15 @@ import { ThemeToggle } from "./theme-toggle"
 import { UserButton } from "./user-button"
 import { useSubscription } from "@/hooks/useSubscription"
 import { useAuth } from "@/hooks/useAuth"
+import { isProTierEnabled } from "@/lib/pro-tier"
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const { isPro, loading: subscriptionLoading } = useSubscription()
   const { isAuthenticated } = useAuth()
+  // No upgrade prompts while Pro is not on sale (src/lib/pro-tier.ts).
+  const showUpgrade = isProTierEnabled()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,7 +52,7 @@ export function Navbar() {
             <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <span className="text-2xl font-bold text-foreground">
-            VivanceData{" "}
+            Vivancedata{" "}
             <span className="font-normal text-muted-foreground">Learn</span>
           </span>
         </Link>
@@ -97,7 +100,7 @@ export function Navbar() {
 
           <div className="hidden xl:flex xl:items-center xl:space-x-2 xl:pl-4 xl:border-l xl:border-border">
             {/* Subscription Status */}
-            {isAuthenticated && !subscriptionLoading && (
+            {isAuthenticated && !subscriptionLoading && (isPro || showUpgrade) && (
               isPro ? (
                 <Badge variant="default" className="bg-primary">
                   <Crown className="h-3 w-3 mr-1" />
@@ -209,7 +212,7 @@ export function Navbar() {
               <span className="font-medium">Settings</span>
             </Link>
             {/* Upgrade Button for Mobile */}
-            {isAuthenticated && !subscriptionLoading && !isPro && (
+            {isAuthenticated && !subscriptionLoading && !isPro && showUpgrade && (
               <Link
                 href="/pricing"
                 className="flex items-center gap-3 px-4 py-3 rounded-lg bg-brand text-primary-foreground hover:bg-brand/90 transition-colors"

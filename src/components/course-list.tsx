@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ProgressCircle } from "@/components/ui/progress-circle"
 import { DifficultyBadge } from "@/components/difficulty-badge"
+import { courseDurationLabel } from "@/lib/course-duration"
 import Link from "next/link"
 
 interface CourseListProps {
@@ -31,9 +32,11 @@ export function CourseList({ courses }: CourseListProps) {
           <CardContent>
             <div className="flex items-center gap-2">
               <DifficultyBadge difficulty={course.difficulty} />
-              <span className="text-sm text-muted-foreground">
-                {course.durationHours} hours
-              </span>
+              {courseDurationLabel(course) && (
+                <span className="text-sm text-muted-foreground">
+                  {courseDurationLabel(course)}
+                </span>
+              )}
               {typeof course.lessonCount === "number" && course.lessonCount > 0 && (
                 <span className="text-sm text-muted-foreground">
                   {course.lessonCount} {course.lessonCount === 1 ? "lesson" : "lessons"}

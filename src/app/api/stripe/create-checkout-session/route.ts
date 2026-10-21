@@ -15,6 +15,7 @@ import {
 } from '@/lib/stripe'
 import prisma from '@/lib/db'
 import { getAppUrl } from '@/lib/app-url'
+import { isProTierEnabled } from '@/lib/pro-tier'
 
 /**
  * POST /api/stripe/create-checkout-session
@@ -24,6 +25,12 @@ import { getAppUrl } from '@/lib/app-url'
  */
 export async function POST(request: NextRequest) {
   try {
+    // Pro is not on sale while the flag is off; refuse before touching
+    // Stripe or the database. See src/lib/pro-tier.ts.
+    if (!isProTierEnabled()) {
+      throw new ApiError(HTTP_STATUS.FORBIDDEN, 'Pro subscriptions are not available yet')
+    }
+
     // Get authenticated user
     const userId = getAuthenticatedUserId(request)
 

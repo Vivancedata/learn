@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import LessonPageClient from './page-client'
 
 export const metadata: Metadata = {
-  title: 'Lesson | Vivance',
+  title: 'Lesson | Vivancedata',
   description: 'Study lesson content, complete activities, and join discussions.',
 }
 

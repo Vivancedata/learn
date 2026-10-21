@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/lib/auth'
 import SignInPageClient from './page-client'
 
 export const metadata: Metadata = {
-  title: 'Sign In | Vivance',
+  title: 'Sign In | Vivancedata',
   description: 'Sign in to track your learning progress and continue where you left off.',
 }
 

@@ -221,7 +221,7 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
     id: 'early-adopter',
     name: 'Early Adopter',
-    description: 'Join VivanceData during beta',
+    description: 'Join Vivancedata during beta',
     icon: '🚀',
     checkCondition: () => true, // Manually awarded
   },

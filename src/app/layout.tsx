@@ -11,6 +11,7 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext"
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration"
 import { PostHogProvider } from "@/components/providers/posthog-provider"
 import { MobileProvider } from "@/components/mobile/mobile-provider"
+import { SiteFooter } from "@/components/site-footer"
 
 // Geist Sans sets all UI and prose; Geist Mono sets code and the uppercase
 // section eyebrows. Exposed as CSS variables that tailwind.preset.ts reads.
@@ -27,13 +28,13 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "VivanceData Learning Platform",
+  title: "Vivancedata Learning Platform",
   description: "Learn AI and Data Science with structured learning paths",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "VivanceData",
+    title: "Vivancedata",
   },
   formatDetection: {
     telephone: false,
@@ -105,9 +106,10 @@ export default function RootLayout({
                       installPromptMinVisits={2}
                     >
                       <Navbar />
-                      <main id="main-content" tabIndex={-1} className="container mx-auto py-8 px-4 pb-24 md:pb-8 focus:outline-none">
+                      <main id="main-content" tabIndex={-1} className="container mx-auto py-8 px-4 focus:outline-none">
                         {children}
                       </main>
+                      <SiteFooter />
                     </MobileProvider>
                   </ThemeProvider>
                 </SubscriptionProvider>
