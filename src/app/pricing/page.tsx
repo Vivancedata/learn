@@ -6,7 +6,7 @@ import PricingPageClient from './page-client'
 import { isProTierEnabled } from '@/lib/pro-tier'
 
 export const metadata: Metadata = {
-  title: 'Pricing | Vivance',
+  title: 'Pricing | Vivancedata',
   description: 'Compare plans and choose the best learning path for your goals.',
 }
 

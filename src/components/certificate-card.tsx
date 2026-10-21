@@ -41,7 +41,7 @@ export default function CertificateCard({ certificate, userName }: CertificateCa
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
         <div className="text-center">
           <h2 className="text-3xl font-bold mb-2">Certificate of Completion</h2>
-          <p className="text-blue-100">VivanceData Learning Platform</p>
+          <p className="text-blue-100">Vivancedata Learning Platform</p>
         </div>
       </div>
 
@@ -57,9 +57,6 @@ export default function CertificateCard({ certificate, userName }: CertificateCa
           <div className="flex justify-center gap-4 text-sm text-gray-500 mb-4">
             <span className="bg-gray-100 px-3 py-1 rounded">
               {certificate.course.difficulty}
-            </span>
-            <span className="bg-gray-100 px-3 py-1 rounded">
-              {certificate.course.durationHours} hours
             </span>
           </div>
         </div>
