@@ -117,6 +117,7 @@ export default function SignInPage() {
                 name="email"
                 type="email"
                 placeholder="your@email.com…"
+                className="placeholder:text-muted-foreground"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isSubmitting}
@@ -144,6 +145,7 @@ export default function SignInPage() {
                 name="password"
                 type="password"
                 placeholder="••••••••"
+                className="placeholder:text-muted-foreground"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isSubmitting}

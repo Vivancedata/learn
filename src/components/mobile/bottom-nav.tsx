@@ -153,7 +153,7 @@ export function BottomNav({ notificationCount = 0 }: BottomNavProps) {
                   </div>
                   <span
                     className={cn(
-                      'text-[10px] font-medium mt-1',
+                      'text-xs font-medium mt-1',
                       active && 'font-semibold'
                     )}
                   >

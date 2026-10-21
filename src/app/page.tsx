@@ -17,8 +17,8 @@ import {
   TrendingUp
 } from "lucide-react"
 import { getAllCourses, getAllPaths } from "@/lib/content"
+import { DifficultyBadge } from "@/components/difficulty-badge"
 import { courseDurationLabel } from "@/lib/course-duration"
-import { DIFFICULTY_BADGE_CLASSES } from "@/lib/difficulty"
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
@@ -293,9 +293,7 @@ export default async function page() {
                   </div>
                   <CardHeader>
                     <div className="flex items-center gap-2 mb-2">
-                      <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full border ${DIFFICULTY_BADGE_CLASSES[course.difficulty]}`}>
-                        {course.difficulty}
-                      </span>
+                      <DifficultyBadge difficulty={course.difficulty} />
                       {courseDurationLabel(course) && (
                         <span className="text-xs text-muted-foreground">
                           {courseDurationLabel(course)}
