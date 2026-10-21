@@ -547,13 +547,15 @@ function AssessmentsCatalogContent() {
     }
   }, [currentDifficulty, currentPage, currentSkillArea])
 
+  const userId = user?.id
+
   const fetchUserStats = useCallback(async () => {
-    if (!user?.id) {
+    if (!userId) {
       return
     }
 
     try {
-      const response = await fetch(`/api/assessments/user/${user.id}`, {
+      const response = await fetch(`/api/assessments/user/${userId}`, {
         credentials: 'include',
       })
 
@@ -567,7 +569,7 @@ function AssessmentsCatalogContent() {
     } catch (_error) {
       // User stats are optional - non-critical failure.
     }
-  }, [user?.id])
+  }, [userId])
 
   useEffect(() => {
     void fetchAssessments()
