@@ -17,7 +17,7 @@ export function getStripe(): Stripe {
       throw new Error('STRIPE_SECRET_KEY environment variable is required')
     }
     _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2026-08-26.dahlia',
+      apiVersion: '2026-09-30.endive',
       typescript: true,
     })
   }
@@ -69,7 +69,9 @@ export async function createCheckoutSession(
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: 'subscription',
-    payment_method_types: ['card'],
+    // stripe 23 (API 2026-09-30.endive) removed payment_method_types here; the
+    // allow-list filter keeps Checkout card-only as before.
+    allowed_payment_method_types: ['card'],
     line_items: [
       {
         price: priceId,
