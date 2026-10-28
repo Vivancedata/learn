@@ -105,7 +105,7 @@ export function PythonExercise({
         spellCheck={false}
         translate="no"
         aria-label={`${title} code editor`}
-        className="h-80 w-full resize-y rounded-md border border-border bg-muted/30 p-3 font-mono text-sm leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="h-80 w-full resize-y rounded-md border border-border bg-muted/30 p-3 font-mono text-sm leading-relaxed focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
       />
 
       {/* Persistent live region: content inserted into a freshly mounted

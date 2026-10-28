@@ -497,9 +497,9 @@ function useCodePlaygroundContent({
                       )}
                     >
                       {result.passed ? (
-                        <CheckCircle2 className="h-4 w-4 text-[#a6e3a1] flex-shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-4 w-4 text-[#a6e3a1] shrink-0 mt-0.5" />
                       ) : (
-                        <AlertCircle className="h-4 w-4 text-[#f38ba8] flex-shrink-0 mt-0.5" />
+                        <AlertCircle className="h-4 w-4 text-[#f38ba8] shrink-0 mt-0.5" />
                       )}
                       <div>
                         <div className={result.passed ? 'text-[#a6e3a1]' : 'text-[#f38ba8]'}>

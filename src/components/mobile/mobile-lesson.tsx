@@ -159,7 +159,7 @@ export function MobileLesson({
       )}
     >
       {/* Progress header */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-xs border-b border-border">
         <Progress
           value={progressPercent}
           className="h-1 rounded-none"
@@ -214,7 +214,7 @@ export function MobileLesson({
           className={cn(
             'fixed bottom-32 left-1/2 -translate-x-1/2',
             'px-4 py-2 rounded-full',
-            'bg-muted/90 backdrop-blur-sm',
+            'bg-muted/90 backdrop-blur-xs',
             'text-xs text-muted-foreground',
             'animate-in fade-in slide-in-from-bottom-4 duration-500',
             'flex items-center gap-2'
@@ -227,7 +227,7 @@ export function MobileLesson({
       )}
 
       {/* Navigation bar */}
-      <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border safe-area-bottom">
+      <div className="sticky bottom-0 bg-background/95 backdrop-blur-xs border-t border-border safe-area-bottom">
         <div className="flex items-center justify-between p-4 gap-4">
           {/* Previous button */}
           <Button
@@ -253,7 +253,7 @@ export function MobileLesson({
               onClick={onMarkComplete}
               disabled={isCompleted || isMarkingComplete}
               className={cn(
-                'flex-[2] h-12',
+                'flex-2 h-12',
                 'touch-manipulation',
                 isCompleted && 'bg-success/10 border-success text-success hover:bg-success/20'
               )}

@@ -109,7 +109,7 @@ export function BottomNav({ notificationCount = 0 }: BottomNavProps) {
                     'w-16 h-14 rounded-xl',
                     'transition-[transform,background-color,color] duration-200 ease-out',
                     'touch-manipulation select-none',
-                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+                    'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
                     active
                       ? 'text-brand bg-primary/10'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',

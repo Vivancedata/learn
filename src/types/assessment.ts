@@ -120,13 +120,13 @@ export function getSkillLevel(score: number): SkillLevel {
 export function getSkillBadgeColor(level: SkillLevel): string {
   switch (level) {
     case 'expert':
-      return 'bg-gradient-to-r from-amber-400 to-yellow-500 text-white'
+      return 'bg-linear-to-r from-amber-400 to-yellow-500 text-white'
     case 'advanced':
-      return 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white'
+      return 'bg-linear-to-r from-emerald-500 to-teal-500 text-white'
     case 'intermediate':
-      return 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
+      return 'bg-linear-to-r from-blue-500 to-indigo-500 text-white'
     case 'beginner':
-      return 'bg-gradient-to-r from-slate-400 to-gray-500 text-white'
+      return 'bg-linear-to-r from-slate-400 to-gray-500 text-white'
     default:
       return 'bg-muted text-muted-foreground'
   }

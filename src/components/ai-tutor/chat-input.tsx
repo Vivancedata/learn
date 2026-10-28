@@ -124,7 +124,7 @@ export function ChatInput({
   const hasQuickActions = Boolean(onExplainClick || onHintClick || onExampleClick)
 
   return (
-    <div className="border-t border-border bg-card/50 backdrop-blur-sm p-3 space-y-3">
+    <div className="border-t border-border bg-card/50 backdrop-blur-xs p-3 space-y-3">
       {/* Quick action buttons */}
       {showQuickActions && hasQuickActions && !isLoading && (
         <div className="flex flex-wrap gap-2" role="group" aria-label="Quick actions">
@@ -189,7 +189,7 @@ export function ChatInput({
             rows={MIN_ROWS}
             className={cn(
               'flex-1 resize-none bg-transparent text-sm placeholder:text-muted-foreground',
-              'focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+              'focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50',
               'min-h-[24px] py-1.5 px-2'
             )}
             aria-label="Type your message"
@@ -201,7 +201,7 @@ export function ChatInput({
             size="icon"
             variant={canSend ? 'default' : 'ghost'}
             className={cn(
-              'h-8 w-8 rounded-lg flex-shrink-0 transition-colors duration-200',
+              'h-8 w-8 rounded-lg shrink-0 transition-colors duration-200',
               canSend && 'bg-primary hover:bg-primary/90'
             )}
             disabled={!canSend}

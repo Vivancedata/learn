@@ -12,7 +12,7 @@ const LIGHTBULB_PATH =
 
 const CHECK_ICON = (
   <svg
-    className="w-4 h-4 mt-0.5 text-brand flex-shrink-0"
+    className="w-4 h-4 mt-0.5 text-brand shrink-0"
     fill="none"
     stroke="currentColor"
     viewBox="0 0 24 24"
@@ -68,7 +68,7 @@ export function EmptyRecommendations({
       <CardContent className="flex flex-col items-center justify-center py-12 px-6 text-center">
         {/* Illustration */}
         <div className="relative mb-6">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full blur-2xl" />
+          <div className="absolute inset-0 bg-linear-to-br from-primary/20 to-primary/5 rounded-full blur-2xl" />
           <svg
             className="relative w-24 h-24 text-brand"
             fill="none"

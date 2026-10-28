@@ -95,7 +95,7 @@ export function StreakFreezeButton({
           <>
             <CardContent className="pb-2">
               <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20">
-                <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+                <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
                 <div className="text-sm">
                   <p className="font-medium text-warning">This action cannot be undone</p>
                   <p className="text-muted-foreground mt-1">

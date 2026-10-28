@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Suspense } from "react"
 import { Geist, Geist_Mono } from "next/font/google"
-import "@vivancedata/ui/styles"
 import "./globals.css"
 import { Navbar } from "@/components/ui/navbar"
 import { ThemeProvider } from "@/components/ui/theme-provider"
@@ -83,7 +82,7 @@ export default function RootLayout({
       <body className="font-sans">
         <a
           href="#main-content"
-          className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:left-4 focus-visible:top-4 focus-visible:z-[100] focus-visible:rounded-md focus-visible:bg-background focus-visible:px-4 focus-visible:py-2 focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:left-4 focus-visible:top-4 focus-visible:z-100 focus-visible:rounded-md focus-visible:bg-background focus-visible:px-4 focus-visible:py-2 focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         >
           Skip to Main Content
         </a>
@@ -106,7 +105,7 @@ export default function RootLayout({
                       installPromptMinVisits={2}
                     >
                       <Navbar />
-                      <main id="main-content" tabIndex={-1} className="container mx-auto py-8 px-4 focus:outline-none">
+                      <main id="main-content" tabIndex={-1} className="container mx-auto py-8 px-4 focus:outline-hidden">
                         {children}
                       </main>
                       <SiteFooter />

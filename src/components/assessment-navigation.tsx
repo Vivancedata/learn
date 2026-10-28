@@ -46,7 +46,7 @@ export function AssessmentNavigation({
                 onClick={() => onQuestionClick(index)}
                 className={cn(
                   'relative w-10 h-10 rounded-lg font-medium text-sm transition-[transform,background-color,border-color,color] duration-200',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2',
+                  'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2',
                   'hover:scale-105 active:scale-95',
                   // Default unanswered state
                   !isCurrent && !isAnswered && !isFlagged && 'bg-muted text-muted-foreground hover:bg-muted/80',
