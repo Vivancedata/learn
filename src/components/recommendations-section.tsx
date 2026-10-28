@@ -312,7 +312,7 @@ export function RecommendationsSection({
             {recommendations.map((recommendation) => (
               <div
                 key={recommendation.id}
-                className="flex-shrink-0"
+                className="shrink-0"
                 style={{ width: `calc((100% - ${(itemsPerView - 1) * 24}px) / ${itemsPerView})` }}
               >
                 <RecommendationCard
@@ -334,7 +334,7 @@ export function RecommendationsSection({
                   type="button"
                   onClick={() => setCarouselIndex(index)}
                   // 24px hit area (WCAG 2.5.8) around the small visual dot
-                  className="group flex h-6 min-w-6 items-center justify-center px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
+                  className="group flex h-6 min-w-6 items-center justify-center px-1 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-full"
                   aria-label={`Go to slide ${index + 1}`}
                   aria-current={index === carouselIndex ? 'true' : 'false'}
                 >

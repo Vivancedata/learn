@@ -38,7 +38,7 @@ export default function CertificateCard({ certificate, userName }: CertificateCa
   return (
     <div className="certificate-card bg-white rounded-lg shadow-lg overflow-hidden border-2 border-blue-500">
       {/* Certificate Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+      <div className="bg-linear-to-r from-blue-600 to-purple-600 text-white p-6">
         <div className="text-center">
           <h2 className="text-3xl font-bold mb-2">Certificate of Completion</h2>
           <p className="text-blue-100">Vivancedata Learning Platform</p>

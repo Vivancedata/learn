@@ -87,7 +87,7 @@ export function AssessmentResults({
       )}>
         {/* Celebration Header for Passed */}
         {passed && (
-          <div className="bg-gradient-to-r from-success/20 via-success/10 to-success/20 px-6 py-4 border-b border-success/20">
+          <div className="bg-linear-to-r from-success/20 via-success/10 to-success/20 px-6 py-4 border-b border-success/20">
             <div className="flex items-center justify-center gap-2 text-success">
               <Sparkles className="h-5 w-5 animate-pulse" />
               <span className="font-semibold">Congratulations! You passed!</span>
@@ -300,7 +300,7 @@ function QuestionReviewItem({
       >
         <div className="flex min-w-0 items-center gap-3">
           <span className={cn(
-            'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-medium',
+            'shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-medium',
             result.correct ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'
           )}>
             {result.correct ? (
@@ -317,9 +317,9 @@ function QuestionReviewItem({
           </div>
         </div>
         {isExpanded ? (
-          <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+          <ChevronUp className="h-5 w-5 text-muted-foreground shrink-0" />
         ) : (
-          <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+          <ChevronDown className="h-5 w-5 text-muted-foreground shrink-0" />
         )}
       </button>
 

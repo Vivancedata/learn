@@ -170,7 +170,7 @@ function AssessmentHeader({
   onOpenSubmitModal: () => void
 }) {
   return (
-    <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur-sm supports-backdrop-filter:bg-background/60">
       <div className="container py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -367,7 +367,7 @@ function MobileQuestionSidebar({
         type="button"
         aria-label="Close question sidebar"
         tabIndex={-1}
-        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-background/80 backdrop-blur-xs"
         onClick={onClose}
       />
       <div className="absolute right-0 top-0 h-full w-80 max-w-full border-l bg-card shadow-lg">
@@ -427,7 +427,7 @@ function SubmitConfirmationModal({
         type="button"
         aria-label="Close submit confirmation"
         tabIndex={-1}
-        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-background/80 backdrop-blur-xs"
         onClick={onClose}
       />
       <Card className="relative w-full max-w-md">
@@ -446,7 +446,7 @@ function SubmitConfirmationModal({
             </div>
             {unansweredCount > 0 && (
               <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3">
-                <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-warning" />
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
                 <div className="text-sm">
                   <p className="font-medium text-warning">
                     {unansweredCount} question{unansweredCount !== 1 ? 's' : ''} unanswered
@@ -493,7 +493,7 @@ function SubmittingOverlay({ isSubmitting }: { isSubmitting: boolean }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-xs"
       role="status"
       aria-busy="true"
     >

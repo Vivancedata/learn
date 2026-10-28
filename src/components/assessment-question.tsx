@@ -166,7 +166,7 @@ function SingleChoiceInput({
             aria-pressed={isSelected}
             className={cn(
               'w-full flex items-start gap-3 p-4 rounded-lg border text-left transition-colors',
-              'hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+              'hover:bg-muted/50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
               isSelected && !showResult && 'border-brand bg-primary/5',
               isCorrectAnswer && 'border-success bg-success/10',
               isWrongSelected && 'border-destructive bg-destructive/10',
@@ -174,7 +174,7 @@ function SingleChoiceInput({
               !isSelected && !showResult && 'border-border'
             )}
           >
-            <span className="flex-shrink-0 mt-0.5">
+            <span className="shrink-0 mt-0.5">
               {isCorrectAnswer ? (
                 <CheckCircle className="h-5 w-5 text-success" />
               ) : isWrongSelected ? (
@@ -246,7 +246,7 @@ function MultipleChoiceInput({
             aria-pressed={isSelected}
             className={cn(
               'w-full flex items-start gap-3 p-4 rounded-lg border text-left transition-colors',
-              'hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+              'hover:bg-muted/50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
               isSelected && !showResult && 'border-brand bg-primary/5',
               isCorrectAnswer && isSelected && 'border-success bg-success/10',
               isWrongSelected && 'border-destructive bg-destructive/10',
@@ -255,7 +255,7 @@ function MultipleChoiceInput({
               !isSelected && !showResult && 'border-border'
             )}
           >
-            <span className="flex-shrink-0 mt-0.5">
+            <span className="shrink-0 mt-0.5">
               {isCorrectAnswer && isSelected ? (
                 <CheckSquare className="h-5 w-5 text-success" />
               ) : isWrongSelected ? (
@@ -321,7 +321,7 @@ function TextInput({
         disabled={disabled}
         className={cn(
           'w-full px-4 py-3 rounded-lg border bg-background transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-brand',
+          'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-brand',
           showResult && isCorrect && 'border-success bg-success/10',
           showResult && !isCorrect && 'border-destructive bg-destructive/10',
           disabled && 'cursor-not-allowed opacity-60'
