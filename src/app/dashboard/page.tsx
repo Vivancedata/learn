@@ -272,7 +272,7 @@ function useDashboardContentView() {
       )}
 
       {showGettingStarted && (
-        <Card className="border-brand/30 bg-gradient-to-br from-primary/10 via-background to-secondary/20">
+        <Card className="border-brand/30 bg-transparent bg-linear-to-br from-primary/10 via-background to-secondary/20">
           <CardHeader>
             <CardTitle as="h2">Start Here: Your First 30 Minutes</CardTitle>
             <CardDescription>
@@ -624,19 +624,19 @@ function useDashboardContentView() {
             <CardContent>
               <ul className="space-y-2 text-body-sm">
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
                   <span>Answer questions in course discussions</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
                   <span>Share helpful tips and resources</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
                   <span>When others find your help valuable, they give you a point</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-success mt-0.5 shrink-0" />
                   <span>Earn badges as you help more people</span>
                 </li>
               </ul>

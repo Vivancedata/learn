@@ -42,7 +42,7 @@ export function Navbar() {
   return (
     <nav className={`sticky top-0 z-50 transition-[background-color,border-color] duration-300 ${
       scrolled
-        ? 'bg-background/95 backdrop-blur-sm border-b border-border'
+        ? 'bg-background/95 backdrop-blur-xs border-b border-border'
         : 'bg-background border-b border-transparent'
     }`}>
       <div className="container flex h-16 items-center px-4">
@@ -57,7 +57,7 @@ export function Navbar() {
           </span>
         </Link>
 
-        <div className="ml-auto flex items-center space-x-4">
+        <div className="ml-auto flex items-center gap-4">
           {/* Desktop navigation */}
           <div className="hidden xl:flex xl:items-center xl:space-x-1">
             <Button variant="ghost" asChild className="text-muted-foreground hover:text-foreground">

@@ -125,7 +125,7 @@ export function KnowledgeCheck({ questions, onComplete }: KnowledgeCheckProps) {
                         disabled={showExplanation}
                         // The wrapping label carries the ring token via focus-within, so the
                         // native outline would double it in the UA's own blue.
-                        className="mt-1 h-4 w-4 shrink-0 accent-[hsl(var(--brand))] outline-none disabled:opacity-100"
+                        className="mt-1 h-4 w-4 shrink-0 accent-[hsl(var(--brand))] outline-hidden disabled:opacity-100"
                       />
                       <span className="flex-1">{option}</span>
                       {showExplanation && isAnswer && (
@@ -200,9 +200,9 @@ export function KnowledgeCheck({ questions, onComplete }: KnowledgeCheckProps) {
                   return (
                     <li key={index} className="flex items-center gap-2">
                       {right ? (
-                        <CheckCircle className="h-4 w-4 text-success flex-shrink-0" aria-hidden="true" />
+                        <CheckCircle className="h-4 w-4 text-success shrink-0" aria-hidden="true" />
                       ) : (
-                        <XCircle className="h-4 w-4 text-destructive flex-shrink-0" aria-hidden="true" />
+                        <XCircle className="h-4 w-4 text-destructive shrink-0" aria-hidden="true" />
                       )}
                       <span className="sr-only">{right ? 'Correct:' : 'Incorrect:'}</span>
                       <span className="text-sm truncate">{q.question}</span>

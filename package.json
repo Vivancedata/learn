@@ -92,6 +92,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
+    "@tailwindcss/postcss": "^4.3.3",
     "@tailwindcss/typography": "^0.5.20",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -109,7 +110,7 @@
     "markdownlint-cli2": "^0.21.0",
     "postcss": "^8.5.23",
     "prisma": "^7.10.1",
-    "tailwindcss": "^3.4.1",
+    "tailwindcss": "^4.3.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },

@@ -160,7 +160,7 @@ export function CourseCertificate({ course, progress }: CourseCertificateProps) 
           </div>
         ) : (
           <div className="border rounded-lg p-6 bg-card/50 relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-lg" />
+            <div className="absolute inset-0 bg-linear-to-r from-blue-500/5 to-purple-500/5 rounded-lg" />
             
             <div className="relative space-y-6 flex flex-col items-center text-center">
               <Award className="h-16 w-16 text-brand" />

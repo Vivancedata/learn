@@ -122,7 +122,7 @@ function TypingIndicator() {
 function AiAvatar() {
   return (
     <div
-      className="w-8 h-8 rounded-full bg-brand flex items-center justify-center flex-shrink-0 shadow-sm"
+      className="w-8 h-8 rounded-full bg-brand flex items-center justify-center shrink-0 shadow-xs"
       aria-hidden="true"
     >
       <Bot className="w-4 h-4 text-primary-foreground" />
@@ -136,7 +136,7 @@ function AiAvatar() {
 function UserAvatar() {
   return (
     <div
-      className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0"
+      className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0"
       aria-hidden="true"
     >
       <User className="w-4 h-4 text-secondary-foreground" />
@@ -184,16 +184,16 @@ function ChatMessageComponent({
             'rounded-2xl px-4 py-2.5 text-sm',
             isUser
               ? 'bg-primary text-primary-foreground rounded-tr-md'
-              : 'bg-card border border-border rounded-tl-md shadow-sm',
+              : 'bg-card border border-border rounded-tl-md shadow-xs',
             isLatest && !isUser && 'ring-1 ring-brand/20'
           )}
         >
           {isStreaming ? (
             <TypingIndicator />
           ) : isUser ? (
-            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+            <p className="whitespace-pre-wrap wrap-break-word">{message.content}</p>
           ) : (
-            <div className="prose prose-sm dark:prose-invert max-w-none break-words">
+            <div className="prose prose-sm dark:prose-invert max-w-none wrap-break-word">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={markdownComponents}

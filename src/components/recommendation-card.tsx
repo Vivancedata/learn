@@ -112,7 +112,7 @@ export function RecommendationCard({
           // Touch screens have no hover, so keep the control visible there.
           'opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100',
           'transition-[opacity,background-color,color] duration-200',
-          'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          'focus-visible:opacity-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
           isDismissing && 'cursor-not-allowed opacity-50'
         )}
         aria-label="Dismiss recommendation"
@@ -151,7 +151,7 @@ export function RecommendationCard({
       <Link
         href={`/courses/${courseId}`}
         onClick={handleClick}
-        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
+        className="block focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
       >
         <CardHeader className={cn('pb-3', showMatchScore && 'pt-10')}>
           {/* Path indicator */}

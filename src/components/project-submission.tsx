@@ -283,7 +283,7 @@ export function ProjectSubmission({ lessonId, courseId: _courseId, requirements 
             
             {error && (
               <div id="project-form-error" role="alert" className="bg-destructive/10 text-destructive p-3 rounded-md flex items-start gap-2">
-                <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
                 <p className="text-sm">{error}</p>
               </div>
             )}

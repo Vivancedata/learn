@@ -328,7 +328,7 @@ function LeaderboardContent() {
           {/* Podium - Top 3 */}
           {leaderboardData.entries.length > 0 && (
             <Card className="overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-amber-500/10 via-slate-400/10 to-amber-600/10">
+              <CardHeader className="bg-linear-to-r from-amber-500/10 via-slate-400/10 to-amber-600/10">
                 <CardTitle className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-amber-500" />
                   Top Performers
@@ -389,7 +389,7 @@ function LeaderboardContent() {
       )}
 
       {/* Motivational footer */}
-      <Card className="bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5">
+      <Card className="bg-transparent bg-linear-to-r from-primary/5 via-accent/5 to-primary/5">
         <CardContent className="p-6 text-center">
           <h3 className="font-semibold mb-2">Keep climbing the ranks!</h3>
           <p className="text-sm text-muted-foreground max-w-lg mx-auto">

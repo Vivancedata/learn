@@ -121,7 +121,7 @@ function SuggestedQuestionsComponent({
                 onClick={() => onQuestionClick(question.text)}
                 disabled={isLoading}
               >
-                <Icon className={cn('w-3 h-3 mr-1.5 flex-shrink-0', iconClasses)} aria-hidden="true" />
+                <Icon className={cn('w-3 h-3 mr-1.5 shrink-0', iconClasses)} aria-hidden="true" />
                 <span className="truncate">{question.text}</span>
               </Button>
             )
@@ -134,7 +134,7 @@ function SuggestedQuestionsComponent({
               className={cn(
                 'group flex items-start gap-3 w-full p-3 rounded-lg border text-left',
                 'transition-colors duration-200',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                'focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
                 categoryClasses
               )}
@@ -143,7 +143,7 @@ function SuggestedQuestionsComponent({
             >
               <div
                 className={cn(
-                  'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
+                  'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
                   'bg-background border transition-colors',
                   categoryClasses
                 )}
@@ -159,7 +159,7 @@ function SuggestedQuestionsComponent({
                 </p>
               </div>
               <ArrowRight
-                className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-1"
+                className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-1"
                 aria-hidden="true"
               />
             </button>

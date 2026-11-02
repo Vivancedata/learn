@@ -92,7 +92,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
             <p className="font-semibold text-red-800 dark:text-red-300 mb-2">
               Development Error Details:
             </p>
-            <p className="font-mono text-sm text-red-700 dark:text-red-400 break-words">
+            <p className="font-mono text-sm text-red-700 dark:text-red-400 wrap-break-word">
               {error.message}
             </p>
             {error.stack && (

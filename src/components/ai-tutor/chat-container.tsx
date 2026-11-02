@@ -68,7 +68,7 @@ function ChatHeader({
   hasMessages: boolean
 }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/80 backdrop-blur-sm rounded-t-xl">
+    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/80 backdrop-blur-xs rounded-t-xl">
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 rounded-full bg-brand flex items-center justify-center">
           <Bot className="w-4 h-4 text-primary-foreground" aria-hidden="true" />
@@ -187,7 +187,7 @@ function MessagesContainer({
   const hasMessages = messages.length > 0
 
   return (
-    <ScrollArea className="flex-1 px-4 [&_[data-radix-scroll-area-viewport]]:overscroll-contain">
+    <ScrollArea className="flex-1 px-4 **:data-radix-scroll-area-viewport:overscroll-contain">
       <div
         ref={scrollRef}
         className="py-4 space-y-4"
@@ -214,10 +214,10 @@ function MessagesContainer({
             ))}
             {isLoading && (
               <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-brand flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-brand flex items-center justify-center shrink-0">
                   <Bot className="w-4 h-4 text-primary-foreground" />
                 </div>
-                <div className="bg-card border border-border rounded-2xl rounded-tl-md px-4 py-2.5 shadow-sm">
+                <div className="bg-card border border-border rounded-2xl rounded-tl-md px-4 py-2.5 shadow-xs">
                   <TypingIndicator />
                 </div>
               </div>
@@ -247,7 +247,7 @@ function MessagesContainer({
 function Backdrop({ onClick }: { onClick: () => void }) {
   return (
     <div
-      className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 sm:hidden"
+      className="fixed inset-0 bg-background/80 backdrop-blur-xs z-40 sm:hidden"
       onClick={onClick}
       aria-hidden="true"
     />

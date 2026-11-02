@@ -53,7 +53,7 @@ export function ProgressSummary({
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {/* Course Progress Card */}
       <Card className="relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-bl from-primary/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">Course Progress</CardTitle>
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10">
@@ -111,7 +111,7 @@ export function ProgressSummary({
         </Card>
       ) : (
         <Card className="relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-warning/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-bl from-warning/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Active Courses</CardTitle>
             <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-warning/10">
@@ -130,7 +130,7 @@ export function ProgressSummary({
       {/* Path Progress */}
       {paths && (
         <Card className="relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-success/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-bl from-success/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Path Progress</CardTitle>
             <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-success/10">

@@ -105,7 +105,7 @@ export function RecommendationReason({
     >
       {showIcon && (
         <svg
-          className={cn('w-3.5 h-3.5 flex-shrink-0', colors.icon)}
+          className={cn('w-3.5 h-3.5 shrink-0', colors.icon)}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

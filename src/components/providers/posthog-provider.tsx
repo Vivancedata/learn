@@ -140,7 +140,7 @@ function ConsentBanner({ onChoice }: { onChoice: (consent: AnalyticsConsent) => 
     <div
       role="region"
       aria-label="Analytics consent"
-      className="fixed inset-x-4 bottom-20 z-[60] mx-auto max-w-xl rounded-lg border border-border bg-background p-4 shadow-lg md:bottom-4"
+      className="fixed inset-x-4 bottom-20 z-60 mx-auto max-w-xl rounded-lg border border-border bg-background p-4 shadow-lg md:bottom-4"
     >
       <p className="text-sm text-muted-foreground">
         May we use PostHog analytics to see which pages and lessons get used?
