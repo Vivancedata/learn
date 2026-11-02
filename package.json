@@ -84,7 +84,7 @@
     "react-markdown": "^10.0.0",
     "remark-gfm": "^4.0.1",
     "resend": "^6.34.1",
-    "stripe": "22.6.2",
+    "stripe": "23.0.1",
     "swr": "^2.5.1",
     "tailwindcss-animate": "^1.0.7",
     "web-push": "^3.6.7",
