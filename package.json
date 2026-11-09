@@ -133,19 +133,16 @@
       "minimatch": "^3.1.4"
     },
     "@jest/reporters": {
-      "minimatch": "^9.0.7"
+      "minimatch": "^11.0.1"
     },
     "@prisma/dev": {
       "@hono/node-server": "^1.19.10"
     },
-    "@sentry/bundler-plugin-core": {
-      "glob": "^11.1.0"
-    },
     "@sentry/node": {
-      "minimatch": "^10.2.4"
+      "minimatch": "^11.0.1"
     },
     "@typescript-eslint/typescript-estree": {
-      "minimatch": "^9.0.7"
+      "minimatch": "^11.0.1"
     },
     "eslint": {
       "ajv": "^6.14.0",
@@ -162,16 +159,16 @@
     },
     "flatted": "^3.4.0",
     "jest-config": {
-      "minimatch": "^9.0.7"
+      "minimatch": "^11.0.1"
     },
     "jest-runtime": {
-      "minimatch": "^9.0.7"
+      "minimatch": "^11.0.1"
     },
     "native-run": {
       "yauzl": "^3.2.1"
     },
     "test-exclude": {
-      "minimatch": "^10.2.4"
+      "minimatch": "^11.0.1"
     },
     "gray-matter": {
       "js-yaml": "^3.15.2"
@@ -194,6 +191,7 @@
     },
     "xcode": {
       "uuid": "^11.1.1"
-    }
+    },
+    "glob": "^14.0.2"
   }
 }
