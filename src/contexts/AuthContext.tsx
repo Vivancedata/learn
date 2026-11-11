@@ -90,7 +90,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         const data = await response.json()
-        const nextUser = data.data.user as User
+        // 200 with user: null means no session (logged-out visitor)
+        const nextUser = (data.data.user ?? null) as User | null
         setUser(nextUser)
         syncSentryUser(nextUser)
       } else {

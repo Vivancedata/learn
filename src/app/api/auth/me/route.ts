@@ -14,6 +14,17 @@ import { requireAuth } from '@/lib/auth'
  */
 export async function GET(request: NextRequest) {
   try {
+    // No credentials at all means a logged-out visitor: answer 200 with
+    // user: null so the browser console does not log a 401 on every first
+    // page view. A token or cookie that fails verification still gets 401.
+    const hasCredentials =
+      Boolean(request.headers.get('authorization')?.startsWith('Bearer ')) ||
+      request.cookies.has('auth-token')
+
+    if (!hasCredentials) {
+      return apiSuccess({ user: null }, HTTP_STATUS.OK)
+    }
+
     // Require authentication - will throw if not authenticated
     const session = await requireAuth(request)
 
