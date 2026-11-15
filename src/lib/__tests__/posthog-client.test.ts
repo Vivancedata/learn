@@ -66,4 +66,34 @@ describe('posthog-client', () => {
 
     expect(posthog.capture).not.toHaveBeenCalled()
   })
+
+  it('does not load PostHog when no key is configured', async () => {
+    delete process.env.NEXT_PUBLIC_POSTHOG_KEY
+    const { client, consent } = await freshModules()
+    consent.setAnalyticsConsent('granted')
+
+    expect(await client.loadPostHog()).toBeNull()
+    expect(mockPosthog.init).not.toHaveBeenCalled()
+  })
+
+  it('turns on PostHog debug output only in development', async () => {
+    const { client, consent } = await freshModules()
+    consent.setAnalyticsConsent('granted')
+    await client.loadPostHog()
+    const [, options] = mockPosthog.init.mock.calls[0] as unknown as [
+      string,
+      { loaded: (ph: { debug: jest.Mock }) => void },
+    ]
+    const env = process.env as Record<string, string | undefined>
+    const nodeEnv = env.NODE_ENV
+    const ph = { debug: jest.fn() }
+
+    options.loaded(ph)
+    expect(ph.debug).not.toHaveBeenCalled()
+
+    env.NODE_ENV = 'development'
+    options.loaded(ph)
+    env.NODE_ENV = nodeEnv
+    expect(ph.debug).toHaveBeenCalledTimes(1)
+  })
 })

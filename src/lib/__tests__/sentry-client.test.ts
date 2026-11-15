@@ -66,4 +66,44 @@ describe('sentry-client', () => {
     expect(mockSentry.init).not.toHaveBeenCalled()
     expect(mockSentry.captureException).not.toHaveBeenCalled()
   })
+
+  it('applies context registered after the SDK has started', async () => {
+    const client = await freshClient()
+    await client.loadSentry()
+
+    client.onSentryReady((Sentry) => Sentry.setUser({ id: 'u2' }))
+    await flush()
+
+    expect(mockSentry.setUser).toHaveBeenCalledWith({ id: 'u2' })
+  })
+
+  describe('beforeSend', () => {
+    async function beforeSend() {
+      const client = await freshClient()
+      await client.loadSentry()
+      const [options] = mockSentry.init.mock.calls[0] as unknown as [
+        { beforeSend: (event: Record<string, unknown>, hint: { originalException?: unknown }) => unknown },
+      ]
+      return options.beforeSend
+    }
+
+    it('drops navigation cancellations', async () => {
+      const send = await beforeSend()
+      expect(send({}, { originalException: new Error('AbortError: cancelled') })).toBeNull()
+    })
+
+    it('tags events with the platform and keeps existing app context', async () => {
+      const send = await beforeSend()
+      const event = { contexts: { app: { app_name: 'learn' } } }
+      expect(send(event, { originalException: new Error('boom') })).toEqual({
+        contexts: { app: { app_name: 'learn', platform: 'VivanceData Learning Platform' } },
+      })
+    })
+
+    it('passes events without contexts through unchanged', async () => {
+      const send = await beforeSend()
+      const event = { message: 'hello' }
+      expect(send(event, {})).toBe(event)
+    })
+  })
 })
