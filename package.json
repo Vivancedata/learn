@@ -16,8 +16,8 @@
     "prisma:studio": "prisma studio",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:unit:coverage": "npm test -- --runInBand --coverage --coverageDirectory=coverage/unit --coverageReporters=text-summary --coverageReporters=json-summary --testPathPatterns='src/lib/__tests__|src/types/__tests__' --coverageThreshold='{\"global\":{\"statements\":0,\"branches\":0,\"functions\":0,\"lines\":0}}' && node scripts/check-coverage-threshold.js coverage/unit/coverage-summary.json 85 unit",
-    "test:integration:coverage": "npm test -- --runInBand --coverage --coverageDirectory=coverage/integration --coverageReporters=text-summary --coverageReporters=json-summary --testPathPatterns='src/app/api/__tests__|__tests__/api' --coverageThreshold='{\"global\":{\"statements\":0,\"branches\":0,\"functions\":0,\"lines\":0}}' && node scripts/check-coverage-threshold.js coverage/integration/coverage-summary.json 85 integration /src/app/api/",
+    "test:unit:coverage": "mkdir -p reports && npm test -- --runInBand --coverage --coverageDirectory=coverage/unit --coverageReporters=text-summary --coverageReporters=json-summary --json --outputFile=reports/unit.json --testPathPatterns='src/lib/__tests__|src/types/__tests__' --coverageThreshold='{\"global\":{\"statements\":0,\"branches\":0,\"functions\":0,\"lines\":0}}' && node scripts/check-coverage-threshold.js coverage/unit/coverage-summary.json 85 unit",
+    "test:integration:coverage": "mkdir -p reports && npm test -- --runInBand --coverage --coverageDirectory=coverage/integration --coverageReporters=text-summary --coverageReporters=json-summary --json --outputFile=reports/integration.json --testPathPatterns='src/app/api/__tests__|__tests__/api' --coverageThreshold='{\"global\":{\"statements\":0,\"branches\":0,\"functions\":0,\"lines\":0}}' && node scripts/check-coverage-threshold.js coverage/integration/coverage-summary.json 85 integration /src/app/api/",
     "react-doctor:score": "npx -y react-doctor@latest . --score",
     "react-doctor:ci": "node scripts/check-react-doctor-score.mjs",
     "lighthouse:ci": "node scripts/check-lighthouse-score.mjs http://127.0.0.1:3000 /pricing /sign-in",
@@ -43,7 +43,14 @@
     "mobile:android": "npm run build:mobile && npm run cap:sync:android && npm run cap:open:android",
     "mobile:dev:ios": "npx cap run ios --livereload --external",
     "mobile:dev:android": "npx cap run android --livereload --external",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "verify": "npm run verify:lint && npm run verify:typecheck && npm run verify:unit && npm run verify:integration && npm run verify:build",
+    "verify:lint": "npm run lint",
+    "verify:typecheck": "npm run type-check",
+    "verify:unit": "npm run test:unit:coverage && node scripts/verify-summary.mjs unit reports/unit.json",
+    "verify:integration": "npm run test:integration:coverage && node scripts/verify-summary.mjs integration reports/integration.json",
+    "verify:build": "npm run build",
+    "verify:ui": "playwright test && node scripts/verify-summary.mjs ui reports/ui.json"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",
@@ -92,6 +99,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
+    "@playwright/test": "1.64.1",
     "@tailwindcss/postcss": "^4.3.5",
     "@tailwindcss/typography": "^0.5.20",
     "@testing-library/jest-dom": "^7.0.1",

@@ -47,6 +47,17 @@ npx prisma generate           # Regenerate Prisma Client
 npx prisma migrate deploy     # Apply migrations (production)
 ```
 
+## Checks
+
+Run `npm run verify` before opening a PR. It runs exactly what the required CI
+jobs run (`verify:lint`, `verify:typecheck`, `verify:unit`, `verify:integration`,
+`verify:build`); CI calls the same stages. `npm run verify:ui` (after a build)
+takes the Playwright screenshots + trace CI uploads as the `ui-evidence` artifact.
+
+Each test stage prints a `VERIFY stage=... tests=... passed=... failed=... skipped=...`
+line (from `scripts/verify-summary.mjs`). Paste those lines into the PR body
+under "Evidence".
+
 ## Critical Architecture Patterns
 
 ### 1. Two-Layer Security Model
