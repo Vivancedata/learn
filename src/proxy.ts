@@ -150,11 +150,13 @@ export async function proxy(request: NextRequest) {
       return addSecurityHeaders(response)
     }
 
-    const rateLimitResult = await safeRateLimitCheck(
-      `auth:${clientIp}`,
-      RATE_LIMITS.AUTH.limit,
-      RATE_LIMITS.AUTH.windowMs
-    )
+    // /me is the session check every page load makes; it takes no credentials,
+    // so it draws on the general API budget, not the brute-force one that
+    // guards sign-in.
+    const isSessionCheck = pathname === '/api/auth/me'
+    const rateLimitResult = isSessionCheck
+      ? await safeRateLimitCheck(`api:${clientIp}`, RATE_LIMITS.API.limit, RATE_LIMITS.API.windowMs)
+      : await safeRateLimitCheck(`auth:${clientIp}`, RATE_LIMITS.AUTH.limit, RATE_LIMITS.AUTH.windowMs)
 
     const rateLimitHeaders = getRateLimitHeaders(rateLimitResult)
 

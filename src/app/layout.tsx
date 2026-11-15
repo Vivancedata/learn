@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next"
-import { Suspense } from "react"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { Navbar } from "@/components/ui/navbar"
@@ -87,34 +86,32 @@ export default function RootLayout({
           Skip to Main Content
         </a>
         <ErrorBoundary>
-          <Suspense fallback={null}>
-            <PostHogProvider>
-              <AuthProvider>
-                <SubscriptionProvider>
-                  <ThemeProvider
-                    attribute="class"
-                    defaultTheme="system"
-                    enableSystem
-                    disableTransitionOnChange
+          <PostHogProvider>
+            <AuthProvider>
+              <SubscriptionProvider>
+                <ThemeProvider
+                  attribute="class"
+                  defaultTheme="system"
+                  enableSystem
+                  disableTransitionOnChange
+                >
+                  <ServiceWorkerRegistration />
+                  <MobileProvider
+                    showBottomNav={true}
+                    showOfflineIndicator={true}
+                    showInstallPrompt={true}
+                    installPromptMinVisits={2}
                   >
-                    <ServiceWorkerRegistration />
-                    <MobileProvider
-                      showBottomNav={true}
-                      showOfflineIndicator={true}
-                      showInstallPrompt={true}
-                      installPromptMinVisits={2}
-                    >
-                      <Navbar />
-                      <main id="main-content" tabIndex={-1} className="container mx-auto py-8 px-4 focus:outline-hidden">
-                        {children}
-                      </main>
-                      <SiteFooter />
-                    </MobileProvider>
-                  </ThemeProvider>
-                </SubscriptionProvider>
-              </AuthProvider>
-            </PostHogProvider>
-          </Suspense>
+                    <Navbar />
+                    <main id="main-content" tabIndex={-1} className="container mx-auto py-8 px-4 focus:outline-hidden">
+                      {children}
+                    </main>
+                    <SiteFooter />
+                  </MobileProvider>
+                </ThemeProvider>
+              </SubscriptionProvider>
+            </AuthProvider>
+          </PostHogProvider>
         </ErrorBoundary>
       </body>
     </html>
