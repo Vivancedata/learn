@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import * as Sentry from '@sentry/nextjs'
+import { withSentry } from '@/lib/sentry-client'
 
 interface GlobalErrorPageProps {
   error: Error & { digest?: string }
@@ -16,7 +16,7 @@ interface GlobalErrorPageProps {
 export default function GlobalErrorPage({ error, reset }: GlobalErrorPageProps) {
   useEffect(() => {
     // Report critical error to Sentry
-    Sentry.captureException(error, {
+    withSentry((Sentry) => Sentry.captureException(error, {
       contexts: {
         error: {
           digest: error.digest,
@@ -29,7 +29,7 @@ export default function GlobalErrorPage({ error, reset }: GlobalErrorPageProps) 
         critical: 'true',
       },
       level: 'fatal',
-    })
+    }))
   }, [error])
 
   return (

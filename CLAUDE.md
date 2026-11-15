@@ -68,7 +68,7 @@ under "Evidence".
 - All `/api/*` routes (except `/api/auth/*`) require JWT authentication
 - JWT validated from HTTP-only cookie OR `Authorization: Bearer <token>` header
 - User info extracted and injected into request headers: `x-user-id`, `x-user-email`, `x-user-name`
-- Rate limiting enforced: 5 req/15min for auth endpoints, 100 req/15min for API
+- Rate limiting enforced: 5 req/15min for auth endpoints (the `/api/auth/me` session check uses the API budget), 100 req/15min for API
 
 **Layer 2: Route Authorization** (`src/lib/authorization.ts`)
 - Individual routes use `requireOwnership(request, userId, resourceName)`

@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import * as Sentry from '@sentry/nextjs'
+import { withSentry } from '@/lib/sentry-client'
 import { AlertCircle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ErrorBoundary from './ErrorBoundary'
@@ -99,37 +99,41 @@ class ApiErrorBoundaryClass extends React.Component<ApiErrorBoundaryProps, ApiEr
                             error.message.includes('network') ||
                             error.message.includes('request')
 
+          this.setState({ error })
+
           // Report to Sentry with API-specific context
-          const eventId = Sentry.captureException(error, {
-            contexts: {
-              react: {
-                componentStack: errorInfo.componentStack,
+          withSentry((Sentry) => {
+            const eventId = Sentry.captureException(error, {
+              contexts: {
+                react: {
+                  componentStack: errorInfo.componentStack,
+                },
+                api: {
+                  context: this.props.context || 'unknown',
+                  isNetworkError: error.message.includes('fetch') || error.message.includes('network'),
+                },
               },
-              api: {
+              tags: {
+                errorBoundary: 'ApiErrorBoundary',
+                errorType: isApiError ? 'api' : 'runtime',
                 context: this.props.context || 'unknown',
-                isNetworkError: error.message.includes('fetch') || error.message.includes('network'),
               },
-            },
-            tags: {
-              errorBoundary: 'ApiErrorBoundary',
-              errorType: isApiError ? 'api' : 'runtime',
-              context: this.props.context || 'unknown',
-            },
-            level: isApiError ? 'warning' : 'error',
-          })
+              level: isApiError ? 'warning' : 'error',
+            })
 
-          // Store the event ID and error for display
-          this.setState({ eventId, error })
+            // Store the event ID for display
+            this.setState({ eventId })
 
-          // Add breadcrumb for debugging
-          Sentry.addBreadcrumb({
-            category: 'api',
-            message: `API Error caught in ${this.props.context || 'ApiErrorBoundary'}`,
-            level: 'error',
-            data: {
-              errorMessage: error.message,
-              componentStack: errorInfo.componentStack?.substring(0, 500),
-            },
+            // Add breadcrumb for debugging
+            Sentry.addBreadcrumb({
+              category: 'api',
+              message: `API Error caught in ${this.props.context || 'ApiErrorBoundary'}`,
+              level: 'error',
+              data: {
+                errorMessage: error.message,
+                componentStack: errorInfo.componentStack?.substring(0, 500),
+              },
+            })
           })
         }}
       >
