@@ -1,4 +1,5 @@
 import type { PostHog } from 'posthog-js'
+import { getAnalyticsConsent } from './analytics-consent'
 
 /**
  * posthog-js is ~120 KB gzipped and does nothing until the visitor allows
@@ -19,6 +20,11 @@ export function loadPostHog(): Promise<PostHog | null> {
   }
 
   loading ??= import('posthog-js').then(({ default: posthog }) => {
+    // Consent can be withdrawn while the library downloads; never init then.
+    if (getAnalyticsConsent() !== 'granted') {
+      loading = null
+      return null
+    }
     if (!posthog.__loaded) {
       posthog.init(apiKey, {
         api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',

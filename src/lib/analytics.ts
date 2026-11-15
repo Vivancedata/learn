@@ -21,6 +21,7 @@
  */
 
 import type { PostHog } from 'posthog-js'
+import { getAnalyticsConsent } from './analytics-consent'
 import { getPostHog } from './posthog-client'
 
 // ============================================================================
@@ -252,6 +253,7 @@ class Analytics {
    */
   private client(): PostHog | null {
     if (typeof window === 'undefined' || !process.env.NEXT_PUBLIC_POSTHOG_KEY) return null
+    if (getAnalyticsConsent() !== 'granted') return null
     const posthog = getPostHog()
     return posthog?.__loaded ? posthog : null
   }

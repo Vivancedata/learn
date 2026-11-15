@@ -148,7 +148,13 @@ export function PostHogProvider({ children }: PostHogProviderProps) {
     if (consent === 'granted') {
       let cancelled = false
       void loadPostHog().then((posthog) => {
-        if (cancelled || !posthog) return
+        if (!posthog) return
+        if (getAnalyticsConsent() !== 'granted') {
+          posthog.opt_out_capturing()
+          posthog.reset()
+          return
+        }
+        if (cancelled) return
         if (posthog.has_opted_out_capturing()) posthog.opt_in_capturing()
         setClient(posthog)
       })
