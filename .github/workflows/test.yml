@@ -263,10 +263,11 @@ jobs:
           for s in $EXPECTED_STAGES; do
             f="verify-stages/$s.json"
             [ -f "$f" ] || { echo "::error::missing VERIFY stage '$s'"; exit 1; }
-            jq -e --arg s "$s" '.stage == $s and ([.tests, .passed, .failed, .skipped] | all(type == "number" and . == floor and . >= 0))' "$f" > /dev/null \
+            jq -e --arg s "$s" '.stage == $s and ([.tests, .passed, .failed, .skipped] | all(type == "number" and . == floor and . >= 0))
+              and (.passed_ids | type == "array" and all(type == "string"))' "$f" > /dev/null \
               || { echo "::error::unparseable VERIFY stage '$s'"; cat "$f"; exit 1; }
           done
-          jq -n --arg repo "$REPO" --arg commit "$COMMIT" '{schema: 1, repo: $repo, commit: $commit, stages: [inputs]}' \
+          jq -n --arg repo "$REPO" --arg commit "$COMMIT" '{schema: 1, repo: $repo, commit: $commit, stages: [inputs | .passed_ids |= (unique | sort)]}' \
             $(for s in $EXPECTED_STAGES; do echo "verify-stages/$s.json"; done) > verify-report.json
           cat verify-report.json
 
