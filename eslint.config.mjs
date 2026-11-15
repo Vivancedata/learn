@@ -25,6 +25,24 @@ const eslintConfig = [
       "react-hooks/purity": "off",
     },
   },
+  {
+    files: ["src/app/**/*.tsx", "src/components/**/*.tsx", "src/contexts/**/*.tsx", "src/hooks/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@sentry/nextjs",
+              allowTypeImports: true,
+              message:
+                "Use withSentry/onSentryReady from '@/lib/sentry-client': a value import puts the Sentry SDK in every page's first load.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;

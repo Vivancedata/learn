@@ -13,7 +13,7 @@ const CONTACT = 'support@vivancedata.com'
 /**
  * Written from what the code does, not from a template. When a data flow
  * changes (a new processor, a new analytics setting, Sentry sample rates in
- * sentry.client.config.ts, PostHog options in posthog-provider.tsx), update
+ * src/lib/sentry-client.ts, PostHog options in posthog-provider.tsx), update
  * this page in the same pull request.
  */
 export default function PrivacyPage() {
