@@ -3,7 +3,9 @@
 // Reads a machine-readable test report (vitest/jest --json, playwright json, or JUnit XML)
 // and prints ONE line: VERIFY stage=<name> tests=<total> passed=<n> failed=<n> skipped=<n>
 // The line is also appended to $GITHUB_STEP_SUMMARY when set. Exits 1 if counts can't be parsed.
-import { appendFileSync, readFileSync } from 'node:fs'
+// When $VERIFY_STAGE_DIR is set, the counts are also written to $VERIFY_STAGE_DIR/<stage>.json
+// for the verify-report artifact.
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 
 export function parseCounts(text) {
   const trimmed = text.trim()
@@ -50,4 +52,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const line = `VERIFY stage=${stage} tests=${c.tests} passed=${c.passed} failed=${c.failed} skipped=${c.skipped}`
   console.log(line)
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${line}\n`)
+  const dir = process.env.VERIFY_STAGE_DIR
+  if (dir) {
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(`${dir}/${stage}.json`, `${JSON.stringify({ stage, ...c })}\n`)
+  }
 }
