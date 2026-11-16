@@ -16,8 +16,8 @@
     "prisma:studio": "prisma studio",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:unit:coverage": "npm test -- --runInBand --coverage --coverageDirectory=coverage/unit --coverageReporters=text-summary --coverageReporters=json-summary --testPathPatterns='src/lib/__tests__|src/types/__tests__' --coverageThreshold='{\"global\":{\"statements\":0,\"branches\":0,\"functions\":0,\"lines\":0}}' && node scripts/check-coverage-threshold.js coverage/unit/coverage-summary.json 85 unit",
-    "test:integration:coverage": "npm test -- --runInBand --coverage --coverageDirectory=coverage/integration --coverageReporters=text-summary --coverageReporters=json-summary --testPathPatterns='src/app/api/__tests__|__tests__/api' --coverageThreshold='{\"global\":{\"statements\":0,\"branches\":0,\"functions\":0,\"lines\":0}}' && node scripts/check-coverage-threshold.js coverage/integration/coverage-summary.json 85 integration /src/app/api/",
+    "test:unit:coverage": "mkdir -p reports && npm test -- --runInBand --coverage --coverageDirectory=coverage/unit --coverageReporters=text-summary --coverageReporters=json-summary --json --outputFile=reports/unit.json --testPathPatterns='src/lib/__tests__|src/types/__tests__' --coverageThreshold='{\"global\":{\"statements\":0,\"branches\":0,\"functions\":0,\"lines\":0}}' && node scripts/check-coverage-threshold.js coverage/unit/coverage-summary.json 85 unit",
+    "test:integration:coverage": "mkdir -p reports && npm test -- --runInBand --coverage --coverageDirectory=coverage/integration --coverageReporters=text-summary --coverageReporters=json-summary --json --outputFile=reports/integration.json --testPathPatterns='src/app/api/__tests__|__tests__/api' --coverageThreshold='{\"global\":{\"statements\":0,\"branches\":0,\"functions\":0,\"lines\":0}}' && node scripts/check-coverage-threshold.js coverage/integration/coverage-summary.json 85 integration /src/app/api/",
     "react-doctor:score": "npx -y react-doctor@latest . --score",
     "react-doctor:ci": "node scripts/check-react-doctor-score.mjs",
     "lighthouse:ci": "node scripts/check-lighthouse-score.mjs http://127.0.0.1:3000 /pricing /sign-in",
@@ -43,16 +43,23 @@
     "mobile:android": "npm run build:mobile && npm run cap:sync:android && npm run cap:open:android",
     "mobile:dev:ios": "npx cap run ios --livereload --external",
     "mobile:dev:android": "npx cap run android --livereload --external",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "verify": "npm run verify:lint && npm run verify:typecheck && npm run verify:unit && npm run verify:integration && npm run verify:build",
+    "verify:lint": "npm run lint",
+    "verify:typecheck": "npm run type-check",
+    "verify:unit": "npm run test:unit:coverage && node scripts/verify-summary.mjs unit reports/unit.json",
+    "verify:integration": "npm run test:integration:coverage && node scripts/verify-summary.mjs integration reports/integration.json",
+    "verify:build": "npm run build",
+    "verify:ui": "playwright test && node scripts/verify-summary.mjs ui reports/ui.json"
   },
   "dependencies": {
-    "@capacitor/android": "^8.5.3",
+    "@capacitor/android": "^8.6.0",
     "@capacitor/app": "^8.1.2",
     "@capacitor/browser": "^8.0.5",
-    "@capacitor/cli": "^8.5.3",
+    "@capacitor/cli": "^8.6.0",
     "@capacitor/core": "^8.5.3",
     "@capacitor/haptics": "^8.0.2",
-    "@capacitor/ios": "^8.5.3",
+    "@capacitor/ios": "^8.6.0",
     "@capacitor/keyboard": "^8.0.6",
     "@capacitor/push-notifications": "^8.1.3",
     "@capacitor/splash-screen": "^8.0.2",
@@ -64,27 +71,27 @@
     "@radix-ui/react-label": "^2.1.17",
     "@radix-ui/react-scroll-area": "^1.4.0",
     "@radix-ui/react-slot": "^1.4.0",
-    "@sentry/nextjs": "^11.8.0",
-    "@stripe/stripe-js": "^10.1.0",
+    "@sentry/nextjs": "^11.11.0",
+    "@stripe/stripe-js": "^10.2.1",
     "@upstash/ratelimit": "^2.2.0",
-    "@upstash/redis": "^1.39.0",
+    "@upstash/redis": "^1.41.0",
     "@vivancedata/ui": "https://github.com/Vivancedata/ui/archive/refs/tags/v0.4.0.tar.gz",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "gray-matter": "^4.0.3",
-    "jose": "^6.2.12",
-    "lucide-react": "^1.59.0",
-    "next": "^16.4.2",
+    "jose": "^6.2.16",
+    "lucide-react": "^1.70.0",
+    "next": "^16.4.5",
     "next-themes": "^0.4.4",
     "pg": "^8.23.1",
-    "posthog-js": "^1.438.12",
-    "posthog-node": "^5.56.2",
+    "posthog-js": "^1.447.3",
+    "posthog-node": "^5.63.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-markdown": "^10.0.0",
     "remark-gfm": "^4.0.1",
-    "resend": "^6.34.1",
-    "stripe": "22.6.2",
+    "resend": "^6.37.0",
+    "stripe": "23.1.0",
     "swr": "^2.5.1",
     "tailwindcss-animate": "^1.0.7",
     "web-push": "^3.6.7",
@@ -92,26 +99,28 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
+    "@playwright/test": "1.64.1",
+    "@tailwindcss/postcss": "^4.3.5",
     "@tailwindcss/typography": "^0.5.20",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@types/bcryptjs": "^3.0.0",
     "@types/jest": "^30.0.0",
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/web-push": "^3.6.4",
-    "eslint": "^10.13.0",
-    "eslint-config-next": "^16.4.2",
+    "eslint": "^10.14.0",
+    "eslint-config-next": "^16.4.5",
     "jest": "^30.5.2",
     "jest-environment-jsdom": "^30.5.2",
-    "markdownlint-cli2": "^0.21.0",
+    "markdownlint-cli2": "^0.24.0",
     "postcss": "^8.5.23",
     "prisma": "^7.10.1",
-    "tailwindcss": "^3.4.1",
+    "tailwindcss": "^4.3.3",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "ts-node": {
     "compilerOptions": {
@@ -132,19 +141,16 @@
       "minimatch": "^3.1.4"
     },
     "@jest/reporters": {
-      "minimatch": "^9.0.7"
+      "minimatch": "^11.0.1"
     },
     "@prisma/dev": {
       "@hono/node-server": "^1.19.10"
     },
-    "@sentry/bundler-plugin-core": {
-      "glob": "^11.1.0"
-    },
     "@sentry/node": {
-      "minimatch": "^10.2.4"
+      "minimatch": "^11.0.1"
     },
     "@typescript-eslint/typescript-estree": {
-      "minimatch": "^9.0.7"
+      "minimatch": "^11.0.1"
     },
     "eslint": {
       "ajv": "^6.14.0",
@@ -161,16 +167,16 @@
     },
     "flatted": "^3.4.0",
     "jest-config": {
-      "minimatch": "^9.0.7"
+      "minimatch": "^11.0.1"
     },
     "jest-runtime": {
-      "minimatch": "^9.0.7"
+      "minimatch": "^11.0.1"
     },
     "native-run": {
       "yauzl": "^3.2.1"
     },
     "test-exclude": {
-      "minimatch": "^10.2.4"
+      "minimatch": "^11.0.1"
     },
     "gray-matter": {
       "js-yaml": "^3.15.2"
@@ -193,6 +199,10 @@
     },
     "xcode": {
       "uuid": "^11.1.1"
+    },
+    "glob": "^14.0.2",
+    "markdownlint": {
+      "re2js": "~2.8.7"
     }
   }
 }

@@ -61,7 +61,7 @@ export function HelperBadge({
     return (
       <Badge
         className={cn(
-          'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 gap-1',
+          'bg-linear-to-r from-amber-500 to-orange-500 text-white border-0 gap-1',
           size === 'sm' ? 'text-xs px-2 py-0' : '',
           className
         )}
@@ -78,7 +78,7 @@ export function HelperBadge({
   return (
     <Badge
       className={cn(
-        'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 gap-1',
+        'bg-linear-to-r from-blue-500 to-purple-500 text-white border-0 gap-1',
         size === 'sm' ? 'text-xs px-2 py-0' : '',
         className
       )}

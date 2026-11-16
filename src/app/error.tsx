@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import * as Sentry from '@sentry/nextjs'
+import { withSentry } from '@/lib/sentry-client'
 import { AlertTriangle, RefreshCw, Home, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -17,29 +17,31 @@ interface ErrorPageProps {
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
   useEffect(() => {
     // Report error to Sentry
-    const eventId = Sentry.captureException(error, {
-      contexts: {
-        error: {
-          digest: error.digest,
-          name: error.name,
+    withSentry((Sentry) => {
+      const eventId = Sentry.captureException(error, {
+        contexts: {
+          error: {
+            digest: error.digest,
+            name: error.name,
+          },
         },
-      },
-      tags: {
-        errorBoundary: 'app-error',
-        hasDigest: String(!!error.digest),
-      },
-    })
+        tags: {
+          errorBoundary: 'app-error',
+          hasDigest: String(!!error.digest),
+        },
+      })
 
-    // Store event ID for feedback dialog
-    if (typeof window !== 'undefined') {
-      (window as unknown as { __sentryEventId?: string }).__sentryEventId = eventId
-    }
+      // Store event ID for feedback dialog
+      if (typeof window !== 'undefined') {
+        (window as unknown as { __sentryEventId?: string }).__sentryEventId = eventId
+      }
+    })
   }, [error])
 
   const handleReportFeedback = () => {
     const eventId = (window as unknown as { __sentryEventId?: string }).__sentryEventId
     if (eventId) {
-      Sentry.showReportDialog({
+      withSentry((Sentry) => Sentry.showReportDialog({
         eventId,
         title: 'Something went wrong',
         subtitle: 'Our team has been notified.',
@@ -50,7 +52,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
         labelClose: 'Close',
         labelSubmit: 'Submit Feedback',
         successMessage: 'Thank you for your feedback!',
-      })
+      }))
     }
   }
 
@@ -92,7 +94,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
             <p className="font-semibold text-red-800 dark:text-red-300 mb-2">
               Development Error Details:
             </p>
-            <p className="font-mono text-sm text-red-700 dark:text-red-400 break-words">
+            <p className="font-mono text-sm text-red-700 dark:text-red-400 wrap-break-word">
               {error.message}
             </p>
             {error.stack && (

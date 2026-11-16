@@ -34,13 +34,13 @@ function FreePlanCard() {
         <ul className="mb-6 space-y-3">
           {SUBSCRIPTION_PLANS.FREE.features.map((feature) => (
             <li key={feature} className="flex items-start gap-2">
-              <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
+              <Check className="mt-0.5 h-5 w-5 shrink-0 text-success" />
               <span>{feature}</span>
             </li>
           ))}
           {SUBSCRIPTION_PLANS.FREE.limitations.map((limitation) => (
             <li key={limitation} className="flex items-start gap-2 text-muted-foreground">
-              <X className="mt-0.5 h-5 w-5 flex-shrink-0" />
+              <X className="mt-0.5 h-5 w-5 shrink-0" />
               <span>{limitation}</span>
             </li>
           ))}
@@ -212,7 +212,7 @@ export default function PricingPageClient({ proEnabled }: { proEnabled: boolean 
             <ul className="mb-6 space-y-3">
               {currentPlan.features.map((feature) => (
                 <li key={feature} className="flex items-start gap-2">
-                  <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-success" />
+                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-success" />
                   <span>{feature}</span>
                 </li>
               ))}

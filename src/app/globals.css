@@ -1,4 +1,71 @@
-/* Shared design tokens and global utilities are imported from @vivancedata/ui/styles. */
+@import "tailwindcss";
+
+/*
+ * Shared design tokens, base styles and global utilities. Imported here,
+ * inside the Tailwind root, rather than from layout.tsx: Tailwind v4 compiles
+ * each stylesheet on its own, so the design system's `@apply` rules and its
+ * `@layer` blocks only resolve when they sit in the same compilation.
+ */
+@import "@vivancedata/ui/styles";
+
+/*
+ * The design system still ships its theme as a JavaScript preset (tokens,
+ * darkMode, container, tailwindcss-animate and typography plugins). Load it
+ * through the v4 compatibility layer until @vivancedata/ui ships a CSS theme.
+ */
+@config "@vivancedata/ui/tailwind";
+
+/*
+ * v4 skips node_modules when detecting class names, so scan the design
+ * system's components explicitly, or utilities used only inside
+ * @vivancedata/ui get left out of the build.
+ */
+@source "../../node_modules/@vivancedata/ui/src";
+
+/*
+ * The preset's named spacing steps (xs, sm, md ... 4xl) share names with the
+ * max-width scale. v4 resolves max-w-* against --spacing-* before
+ * --container-*, which would turn max-w-md into 16px. Pin the v3 max-width
+ * values so max-w-xs ... max-w-4xl keep meaning what they did.
+ */
+@theme {
+  --max-width-xs: 20rem;
+  --max-width-sm: 24rem;
+  --max-width-md: 28rem;
+  --max-width-lg: 32rem;
+  --max-width-xl: 36rem;
+  --max-width-2xl: 42rem;
+  --max-width-3xl: 48rem;
+  --max-width-4xl: 56rem;
+}
+
+/*
+ * v3 compatibility for Preflight changes in v4, so the upgrade does not
+ * change how anything looks or behaves:
+ *
+ * - Pseudo-elements defaulted to gray-200 borders in v3 (`*` itself gets
+ *   `--border` from the design system's base layer). v4 uses currentcolor.
+ * - Placeholders were gray-400 in v3; v4 uses the text color at 50%.
+ * - Buttons had a pointer cursor in v3; v4 uses the browser default.
+ */
+@layer base {
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
 
 /*
  * App-level interaction defaults (Vercel Web Interface Guidelines).
@@ -10,29 +77,34 @@
  *   controls without disabling pinch zoom.
  * - The tap highlight is set on purpose: a faint tint, so a tap still shows.
  * - Headings balance their lines so a two-line heading keeps no widow.
+ *
+ * Kept in the base layer: v4 emits real cascade layers, and unlayered rules
+ * would otherwise beat utilities (a `text-pretty` on a heading, say).
  */
-html {
-  scroll-padding-top: 5rem;
-  -webkit-tap-highlight-color: hsl(var(--foreground) / 0.08);
-}
+@layer base {
+  html {
+    scroll-padding-top: 5rem;
+    -webkit-tap-highlight-color: hsl(var(--foreground) / 0.08);
+  }
 
-a,
-button,
-input,
-label,
-select,
-summary,
-textarea,
-[role="button"],
-[role="tab"] {
-  touch-action: manipulation;
-}
+  a,
+  button,
+  input,
+  label,
+  select,
+  summary,
+  textarea,
+  [role="button"],
+  [role="tab"] {
+    touch-action: manipulation;
+  }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  text-wrap: balance;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    text-wrap: balance;
+  }
 }

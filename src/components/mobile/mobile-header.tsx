@@ -148,7 +148,7 @@ export function MobileHeader({
         transparentOnTop && !scrolled
           ? 'bg-transparent'
           : 'bg-background/80 backdrop-blur-xl border-b border-border/50',
-        scrolled && 'shadow-sm',
+        scrolled && 'shadow-xs',
         className
       )}
       role="banner"

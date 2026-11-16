@@ -30,6 +30,9 @@ venv/
 # testing
 /coverage
 /.playwright-cli/
+/reports/
+/test-results/
+/playwright-report/
 /.cache/
 
 # next.js

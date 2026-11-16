@@ -123,7 +123,7 @@ function CheckoutSuccessContent() {
           <ul className="space-y-3">
             {PRO_FEATURES.map((feature) => (
               <li key={feature} className="flex items-start gap-2">
-                <CheckCircle2 className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />
+                <CheckCircle2 className="h-5 w-5 text-success shrink-0 mt-0.5" />
                 <span>{feature}</span>
               </li>
             ))}

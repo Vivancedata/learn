@@ -170,7 +170,7 @@ export function CodeEditor({
         {/* Line Numbers */}
         {showLineNumbers && (
           <div
-            className="flex-shrink-0 select-none bg-[#181825] text-[#9399b2] text-right py-3 px-2 border-r border-[#313244] overflow-hidden"
+            className="shrink-0 select-none bg-[#181825] text-[#9399b2] text-right py-3 px-2 border-r border-[#313244] overflow-hidden"
             style={{ fontSize }}
             aria-hidden="true"
           >
@@ -187,7 +187,7 @@ export function CodeEditor({
           {/* Highlighted Code Overlay */}
           <pre
             ref={highlightRef}
-            className="absolute inset-0 m-0 py-3 px-4 overflow-auto pointer-events-none whitespace-pre-wrap break-words"
+            className="absolute inset-0 m-0 py-3 px-4 overflow-auto pointer-events-none whitespace-pre-wrap wrap-break-word"
             style={{
               fontSize,
               lineHeight: '1.5rem',
@@ -218,8 +218,8 @@ export function CodeEditor({
             className={cn(
               'absolute inset-0 w-full h-full m-0 py-3 px-4',
               'bg-transparent text-transparent caret-[#f5e0dc]',
-              'resize-none outline-none border-none',
-              'overflow-auto whitespace-pre-wrap break-words',
+              'resize-none outline-hidden border-none',
+              'overflow-auto whitespace-pre-wrap wrap-break-word',
               readOnly && 'cursor-default'
             )}
             style={{

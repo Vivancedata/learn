@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
-import * as Sentry from '@sentry/nextjs'
+import type { Breadcrumb } from '@sentry/nextjs'
+import { onSentryReady } from '@/lib/sentry-client'
 import { analytics } from '@/lib/analytics'
 
 const DEFERRED_AUTH_PATHS = [
@@ -47,17 +48,17 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-function syncSentryUser(user: User | null) {
-  if (user) {
-    Sentry.setUser({
-      id: user.id,
-      email: user.email,
-      username: user.name || user.email,
-    })
-    return
-  }
+function addSentryBreadcrumb(breadcrumb: Breadcrumb) {
+  const timestamp = Date.now() / 1000
+  onSentryReady((Sentry) => Sentry.addBreadcrumb({ timestamp, ...breadcrumb }))
+}
 
-  Sentry.setUser(null)
+function syncSentryUser(user: User | null) {
+  onSentryReady((Sentry) => {
+    Sentry.setUser(
+      user ? { id: user.id, email: user.email, username: user.name || user.email } : null
+    )
+  })
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -90,7 +91,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         const data = await response.json()
-        const nextUser = data.data.user as User
+        // 200 with user: null means no session (logged-out visitor)
+        const nextUser = (data.data.user ?? null) as User | null
         setUser(nextUser)
         syncSentryUser(nextUser)
       } else {
@@ -142,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSessionResolved(true)
       syncSentryUser(loggedInUser)
 
-      Sentry.addBreadcrumb({
+      addSentryBreadcrumb({
         category: 'auth',
         message: 'User authenticated',
         level: 'info',
@@ -163,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(message)
 
       // Track authentication failures in Sentry
-      Sentry.addBreadcrumb({
+      addSentryBreadcrumb({
         category: 'auth',
         message: 'Login failed',
         level: 'warning',
@@ -209,7 +211,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSessionResolved(true)
       syncSentryUser(newUser)
 
-      Sentry.addBreadcrumb({
+      addSentryBreadcrumb({
         category: 'auth',
         message: 'User authenticated',
         level: 'info',
@@ -233,7 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(message)
 
       // Track signup failures in Sentry
-      Sentry.addBreadcrumb({
+      addSentryBreadcrumb({
         category: 'auth',
         message: 'Signup failed',
         level: 'warning',
@@ -262,7 +264,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       // Add breadcrumb for logout
-      Sentry.addBreadcrumb({
+      addSentryBreadcrumb({
         category: 'auth',
         message: 'User logged out',
         level: 'info',
@@ -279,7 +281,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError('Logout failed')
 
       // Track logout failures in Sentry
-      Sentry.addBreadcrumb({
+      addSentryBreadcrumb({
         category: 'auth',
         message: 'Logout failed',
         level: 'warning',

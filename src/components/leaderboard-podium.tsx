@@ -119,7 +119,7 @@ function PodiumPlace({
       <div className="relative">
         <div
           className={cn(
-            'w-16 h-16 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold',
+            'w-16 h-16 rounded-full bg-linear-to-br flex items-center justify-center text-white font-bold',
             'ring-4 shadow-lg transition-transform hover:scale-105',
             colors[position],
             borderColors[position],
@@ -162,7 +162,7 @@ function PodiumPlace({
       {/* Podium */}
       <div
         className={cn(
-          'mt-4 w-20 rounded-t-lg bg-gradient-to-b flex items-center justify-center shadow-lg',
+          'mt-4 w-20 rounded-t-lg bg-linear-to-b flex items-center justify-center shadow-lg',
           heights[position],
           colors[position]
         )}

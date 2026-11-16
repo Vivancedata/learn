@@ -192,7 +192,7 @@ export function StreakCalendar({
               className={cn(
                 'relative aspect-square rounded-lg border transition-colors duration-200',
                 'flex items-center justify-center cursor-default',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+                'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand/50',
                 dayClassName
               )}
               role="listitem"

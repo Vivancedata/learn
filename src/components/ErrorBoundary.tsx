@@ -1,7 +1,7 @@
 'use client'
 
 import React, { Component, ErrorInfo, ReactNode } from 'react'
-import * as Sentry from '@sentry/nextjs'
+import { withSentry } from '@/lib/sentry-client'
 import { AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -47,20 +47,22 @@ class ErrorBoundary extends Component<Props, State> {
     }
 
     // Report to Sentry with React-specific context
-    const eventId = Sentry.captureException(error, {
-      contexts: {
-        react: {
-          componentStack: errorInfo.componentStack,
+    withSentry((Sentry) => {
+      const eventId = Sentry.captureException(error, {
+        contexts: {
+          react: {
+            componentStack: errorInfo.componentStack,
+          },
         },
-      },
-      tags: {
-        errorBoundary: 'ErrorBoundary',
-        component: 'global',
-      },
-    })
+        tags: {
+          errorBoundary: 'ErrorBoundary',
+          component: 'global',
+        },
+      })
 
-    // Store the event ID for user feedback
-    this.setState({ eventId })
+      // Store the event ID for user feedback
+      this.setState({ eventId })
+    })
 
     // Call custom error handler if provided
     if (this.props.onError) {
@@ -77,10 +79,11 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   handleReportFeedback = () => {
-    if (this.state.eventId) {
+    const { eventId } = this.state
+    if (eventId) {
       // Open Sentry feedback dialog
-      Sentry.showReportDialog({
-        eventId: this.state.eventId,
+      withSentry((Sentry) => Sentry.showReportDialog({
+        eventId,
         title: 'It looks like we had an error.',
         subtitle: 'Our team has been notified.',
         subtitle2: 'If you would like to help, tell us what happened below.',
@@ -90,7 +93,7 @@ class ErrorBoundary extends Component<Props, State> {
         labelClose: 'Close',
         labelSubmit: 'Submit',
         successMessage: 'Your feedback has been sent. Thank you!',
-      })
+      }))
     }
   }
 
@@ -128,7 +131,7 @@ class ErrorBoundary extends Component<Props, State> {
 
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <div className="mt-4 p-4 bg-muted rounded-lg text-left">
-                <p className="font-mono text-sm text-destructive break-words">
+                <p className="font-mono text-sm text-destructive wrap-break-word">
                   {this.state.error.message}
                 </p>
                 {this.state.error.stack && (

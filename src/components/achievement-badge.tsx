@@ -42,7 +42,7 @@ export default function AchievementBadge({
         className={`${sizeClasses[size]} mx-auto mb-2 rounded-full flex items-center justify-center ${
           locked
             ? 'bg-gray-200 border-2 border-gray-300'
-            : 'bg-gradient-to-br from-yellow-400 to-orange-500 border-4 border-yellow-300 shadow-lg'
+            : 'bg-linear-to-br from-yellow-400 to-orange-500 border-4 border-yellow-300 shadow-lg'
         }`}
       >
         <span className="achievement-icon">{achievement.icon}</span>

@@ -232,7 +232,7 @@ function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRef
       <CardContent className="space-y-6">
         {error && (
           <div className="bg-destructive/10 text-destructive p-3 rounded-md flex items-start gap-2" role="alert">
-            <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+            <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
             <p className="text-sm">{error}</p>
           </div>
         )}
@@ -301,7 +301,7 @@ function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRef
                     </div>
                   </div>
 
-                  <p className="text-sm mb-3 break-words">{discussion.content}</p>
+                  <p className="text-sm mb-3 wrap-break-word">{discussion.content}</p>
 
                   <div className="flex items-center gap-4">
                     <Button
@@ -431,7 +431,7 @@ function useCommunityDiscussionsContent({ discussions, courseId, lessonId, onRef
                           </div>
                         </div>
 
-                        <p className="text-sm mb-2 break-words">{reply.content}</p>
+                        <p className="text-sm mb-2 wrap-break-word">{reply.content}</p>
 
                         <div className="flex items-center gap-4">
                           <Button

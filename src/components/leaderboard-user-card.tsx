@@ -18,7 +18,7 @@ export function LeaderboardUserCard({
 }: LeaderboardUserCardProps) {
   if (!userRank) {
     return (
-      <Card className={cn('bg-gradient-to-br from-muted/50 to-muted', className)}>
+      <Card className={cn('bg-transparent bg-linear-to-br from-muted/50 to-muted', className)}>
         <CardContent className="p-6">
           <div className="text-center">
             <p className="text-muted-foreground">
@@ -45,12 +45,12 @@ export function LeaderboardUserCard({
 
   return (
     <Card className={cn(
-      'bg-gradient-to-br from-primary/10 via-accent/5 to-background border-brand/20',
+      'bg-transparent bg-linear-to-br from-primary/10 via-accent/5 to-background border-brand/20',
       'overflow-hidden relative',
       className
     )}>
       {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-bl from-primary/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
 
       <CardContent className="p-6 relative">
         <div className="flex flex-col sm:flex-row items-center gap-6">

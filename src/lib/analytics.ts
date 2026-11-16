@@ -20,7 +20,9 @@
  * ```
  */
 
-import posthog from 'posthog-js'
+import type { PostHog } from 'posthog-js'
+import { getAnalyticsConsent } from './analytics-consent'
+import { getPostHog } from './posthog-client'
 
 // ============================================================================
 // Event Type Definitions
@@ -245,14 +247,15 @@ export interface UserTraits {
  * All methods are non-blocking and fail silently to not affect UX
  */
 class Analytics {
-  private isEnabled(): boolean {
-    // posthog.__loaded is only true once the visitor has allowed analytics
-    // and PostHogProvider has initialised it; before that, send nothing.
-    return (
-      typeof window !== 'undefined' &&
-      !!process.env.NEXT_PUBLIC_POSTHOG_KEY &&
-      Boolean(posthog.__loaded)
-    )
+  /**
+   * The PostHog client, once the visitor has allowed analytics and
+   * PostHogProvider has loaded and initialised it; before that, send nothing.
+   */
+  private client(): PostHog | null {
+    if (typeof window === 'undefined' || !process.env.NEXT_PUBLIC_POSTHOG_KEY) return null
+    if (getAnalyticsConsent() !== 'granted') return null
+    const posthog = getPostHog()
+    return posthog?.__loaded ? posthog : null
   }
 
   /**
@@ -261,7 +264,8 @@ class Analytics {
    * @param properties - Optional event properties
    */
   track(event: string, properties?: Record<string, unknown> | object): void {
-    if (!this.isEnabled()) return
+    const posthog = this.client()
+    if (!posthog) return
 
     try {
       posthog.capture(event, {
@@ -282,7 +286,8 @@ class Analytics {
    * @param traits - Optional user properties
    */
   identify(userId: string, traits?: UserTraits): void {
-    if (!this.isEnabled()) return
+    const posthog = this.client()
+    if (!posthog) return
 
     try {
       posthog.identify(userId, {
@@ -303,7 +308,8 @@ class Analytics {
    * @param properties - Optional page properties
    */
   page(name: string, properties?: Record<string, unknown>): void {
-    if (!this.isEnabled()) return
+    const posthog = this.client()
+    if (!posthog) return
 
     try {
       posthog.capture('$pageview', {
@@ -323,7 +329,8 @@ class Analytics {
    * Clears user identification and starts fresh session
    */
   reset(): void {
-    if (!this.isEnabled()) return
+    const posthog = this.client()
+    if (!posthog) return
 
     try {
       posthog.reset()
@@ -339,7 +346,8 @@ class Analytics {
    * @param properties - Properties to set
    */
   setUserProperties(properties: Record<string, unknown>): void {
-    if (!this.isEnabled()) return
+    const posthog = this.client()
+    if (!posthog) return
 
     try {
       posthog.people.set(properties)
@@ -356,7 +364,8 @@ class Analytics {
    * @param value - Value to increment by (default: 1)
    */
   incrementUserProperty(property: string, value = 1): void {
-    if (!this.isEnabled()) return
+    const posthog = this.client()
+    if (!posthog) return
 
     try {
       posthog.people.set_once({ [property]: 0 }) // Initialize if not exists
@@ -374,7 +383,8 @@ class Analytics {
    * @param newId - New user identifier
    */
   alias(newId: string): void {
-    if (!this.isEnabled()) return
+    const posthog = this.client()
+    if (!posthog) return
 
     try {
       posthog.alias(newId)
@@ -390,7 +400,8 @@ class Analytics {
    * @param properties - Properties to register
    */
   registerSuperProperties(properties: Record<string, unknown>): void {
-    if (!this.isEnabled()) return
+    const posthog = this.client()
+    if (!posthog) return
 
     try {
       posthog.register(properties)
@@ -405,7 +416,8 @@ class Analytics {
    * Opt user out of tracking
    */
   optOut(): void {
-    if (!this.isEnabled()) return
+    const posthog = this.client()
+    if (!posthog) return
 
     try {
       posthog.opt_out_capturing()
@@ -420,7 +432,8 @@ class Analytics {
    * Opt user back into tracking
    */
   optIn(): void {
-    if (!this.isEnabled()) return
+    const posthog = this.client()
+    if (!posthog) return
 
     try {
       posthog.opt_in_capturing()
@@ -435,7 +448,8 @@ class Analytics {
    * Check if user has opted out
    */
   hasOptedOut(): boolean {
-    if (!this.isEnabled()) return false
+    const posthog = this.client()
+    if (!posthog) return false
 
     try {
       return posthog.has_opted_out_capturing()

@@ -53,12 +53,12 @@ export function StreakDisplay({
 
   const statusColors = {
     active: {
-      container: 'bg-gradient-to-r from-orange-500/20 to-red-500/20 border-orange-400/50',
+      container: 'bg-linear-to-r from-orange-500/20 to-red-500/20 border-orange-400/50',
       icon: 'text-orange-500',
       text: 'text-orange-600 dark:text-orange-400',
     },
     at_risk: {
-      container: 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-400/50',
+      container: 'bg-linear-to-r from-yellow-500/20 to-orange-500/20 border-yellow-400/50',
       icon: 'text-yellow-500',
       text: 'text-yellow-600 dark:text-yellow-400',
     },
@@ -123,7 +123,7 @@ export function StreakDisplay({
       className={cn(
         baseClassName,
         'cursor-pointer transition-[transform,background-color,border-color,color] duration-200',
-        'hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+        'hover:scale-105 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand/50',
         className
       )}
       type="button"
