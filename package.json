@@ -115,7 +115,7 @@
     "eslint-config-next": "^16.4.6",
     "jest": "^30.5.2",
     "jest-environment-jsdom": "^30.5.2",
-    "markdownlint-cli2": "^0.24.0",
+    "markdownlint-cli2": "^0.24.1",
     "postcss": "^8.5.23",
     "prisma": "^7.10.1",
     "tailwindcss": "^4.3.3",
