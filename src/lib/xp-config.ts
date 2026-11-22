@@ -229,13 +229,13 @@ export const LEVEL_NAMES: Record<number, string> = {
  * Get the level name for a specific level
  */
 export function getLevelName(level: number): string {
-  const milestones = Object.keys(LEVEL_NAMES)
-    .map(Number)
-    .sort((a, b) => b - a)
+  const milestones = Object.entries(LEVEL_NAMES)
+    .map(([milestone, name]) => [Number(milestone), name] as const)
+    .sort(([a], [b]) => b - a)
 
-  for (const milestone of milestones) {
+  for (const [milestone, name] of milestones) {
     if (level >= milestone) {
-      return LEVEL_NAMES[milestone]
+      return name
     }
   }
 

@@ -47,9 +47,9 @@ class CookieJar {
     if (!header) return
     const parts = header.split(',')
     for (const part of parts) {
-      const match = part.match(/([^=]+)=([^;]+)/)
-      if (match) {
-        this.cookies.set(match[1].trim(), match[2].trim())
+      const [, name, value] = part.match(/([^=]+)=([^;]+)/) ?? []
+      if (name !== undefined && value !== undefined) {
+        this.cookies.set(name.trim(), value.trim())
       }
     }
   }

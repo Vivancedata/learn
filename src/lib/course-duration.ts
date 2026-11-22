@@ -31,22 +31,22 @@ export function parseLessonMinutes(duration?: string | null): number | null {
   let total = 0
   let matched = false
 
-  const hours = text.match(/(\d+(?:\.\d+)?)\s*(?:hours|hour|hrs|hr|h)\b/)
-  if (hours) {
-    total += parseFloat(hours[1]) * 60
+  const hours = text.match(/(\d+(?:\.\d+)?)\s*(?:hours|hour|hrs|hr|h)\b/)?.[1]
+  if (hours !== undefined) {
+    total += parseFloat(hours) * 60
     matched = true
   }
 
-  const minutes = text.match(/(\d+(?:\.\d+)?)\s*(?:minutes|minute|mins|min|m)\b/)
-  if (minutes) {
-    total += parseFloat(minutes[1])
+  const minutes = text.match(/(\d+(?:\.\d+)?)\s*(?:minutes|minute|mins|min|m)\b/)?.[1]
+  if (minutes !== undefined) {
+    total += parseFloat(minutes)
     matched = true
   }
 
   if (!matched) {
-    const bare = text.match(/^\s*(\d+(?:\.\d+)?)\s*$/)
-    if (!bare) return null
-    total = parseFloat(bare[1])
+    const bare = text.match(/^\s*(\d+(?:\.\d+)?)\s*$/)?.[1]
+    if (bare === undefined) return null
+    total = parseFloat(bare)
   }
 
   const rounded = Math.round(total)

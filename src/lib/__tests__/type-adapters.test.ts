@@ -110,7 +110,7 @@ describe('Type Adapters', () => {
       expect(result.description).toBe('Section description')
       expect(result.order).toBe(1)
       expect(result.lessons).toHaveLength(1)
-      expect(result.lessons[0].id).toBe('lesson-1')
+      expect(result.lessons[0]?.id).toBe('lesson-1')
     })
 
     it('should handle null description', () => {
@@ -278,8 +278,8 @@ describe('Type Adapters', () => {
       const result = adaptCourses(fromAny(prismaCourses))
 
       expect(result).toHaveLength(2)
-      expect(result[0].id).toBe('course-1')
-      expect(result[1].id).toBe('course-2')
+      expect(result[0]?.id).toBe('course-1')
+      expect(result[1]?.id).toBe('course-2')
     })
 
     it('should handle empty array', () => {
@@ -336,11 +336,11 @@ describe('Type Adapters', () => {
       expect(result.id).toBe('lesson-1')
       expect(result.knowledgeCheck).toBeDefined()
       expect(result.knowledgeCheck?.questions).toHaveLength(2)
-      expect(result.knowledgeCheck?.questions[0].question).toBe('What is 2+2?')
-      expect(result.knowledgeCheck?.questions[0].options).toEqual(['2', '3', '4', '5'])
-      expect(result.knowledgeCheck?.questions[0].correctAnswer).toBe(2)
-      expect(result.knowledgeCheck?.questions[0].explanation).toBe('Basic math: 2+2=4')
-      expect(result.knowledgeCheck?.questions[1].explanation).toBe('')
+      expect(result.knowledgeCheck?.questions[0]?.question).toBe('What is 2+2?')
+      expect(result.knowledgeCheck?.questions[0]?.options).toEqual(['2', '3', '4', '5'])
+      expect(result.knowledgeCheck?.questions[0]?.correctAnswer).toBe(2)
+      expect(result.knowledgeCheck?.questions[0]?.explanation).toBe('Basic math: 2+2=4')
+      expect(result.knowledgeCheck?.questions[1]?.explanation).toBe('')
     })
 
     it('should not add knowledgeCheck if no quiz questions', () => {
@@ -441,7 +441,7 @@ describe('Type Adapters', () => {
 
       const result = adaptLessonWithQuiz(fromAny(prismaLesson))
 
-      expect(result.knowledgeCheck?.questions[0].options).toEqual([])
+      expect(result.knowledgeCheck?.questions[0]?.options).toEqual([])
     })
   })
 
@@ -539,9 +539,9 @@ describe('Type Adapters', () => {
       const result = adaptPaths(fromAny(prismaPaths))
 
       expect(result).toHaveLength(2)
-      expect(result[0].id).toBe('path-1')
-      expect(result[1].id).toBe('path-2')
-      expect(result[1].courses).toEqual(['course-2', 'course-3'])
+      expect(result[0]?.id).toBe('path-1')
+      expect(result[1]?.id).toBe('path-2')
+      expect(result[1]?.courses).toEqual(['course-2', 'course-3'])
     })
 
     it('should handle empty array', () => {

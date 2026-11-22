@@ -37,7 +37,7 @@ function isAnswerCorrect(
     const sortedUser = userAnswers.map(String).sort()
     const sortedCorrect = correctAnswers.map(String).sort()
 
-    return sortedUser.every((a, i) => a.toLowerCase() === sortedCorrect[i].toLowerCase())
+    return sortedUser.every((a, i) => a.toLowerCase() === sortedCorrect[i]?.toLowerCase())
   }
 
   // For code output and fill blank, compare strings (case-insensitive, trimmed)
@@ -50,7 +50,7 @@ function isAnswerCorrect(
 
 function mapChoiceValueToOption(value: string | number, options: string[]): string {
   if (typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < options.length) {
-    return options[value]
+    return options[value] ?? String(value)
   }
 
   return String(value)

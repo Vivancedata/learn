@@ -14,6 +14,7 @@ import {
   leaderboardTypeLabels,
   leaderboardPeriodLabels,
 } from '@/types/leaderboard'
+import { displayName } from '@/lib/display-name'
 
 const leaderboardTypes: LeaderboardType[] = ['xp', 'streaks', 'courses', 'lessons', 'helping']
 const leaderboardPeriods: LeaderboardPeriod[] = ['daily', 'weekly', 'monthly', 'all_time']
@@ -148,7 +149,7 @@ export async function GET(
       periodLabels: Record<LeaderboardPeriod, string>
     } = {
       userId: user.id,
-      userName: user.name || user.email.split('@')[0],
+      userName: displayName(user),
       showOnLeaderboard: user.showOnLeaderboard,
       rankings,
       typeLabels: leaderboardTypeLabels,

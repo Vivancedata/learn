@@ -97,9 +97,9 @@ function useModalDialog(isOpen: boolean, onClose: () => void) {
       if (event.key !== 'Tab') return
 
       const elements = focusable()
-      if (elements.length === 0) return
       const first = elements[0]
       const last = elements[elements.length - 1]
+      if (!first || !last) return
       if (event.shiftKey && document.activeElement === first) {
         event.preventDefault()
         last.focus()
@@ -640,8 +640,12 @@ function AssessmentTakeContent({
       return
     }
 
-    const questionId = state.assessmentData.questions[state.currentQuestionIndex].id
-    dispatch({ type: 'answerChanged', questionId, answer })
+    const question = state.assessmentData.questions[state.currentQuestionIndex]
+    if (!question) {
+      return
+    }
+
+    dispatch({ type: 'answerChanged', questionId: question.id, answer })
   }
 
   const handleFlagToggle = () => {
@@ -671,7 +675,9 @@ function AssessmentTakeContent({
     return <LoadingState />
   }
 
-  if (state.error || !state.assessmentData) {
+  const currentQuestion = state.assessmentData?.questions[state.currentQuestionIndex]
+
+  if (state.error || !state.assessmentData || !currentQuestion) {
     return (
       <ErrorState
         error={state.error}
@@ -682,7 +688,6 @@ function AssessmentTakeContent({
   }
 
   const { assessmentData } = state
-  const currentQuestion = assessmentData.questions[state.currentQuestionIndex]
   const currentAnswer = state.answers[currentQuestion.id]
   const answeredCount = Object.keys(state.answers).length
   const unansweredCount = assessmentData.questions.length - answeredCount

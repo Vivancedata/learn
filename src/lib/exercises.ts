@@ -91,11 +91,12 @@ async function loadExercise(
   slug: string
 ): Promise<Exercise | null> {
   const language = TRACKS[track]
-  if (!language || !SLUG_PATTERN.test(slug)) {
+  const trackDir = TRACK_DIRS[track]
+  if (!language || !trackDir || !SLUG_PATTERN.test(slug)) {
     return null
   }
 
-  const dir = path.join(TRACK_DIRS[track], slug)
+  const dir = path.join(trackDir, slug)
 
   let entries: string[]
   try {
@@ -170,6 +171,7 @@ async function loadExerciseIndex(): Promise<TrackSummary[]> {
   const tracks = await Promise.all(
     Object.entries(TRACKS).map(async ([track, language]): Promise<TrackSummary | null> => {
       const trackDir = TRACK_DIRS[track]
+      if (!trackDir) return null
       let slugs: string[]
       try {
         slugs = (await fs.readdir(trackDir, { withFileTypes: true }))
@@ -186,7 +188,7 @@ async function loadExerciseIndex(): Promise<TrackSummary[]> {
 
       const exercises: ExerciseSummary[] = []
       slugs.forEach((slug, i) => {
-        const hasTest = entriesBySlug[i].some((f) => f.startsWith('test_') && f.endsWith('.py'))
+        const hasTest = entriesBySlug[i]?.some((f) => f.startsWith('test_') && f.endsWith('.py'))
         if (!hasTest) return
         exercises.push({
           track,

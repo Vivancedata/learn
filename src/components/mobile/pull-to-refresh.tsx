@@ -73,6 +73,7 @@ export function PullToRefresh({
     if (!enabled) return
 
     const touch = e.touches[0]
+    if (!touch) return
     setStartY(touch.clientY)
     setStartX(touch.clientX)
     setIsHorizontalScroll(false)
@@ -92,6 +93,7 @@ export function PullToRefresh({
     if (!enabled || state === 'refreshing') return
 
     const touch = e.touches[0]
+    if (!touch) return
     const deltaY = touch.clientY - startY
     const deltaX = touch.clientX - startX
 

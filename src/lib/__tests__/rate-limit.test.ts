@@ -371,8 +371,8 @@ describe('Rate Limiter', () => {
       expect(headers['X-RateLimit-Limit']).toBe('100')
       expect(headers['X-RateLimit-Remaining']).toBe('0')
       expect(headers['Retry-After']).toBeDefined()
-      expect(parseInt(headers['Retry-After'])).toBeGreaterThan(0)
-      expect(parseInt(headers['Retry-After'])).toBeLessThanOrEqual(30)
+      expect(Number(headers['Retry-After'])).toBeGreaterThan(0)
+      expect(Number(headers['Retry-After'])).toBeLessThanOrEqual(30)
     })
 
     it('should format reset time as ISO string', () => {
@@ -400,7 +400,7 @@ describe('Rate Limiter', () => {
       const headers = getRateLimitHeaders(result)
 
       // Retry-After should be 0 or not negative
-      expect(parseInt(headers['Retry-After'])).toBe(0)
+      expect(Number(headers['Retry-After'])).toBe(0)
     })
   })
 

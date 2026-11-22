@@ -442,7 +442,8 @@ function calculateCourseScore(
   }
 
   // Find highest scoring reason
-  if (scores.length === 0) {
+  const [firstScore] = scores
+  if (!firstScore) {
     return {
       courseId: course.id,
       score: 0,
@@ -453,7 +454,7 @@ function calculateCourseScore(
 
   // Calculate weighted total and find primary reason
   let totalScore = 0
-  let primaryReason = scores[0]
+  let primaryReason = firstScore
 
   for (const s of scores) {
     totalScore += s.score

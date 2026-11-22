@@ -204,7 +204,7 @@ describe('getXpHistory', () => {
 
     expect(db.xpTransaction.findMany.mock.calls[0][0]).toMatchObject({ where: { userId: 'u' }, skip: 0, take: 10 })
     expect(history).toMatchObject({ total: 21, page: 1, limit: 10, totalPages: 3 })
-    expect(history.transactions[0].description).toBe('')
+    expect(history.transactions[0]?.description).toBe('')
   })
 
   it('filters by source and offsets later pages', async () => {

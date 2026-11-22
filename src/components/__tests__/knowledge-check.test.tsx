@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { KnowledgeCheck } from '@/components/knowledge-check'
+import { at } from '@/test-utils/at'
 
 const QUESTIONS = [
   {
@@ -21,6 +22,11 @@ const QUESTIONS = [
 ]
 
 describe('KnowledgeCheck', () => {
+  it('renders nothing when there are no questions', () => {
+    const { container } = render(<KnowledgeCheck questions={[]} />)
+    expect(container).toBeEmptyDOMElement()
+  })
+
   it('renders the options as a radio group, not clickable divs', () => {
     render(<KnowledgeCheck questions={QUESTIONS} />)
 
@@ -42,11 +48,11 @@ describe('KnowledgeCheck', () => {
 
     const radios = screen.getAllByRole('radio') as HTMLInputElement[]
     // Radios are focusable; divs with onClick were not.
-    radios[1].focus()
-    expect(document.activeElement).toBe(radios[1])
+    at(radios, 1).focus()
+    expect(document.activeElement).toBe(at(radios, 1))
 
-    fireEvent.click(radios[1])
-    expect(radios[1].checked).toBe(true)
+    fireEvent.click(at(radios, 1))
+    expect(at(radios, 1).checked).toBe(true)
 
     expect(screen.getByRole('button', { name: /check answer/i })).toBeEnabled()
   })
@@ -60,7 +66,7 @@ describe('KnowledgeCheck', () => {
     const { container } = render(<KnowledgeCheck questions={QUESTIONS} />)
 
     const radios = screen.getAllByRole('radio') as HTMLInputElement[]
-    fireEvent.click(radios[1])
+    fireEvent.click(at(radios, 1))
     fireEvent.click(screen.getByRole('button', { name: /check answer/i }))
 
     const live = container.querySelector('[aria-live="polite"]')
@@ -80,10 +86,10 @@ describe('KnowledgeCheck', () => {
     render(<KnowledgeCheck questions={QUESTIONS} />)
 
     // Skip to question 2, which has no explanation.
-    fireEvent.click(screen.getAllByRole('radio')[0])
+    fireEvent.click(at(screen.getAllByRole('radio'), 0))
     fireEvent.click(screen.getByRole('button', { name: /check answer/i }))
     fireEvent.click(screen.getByRole('button', { name: /next question/i }))
-    fireEvent.click(screen.getAllByRole('radio')[1])
+    fireEvent.click(at(screen.getAllByRole('radio'), 1))
     fireEvent.click(screen.getByRole('button', { name: /check answer/i }))
 
     expect(screen.getByText('The answer is: Zero')).toBeInTheDocument()
@@ -93,7 +99,7 @@ describe('KnowledgeCheck', () => {
     const onComplete = jest.fn()
     render(<KnowledgeCheck questions={QUESTIONS} onComplete={onComplete} />)
 
-    fireEvent.click(screen.getAllByRole('radio')[0])
+    fireEvent.click(at(screen.getAllByRole('radio'), 0))
     fireEvent.click(screen.getByRole('button', { name: /check answer/i }))
     fireEvent.click(screen.getByRole('button', { name: /next question/i }))
 
@@ -101,7 +107,7 @@ describe('KnowledgeCheck', () => {
       screen.getByRole('group', { name: /ReLU output for negative inputs/i })
     ).toBeInTheDocument()
 
-    fireEvent.click(screen.getAllByRole('radio')[1])
+    fireEvent.click(at(screen.getAllByRole('radio'), 1))
     fireEvent.click(screen.getByRole('button', { name: /check answer/i }))
     fireEvent.click(screen.getByRole('button', { name: /see results/i }))
 

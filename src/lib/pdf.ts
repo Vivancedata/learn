@@ -18,7 +18,7 @@ export function createSimpleCertificatePdf(input: {
     input.courseTitle,
     `Issued on ${input.issuedDate}`,
     `Verification Code: ${input.verificationCode}`,
-  ]
+  ] as const
 
   const skillsLine = input.skills.length > 0 ? `Skills: ${input.skills.join(', ')}` : ''
 

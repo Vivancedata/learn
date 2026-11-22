@@ -19,7 +19,7 @@ describe('Content-Security-Policy', () => {
 
     return new Map(
       csp.value.split(';').map((directive) => {
-        const [name, ...values] = directive.trim().split(/\s+/)
+        const [name = '', ...values] = directive.trim().split(/\s+/)
         return [name, values.join(' ')]
       }),
     )
