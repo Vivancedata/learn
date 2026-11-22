@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { fromAny } from '@total-typescript/shoehorn'
 import {
   adaptCourse,
   adaptCourses,
@@ -163,7 +163,7 @@ describe('Type Adapters', () => {
         },
       }
 
-      const result = adaptCourse(prismaCourse as any)
+      const result = adaptCourse(fromAny(prismaCourse))
 
       expect(result.id).toBe('course-1')
       expect(result.title).toBe('Test Course')
@@ -194,7 +194,7 @@ describe('Type Adapters', () => {
         },
       }
 
-      const result = adaptCourse(prismaCourse as any)
+      const result = adaptCourse(fromAny(prismaCourse))
 
       expect(result.prerequisites).toBeUndefined()
       expect(result.learningOutcomes).toBeUndefined()
@@ -222,7 +222,7 @@ describe('Type Adapters', () => {
         },
       }
 
-      const result = adaptCourse(prismaCourse as any)
+      const result = adaptCourse(fromAny(prismaCourse))
 
       // Should use default empty array when JSON parsing fails
       expect(result.prerequisites).toEqual([])
@@ -275,7 +275,7 @@ describe('Type Adapters', () => {
         },
       ]
 
-      const result = adaptCourses(prismaCourses as any)
+      const result = adaptCourses(fromAny(prismaCourses))
 
       expect(result).toHaveLength(2)
       expect(result[0].id).toBe('course-1')
@@ -331,7 +331,7 @@ describe('Type Adapters', () => {
         ],
       }
 
-      const result = adaptLessonWithQuiz(prismaLesson as any)
+      const result = adaptLessonWithQuiz(fromAny(prismaLesson))
 
       expect(result.id).toBe('lesson-1')
       expect(result.knowledgeCheck).toBeDefined()
@@ -369,7 +369,7 @@ describe('Type Adapters', () => {
         quizQuestions: [],
       }
 
-      const result = adaptLessonWithQuiz(prismaLesson as any)
+      const result = adaptLessonWithQuiz(fromAny(prismaLesson))
 
       expect(result.knowledgeCheck).toBeUndefined()
     })
@@ -400,7 +400,7 @@ describe('Type Adapters', () => {
         quizQuestions: undefined,
       }
 
-      const result = adaptLessonWithQuiz(prismaLesson as any)
+      const result = adaptLessonWithQuiz(fromAny(prismaLesson))
 
       expect(result.knowledgeCheck).toBeUndefined()
     })
@@ -439,7 +439,7 @@ describe('Type Adapters', () => {
         ],
       }
 
-      const result = adaptLessonWithQuiz(prismaLesson as any)
+      const result = adaptLessonWithQuiz(fromAny(prismaLesson))
 
       expect(result.knowledgeCheck?.questions[0].options).toEqual([])
     })
@@ -461,7 +461,7 @@ describe('Type Adapters', () => {
         ],
       }
 
-      const result = adaptPath(prismaPath as any)
+      const result = adaptPath(fromAny(prismaPath))
 
       expect(result.id).toBe('path-1')
       expect(result.title).toBe('Learning Path')
@@ -485,7 +485,7 @@ describe('Type Adapters', () => {
         courses: [],
       }
 
-      const result = adaptPath(prismaPath as any)
+      const result = adaptPath(fromAny(prismaPath))
 
       expect(result.icon).toBeUndefined()
       expect(result.prerequisites).toBeUndefined()
@@ -505,7 +505,7 @@ describe('Type Adapters', () => {
         courses: [],
       }
 
-      const result = adaptPath(prismaPath as any)
+      const result = adaptPath(fromAny(prismaPath))
 
       expect(result.prerequisites).toEqual([])
     })
@@ -536,7 +536,7 @@ describe('Type Adapters', () => {
         },
       ]
 
-      const result = adaptPaths(prismaPaths as any)
+      const result = adaptPaths(fromAny(prismaPaths))
 
       expect(result).toHaveLength(2)
       expect(result[0].id).toBe('path-1')
@@ -565,7 +565,7 @@ describe('Type Adapters', () => {
         codeSnippet: null,
       }
 
-      const result = adaptAssessmentQuestion(prismaQuestion as any)
+      const result = adaptAssessmentQuestion(fromAny(prismaQuestion))
 
       expect(result.id).toBe('question-1')
       expect(result.questionType).toBe('SINGLE_CHOICE')
@@ -589,7 +589,7 @@ describe('Type Adapters', () => {
         questions: undefined,
       }
 
-      const result = adaptSkillAssessment(prismaAssessment as any)
+      const result = adaptSkillAssessment(fromAny(prismaAssessment))
 
       expect(result.id).toBe('assessment-1')
       expect(result.courseId).toBeUndefined()
@@ -623,7 +623,7 @@ describe('Type Adapters', () => {
         },
       }
 
-      const result = adaptAssessmentAttempt(prismaAttempt as any)
+      const result = adaptAssessmentAttempt(fromAny(prismaAttempt))
 
       expect(result.id).toBe('attempt-1')
       expect(result.answers).toEqual({ q1: 'A' })
@@ -663,8 +663,8 @@ describe('Type Adapters', () => {
         },
       ]
 
-      expect(adaptSkillAssessments(assessments as any)).toHaveLength(1)
-      expect(adaptAssessmentAttempts(attempts as any)).toHaveLength(1)
+      expect(adaptSkillAssessments(fromAny(assessments))).toHaveLength(1)
+      expect(adaptAssessmentAttempts(fromAny(attempts))).toHaveLength(1)
     })
   })
 
@@ -679,7 +679,7 @@ describe('Type Adapters', () => {
         lastWatched: mockDate,
       }
 
-      const result = adaptVideoProgress(prismaProgress as any)
+      const result = adaptVideoProgress(fromAny(prismaProgress))
 
       expect(result.lessonId).toBe('lesson-1')
       expect(result.lastWatched).toBe(mockDate.toISOString())

@@ -167,7 +167,7 @@ def _vd_grade(module_name, user_code, test_code):
 export function parseGradeOutput(json: string): GradeResult {
   let parsed: { results?: TestCase[]; compileError?: string | null }
   try {
-    parsed = JSON.parse(json)
+    parsed = JSON.parse(json) as typeof parsed
   } catch {
     return {
       results: [],
@@ -199,7 +199,7 @@ export interface RunOutput {
 
 export function parseRunOutput(json: string): RunOutput {
   try {
-    const parsed = JSON.parse(json)
+    const parsed = JSON.parse(json) as { stdout?: string; error?: string | null }
     return { stdout: parsed.stdout ?? '', error: parsed.error ?? null }
   } catch {
     return { stdout: '', error: 'Could not parse run output' }
