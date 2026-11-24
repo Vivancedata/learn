@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '22'
+  NODE_VERSION: '24'
   BASE_BRANCH: ${{ github.base_ref || github.event.repository.default_branch }}
   # verify-summary.mjs writes <stage>.json here; merged by the verify-report job.
   VERIFY_STAGE_DIR: verify-stages
