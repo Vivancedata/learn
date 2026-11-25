@@ -1,3 +1,5 @@
+import { displayName } from '@/lib/display-name'
+
 // API response types (from backend)
 export interface ApiUser {
   id: string
@@ -63,7 +65,7 @@ export function transformApiDiscussion(apiDiscussion: ApiDiscussion): Discussion
   return {
     id: apiDiscussion.id,
     userId: apiDiscussion.userId,
-    username: apiDiscussion.user.name || apiDiscussion.user.email.split('@')[0],
+    username: displayName(apiDiscussion.user),
     userPoints: apiDiscussion.user.points || 0,
     content: apiDiscussion.content,
     createdAt: apiDiscussion.createdAt,
@@ -78,7 +80,7 @@ export function transformApiReply(apiReply: ApiDiscussionReply): DiscussionReply
     discussionId: apiReply.discussionId,
     content: apiReply.content,
     userId: apiReply.userId,
-    username: apiReply.user.name || apiReply.user.email.split('@')[0],
+    username: displayName(apiReply.user),
     userPoints: apiReply.user.points || 0,
     createdAt: apiReply.createdAt,
     likes: apiReply.likes,

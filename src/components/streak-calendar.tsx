@@ -65,7 +65,7 @@ export function StreakCalendar({
     activities.forEach(activity => {
       const date = new Date(activity.date)
       date.setHours(0, 0, 0, 0)
-      const key = date.toISOString().split('T')[0]
+      const key = date.toISOString().slice(0, 10)
       map.set(key, activity)
     })
     return map
@@ -81,7 +81,7 @@ export function StreakCalendar({
 
   // Get activity status and styling for a given date
   const getDayStatus = (date: Date) => {
-    const key = date.toISOString().split('T')[0]
+    const key = date.toISOString().slice(0, 10)
     const activity = activityMap.get(key)
 
     const isToday = date.getTime() === todayTime

@@ -87,8 +87,8 @@ describe('Content Utilities', () => {
       const result = await getAllCourses()
 
       expect(result).toHaveLength(1)
-      expect(result[0].id).toBe('course-1')
-      expect(result[0].sections).toHaveLength(1)
+      expect(result[0]?.id).toBe('course-1')
+      expect(result[0]?.sections).toHaveLength(1)
       expect(mockPrisma.course.findMany).toHaveBeenCalled()
     })
 
@@ -300,7 +300,7 @@ describe('Content Utilities', () => {
       expect(result).not.toBeNull()
       expect(result?.knowledgeCheck).toBeDefined()
       expect(result?.knowledgeCheck?.questions).toHaveLength(1)
-      expect(result?.knowledgeCheck?.questions[0].question).toBe('What is 1+1?')
+      expect(result?.knowledgeCheck?.questions[0]?.question).toBe('What is 1+1?')
     })
   })
 
@@ -324,8 +324,8 @@ describe('Content Utilities', () => {
       const result = await getAllPaths()
 
       expect(result).toHaveLength(1)
-      expect(result[0].id).toBe('path-1')
-      expect(result[0].courses).toEqual(['course-1', 'course-2'])
+      expect(result[0]?.id).toBe('path-1')
+      expect(result[0]?.courses).toEqual(['course-1', 'course-2'])
     })
 
     it('should throw on error', async () => {
@@ -456,9 +456,9 @@ More content here.
 
       expect(result).not.toBeNull()
       expect(result?.questions).toHaveLength(1)
-      expect(result?.questions[0].question).toBe('What is HTML?')
-      expect(result?.questions[0].options).toHaveLength(4)
-      expect(result?.questions[0].correctAnswer).toBe(0)
+      expect(result?.questions[0]?.question).toBe('What is HTML?')
+      expect(result?.questions[0]?.options).toHaveLength(4)
+      expect(result?.questions[0]?.correctAnswer).toBe(0)
     })
 
     it('should return null if no knowledge check section is found', () => {
@@ -495,7 +495,7 @@ More content here.
 
       expect(result).not.toBeNull()
       expect(result?.questions).toHaveLength(1)
-      expect(result?.questions[0].question).toBe('End-of-file question?')
+      expect(result?.questions[0]?.question).toBe('End-of-file question?')
     })
 
     it('should return null when knowledge check section is empty', () => {

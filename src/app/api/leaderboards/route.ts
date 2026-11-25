@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import prisma from '@/lib/db'
+import { displayName } from '@/lib/display-name'
 import {
   apiSuccess,
   handleApiError,
@@ -78,9 +79,10 @@ export async function GET(request: NextRequest) {
     let entries: LeaderboardEntry[]
     let calculatedAt: Date
 
-    if (cachedEntries.length > 0) {
+    const firstCachedEntry = cachedEntries[0]
+    if (firstCachedEntry) {
       // Use cached data
-      calculatedAt = cachedEntries[0].calculatedAt
+      calculatedAt = firstCachedEntry.calculatedAt
       entries = cachedEntries
         .filter(entry => isPubliclyRankable(entry.user))
         .map(entry => ({
@@ -88,7 +90,7 @@ export async function GET(request: NextRequest) {
           rank: entry.rank,
           previousRank: entry.previousRank,
           userId: entry.userId,
-          userName: entry.user.name || entry.user.email.split('@')[0],
+          userName: displayName(entry.user),
           score: entry.score,
           metadata: entry.metadata ? safeJsonParse(entry.metadata, {}) : undefined,
           isCurrentUser: currentUserId === entry.userId,
@@ -128,7 +130,7 @@ export async function GET(request: NextRequest) {
           rank: userCacheEntry.rank,
           previousRank: userCacheEntry.previousRank,
           userId: userCacheEntry.userId,
-          userName: userCacheEntry.user.name || userCacheEntry.user.email.split('@')[0],
+          userName: displayName(userCacheEntry.user),
           score: userCacheEntry.score,
           metadata: userCacheEntry.metadata ? safeJsonParse(userCacheEntry.metadata, {}) : undefined,
           isCurrentUser: true,
@@ -254,7 +256,7 @@ async function calculateXPLeaderboard(
       rank: index + 1,
       previousRank: null,
       userId: user.id,
-      userName: user.name || user.email.split('@')[0],
+      userName: displayName(user),
       score: user.score,
       isCurrentUser: currentUserId === user.id,
     }))
@@ -290,7 +292,7 @@ async function calculateStreaksLeaderboard(
     rank: index + 1,
     previousRank: null,
     userId: user.id,
-    userName: user.name || user.email.split('@')[0],
+    userName: displayName(user),
     score: user.currentStreak,
     metadata: {
       streakDays: user.currentStreak,
@@ -352,7 +354,7 @@ async function calculateCoursesLeaderboard(
         rank: index + 1,
         previousRank: null,
         userId: uc.userId,
-        userName: user.name || user.email.split('@')[0],
+        userName: displayName(user),
         score: uc._count.id,
         isCurrentUser: currentUserId === uc.userId,
       }
@@ -409,7 +411,7 @@ async function calculateLessonsLeaderboard(
           rank: index + 1,
           previousRank: null,
           userId: a.userId,
-          userName: user.name || user.email.split('@')[0],
+          userName: displayName(user),
           score: a._sum.lessonsCompleted || 0,
           isCurrentUser: currentUserId === a.userId,
         }
@@ -462,7 +464,7 @@ async function calculateLessonsLeaderboard(
         rank: index + 1,
         previousRank: null,
         userId,
-        userName: user.name || user.email.split('@')[0],
+        userName: displayName(user),
         score,
         isCurrentUser: currentUserId === userId,
       }
@@ -519,7 +521,7 @@ async function calculateHelpingLeaderboard(
         rank: index + 1,
         previousRank: null,
         userId: cp.recipientId,
-        userName: user.name || user.email.split('@')[0],
+        userName: displayName(user),
         score: cp._count.id,
         isCurrentUser: currentUserId === cp.recipientId,
       }

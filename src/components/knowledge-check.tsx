@@ -29,7 +29,7 @@ export function KnowledgeCheck({ questions, onComplete }: KnowledgeCheckProps) {
       setQuizCompleted(true)
 
       const correctAnswers = selectedAnswers.reduce((count, answer, index) => {
-        return answer === questions[index].correctAnswer ? count + 1 : count
+        return answer === questions[index]?.correctAnswer ? count + 1 : count
       }, 0)
 
       const score = Math.round((correctAnswers / questions.length) * 100)
@@ -60,12 +60,14 @@ export function KnowledgeCheck({ questions, onComplete }: KnowledgeCheckProps) {
   }
 
   const correctAnswers = selectedAnswers.reduce((count, answer, index) => {
-    return answer === questions[index].correctAnswer ? count + 1 : count
+    return answer === questions[index]?.correctAnswer ? count + 1 : count
   }, 0)
 
   const score = Math.round((correctAnswers / questions.length) * 100)
 
   const question = questions[currentQuestion]
+  if (!question) return null
+
   const selectedAnswer = selectedAnswers[currentQuestion]
   const isCorrect = selectedAnswer === question.correctAnswer
 

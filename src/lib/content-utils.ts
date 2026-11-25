@@ -69,23 +69,24 @@ export function parseKnowledgeCheck(content: string): { questions: Question[] } 
 
   for (const block of questionBlocks) {
     const lines = block.split('\n').map(line => line.trim()).filter(line => line !== '')
-    if (lines.length === 0) continue
+    const [questionLine, ...optionLines] = lines
+    if (questionLine === undefined) continue
 
-    const questionLineMatch = lines[0].match(/^\d+\.\s+(.+)$/)
-    if (!questionLineMatch) continue
+    const questionText = questionLine.match(/^\d+\.\s+(.+)$/)?.[1]
+    if (questionText === undefined) continue
 
     const options: string[] = []
-    for (let i = 1; i < lines.length; i++) {
-      const optionMatch = lines[i].match(/^[-*]\s+(.+)$/)
-      if (optionMatch) {
-        options.push(optionMatch[1].trim())
+    for (const line of optionLines) {
+      const optionText = line.match(/^[-*]\s+(.+)$/)?.[1]
+      if (optionText !== undefined) {
+        options.push(optionText.trim())
       }
     }
 
     if (options.length === 0) continue
 
     questions.push({
-      question: questionLineMatch[1].trim(),
+      question: questionText.trim(),
       options,
       // The first option listed in the markdown is always the correct answer
       correctAnswer: 0,

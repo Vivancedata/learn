@@ -74,7 +74,7 @@ describe('parseKnowledgeCheck', () => {
       ],
       correctAnswer: 0,
     })
-    expect(parsed!.questions[1].question).toBe('What does ReLU output for negative inputs?')
+    expect(parsed!.questions[1]?.question).toBe('What does ReLU output for negative inputs?')
   })
 
   it('does not invent questions when the lesson has no knowledge check', () => {

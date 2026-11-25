@@ -10,10 +10,12 @@
     "build": "prisma generate && next build --webpack",
     "build:ci": "NODE_ENV=production prisma migrate deploy && NODE_ENV=production prisma generate && NEXT_TELEMETRY_DISABLED=1 NODE_ENV=production next build --webpack",
     "postinstall": "node scripts/postinstall.mjs",
+    "prepare": "simple-git-hooks",
     "build:webpack": "NEXT_TELEMETRY_DISABLED=1 next build --webpack",
     "start": "next start",
     "check:ui-boundary": "vivance-ui-boundary --allow navbar.tsx,sidebar.tsx,user-button.tsx",
     "lint": "npm run check:ui-boundary && eslint src --ext .ts,.tsx",
+    "depcruise": "depcruise src --config .dependency-cruiser.cjs",
     "db:seed": "ts-node --project prisma/tsconfig.seed.json prisma/seed.ts",
     "db:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
@@ -48,7 +50,7 @@
     "mobile:dev:android": "npx cap run android --livereload --external",
     "type-check": "tsc --noEmit",
     "verify": "npm run verify:lint && npm run verify:typecheck && npm run verify:unit && npm run verify:integration && npm run verify:build",
-    "verify:lint": "npm run lint",
+    "verify:lint": "npm run lint && npm run depcruise",
     "verify:typecheck": "npm run type-check",
     "verify:unit": "npm run test:unit:coverage && node scripts/verify-summary.mjs unit reports/unit.json",
     "verify:integration": "npm run test:integration:coverage && node scripts/verify-summary.mjs integration reports/integration.json",
@@ -107,6 +109,8 @@
     "@tailwindcss/typography": "^0.5.20",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
+    "@total-typescript/shoehorn": "^0.1.2",
+    "@total-typescript/ts-reset": "^0.6.1",
     "@types/bcryptjs": "^3.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.6.6",
@@ -114,13 +118,16 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/web-push": "^3.6.4",
+    "dependency-cruiser": "^18.8.0",
     "eslint": "^10.15.0",
     "eslint-config-next": "^16.4.6",
     "jest": "^30.5.2",
     "jest-environment-jsdom": "^30.5.2",
+    "lint-staged": "^17.6.2",
     "markdownlint-cli2": "^0.24.1",
     "postcss": "^8.5.23",
     "prisma": "^7.10.1",
+    "simple-git-hooks": "^2.14.0",
     "tailwindcss": "^4.3.3",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
@@ -207,5 +214,11 @@
     "markdownlint": {
       "re2js": "~2.8.7"
     }
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged && npm run type-check"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": "eslint"
   }
 }

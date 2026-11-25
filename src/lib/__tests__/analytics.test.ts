@@ -1,3 +1,4 @@
+import { fromPartial } from '@total-typescript/shoehorn'
 import { analytics, ANALYTICS_EVENTS } from '../analytics'
 import { setAnalyticsConsent } from '../analytics-consent'
 import { getPostHog } from '../posthog-client'
@@ -42,20 +43,20 @@ const typedEvents: Array<[string, () => void]> = [
   [ANALYTICS_EVENTS.USER_SIGNED_UP, () => analytics.trackUserSignedUp({ plan_type: 'free' })],
   [ANALYTICS_EVENTS.USER_SIGNED_IN, () => analytics.trackUserSignedIn({ signin_method: 'email' })],
   [ANALYTICS_EVENTS.USER_SIGNED_OUT, () => analytics.trackUserSignedOut()],
-  [ANALYTICS_EVENTS.COURSE_STARTED, () => analytics.trackCourseStarted({} as never)],
-  [ANALYTICS_EVENTS.LESSON_COMPLETED, () => analytics.trackLessonCompleted({} as never)],
-  [ANALYTICS_EVENTS.QUIZ_COMPLETED, () => analytics.trackQuizCompleted({} as never)],
-  [ANALYTICS_EVENTS.ASSESSMENT_COMPLETED, () => analytics.trackAssessmentCompleted({} as never)],
-  [ANALYTICS_EVENTS.PROJECT_SUBMITTED, () => analytics.trackProjectSubmitted({} as never)],
-  [ANALYTICS_EVENTS.STREAK_ACHIEVED, () => analytics.trackStreakAchieved({} as never)],
-  [ANALYTICS_EVENTS.LEVEL_UP, () => analytics.trackLevelUp({} as never)],
-  [ANALYTICS_EVENTS.ACHIEVEMENT_UNLOCKED, () => analytics.trackAchievementUnlocked({} as never)],
-  [ANALYTICS_EVENTS.SUBSCRIPTION_STARTED, () => analytics.trackSubscriptionStarted({} as never)],
-  [ANALYTICS_EVENTS.SUBSCRIPTION_CANCELLED, () => analytics.trackSubscriptionCancelled({} as never)],
-  [ANALYTICS_EVENTS.COURSE_ENROLLED, () => analytics.trackCourseEnrolled({} as never)],
-  [ANALYTICS_EVENTS.SEARCH_PERFORMED, () => analytics.trackSearchPerformed({} as never)],
-  [ANALYTICS_EVENTS.DISCUSSION_CREATED, () => analytics.trackDiscussionCreated({} as never)],
-  [ANALYTICS_EVENTS.REPLY_CREATED, () => analytics.trackReplyCreated({} as never)],
+  [ANALYTICS_EVENTS.COURSE_STARTED, () => analytics.trackCourseStarted(fromPartial({}))],
+  [ANALYTICS_EVENTS.LESSON_COMPLETED, () => analytics.trackLessonCompleted(fromPartial({}))],
+  [ANALYTICS_EVENTS.QUIZ_COMPLETED, () => analytics.trackQuizCompleted(fromPartial({}))],
+  [ANALYTICS_EVENTS.ASSESSMENT_COMPLETED, () => analytics.trackAssessmentCompleted(fromPartial({}))],
+  [ANALYTICS_EVENTS.PROJECT_SUBMITTED, () => analytics.trackProjectSubmitted(fromPartial({}))],
+  [ANALYTICS_EVENTS.STREAK_ACHIEVED, () => analytics.trackStreakAchieved(fromPartial({}))],
+  [ANALYTICS_EVENTS.LEVEL_UP, () => analytics.trackLevelUp(fromPartial({}))],
+  [ANALYTICS_EVENTS.ACHIEVEMENT_UNLOCKED, () => analytics.trackAchievementUnlocked(fromPartial({}))],
+  [ANALYTICS_EVENTS.SUBSCRIPTION_STARTED, () => analytics.trackSubscriptionStarted(fromPartial({}))],
+  [ANALYTICS_EVENTS.SUBSCRIPTION_CANCELLED, () => analytics.trackSubscriptionCancelled(fromPartial({}))],
+  [ANALYTICS_EVENTS.COURSE_ENROLLED, () => analytics.trackCourseEnrolled(fromPartial({}))],
+  [ANALYTICS_EVENTS.SEARCH_PERFORMED, () => analytics.trackSearchPerformed(fromPartial({}))],
+  [ANALYTICS_EVENTS.DISCUSSION_CREATED, () => analytics.trackDiscussionCreated(fromPartial({}))],
+  [ANALYTICS_EVENTS.REPLY_CREATED, () => analytics.trackReplyCreated(fromPartial({}))],
   [ANALYTICS_EVENTS.ERROR_OCCURRED, () => analytics.trackError('auth_error', 'nope')],
 ]
 

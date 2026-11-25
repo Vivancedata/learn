@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
+import { at } from '@/test-utils/at'
 
 // Mock Prisma client for testing
 const mockPrisma = {
@@ -319,7 +320,7 @@ describe('Phase 2 Integration Tests', () => {
         mockPrisma.projectSubmission.findMany.mockResolvedValue(mockProjects)
 
         // Verify FIFO ordering (oldest first)
-        expect(mockProjects[0].submittedAt < mockProjects[1].submittedAt).toBe(true)
+        expect(at(mockProjects, 0).submittedAt < at(mockProjects, 1).submittedAt).toBe(true)
       })
     })
   })

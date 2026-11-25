@@ -85,11 +85,10 @@ function extractTableOfContents(content: string): TableOfContentsItem[] {
       continue
     }
     if (inFence) continue
-    const match = /^(#{2,3})\s+(.+)$/.exec(line)
-    if (!match) continue
-    const title = match[2]
+    const [, hashes, title] = /^(#{2,3})\s+(.+)$/.exec(line) ?? []
+    if (hashes === undefined || title === undefined) continue
     const id = title.toLowerCase().replace(/[^\w]+/g, '-')
-    items.push({ id, title, level: match[1].length })
+    items.push({ id, title, level: hashes.length })
   }
   return items
 }

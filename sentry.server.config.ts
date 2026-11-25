@@ -58,9 +58,12 @@ if (SENTRY_DSN) {
 
         // Remove sensitive fields
         const sensitiveFields = ['password', 'token', 'secret', 'apiKey', 'creditCard']
-        for (const field of sensitiveFields) {
-          if (data[field]) {
-            data[field] = '[REDACTED]'
+        if (typeof data === 'object' && data !== null) {
+          const record = data as Record<string, unknown>
+          for (const field of sensitiveFields) {
+            if (record[field]) {
+              record[field] = '[REDACTED]'
+            }
           }
         }
 

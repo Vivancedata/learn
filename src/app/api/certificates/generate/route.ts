@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
       try {
         const outcomes = JSON.parse(course.learningOutcomes)
         if (Array.isArray(outcomes)) {
-          skills = outcomes
+          skills = outcomes.filter((s): s is string => typeof s === 'string')
         }
       } catch {
         // If parsing fails, use default skills based on course title

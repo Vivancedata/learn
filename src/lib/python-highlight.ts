@@ -76,18 +76,15 @@ function wrap(className: string, text: string): string {
 }
 
 function renderToken(token: string): string {
-  const first = token[0]
+  const first = token.charAt(0)
 
   if (first === '"' || first === "'") return wrap(CLASS_STRING, token)
   if (first === '#') return wrap(CLASS_COMMENT, token)
 
   const definition = DEFINITION.exec(token)
   if (definition) {
-    return (
-      wrap(CLASS_KEYWORD, definition[1]) +
-      escapeHtml(definition[2]) +
-      wrap(CLASS_DEFINITION, definition[3])
-    )
+    const [, keyword = '', spacing = '', name = ''] = definition
+    return wrap(CLASS_KEYWORD, keyword) + escapeHtml(spacing) + wrap(CLASS_DEFINITION, name)
   }
 
   if (first >= '0' && first <= '9') return wrap(CLASS_NUMBER, token)

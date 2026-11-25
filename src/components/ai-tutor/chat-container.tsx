@@ -223,7 +223,7 @@ function MessagesContainer({
               </div>
             )}
             {/* Show suggested questions after AI response */}
-            {!isLoading && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && (
+            {!isLoading && messages.at(-1)?.role === 'assistant' && (
               <div className="pt-2">
                 <SuggestedQuestions
                   questions={suggestedQuestions}

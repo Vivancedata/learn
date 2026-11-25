@@ -29,22 +29,22 @@ function getAdjacentLessons(
   const sectionIndex = course.sections.findIndex((section) =>
     section.lessons.some((lesson) => lesson.id === currentLessonId)
   )
-  if (sectionIndex === -1) {
+  const section = course.sections[sectionIndex]
+  if (!section) {
     return { prevLesson: null, nextLesson: null }
   }
 
-  const section = course.sections[sectionIndex]
   const lessonIndex = section.lessons.findIndex((lesson) => lesson.id === currentLessonId)
   const prevSection = course.sections[sectionIndex - 1]
   const nextSection = course.sections[sectionIndex + 1]
 
   const prevLesson =
     lessonIndex > 0
-      ? section.lessons[lessonIndex - 1]
+      ? section.lessons[lessonIndex - 1] ?? null
       : prevSection?.lessons[prevSection.lessons.length - 1] ?? null
   const nextLesson =
     lessonIndex < section.lessons.length - 1
-      ? section.lessons[lessonIndex + 1]
+      ? section.lessons[lessonIndex + 1] ?? null
       : nextSection?.lessons[0] ?? null
 
   return { prevLesson, nextLesson }

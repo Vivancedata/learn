@@ -124,9 +124,9 @@ export function useSwipeGesture(
   // config, so the listeners below attach once instead of on every render
   // (callers pass inline callbacks/config, which change identity each render).
   const handleTouchStart = useEffectEvent((e: TouchEvent) => {
-    if (!ref.current) return
-
     const touch = e.touches[0]
+    if (!ref.current || !touch) return
+
     touchStart.current = {
       x: touch.clientX,
       y: touch.clientY,
@@ -142,9 +142,9 @@ export function useSwipeGesture(
   })
 
   const handleTouchMove = useEffectEvent((e: TouchEvent) => {
-    if (!isTracking.current || !ref.current) return
-
     const touch = e.touches[0]
+    if (!isTracking.current || !ref.current || !touch) return
+
     const deltaX = touch.clientX - touchStart.current.x
     const deltaY = touch.clientY - touchStart.current.y
 

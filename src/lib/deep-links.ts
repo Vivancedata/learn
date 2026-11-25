@@ -87,19 +87,20 @@ export function parseDeepLink(url: string): DeepLinkParseResult {
     const searchParams = parsedUrl.searchParams
 
     // Empty path or home
-    if (pathParts.length === 0) {
+    const [firstPart, part1, part2, part3] = pathParts
+    if (firstPart === undefined) {
       result.route = { type: 'home' }
       result.navigationPath = '/'
       result.isValid = true
       return result
     }
 
-    const routeType = pathParts[0].toLowerCase()
+    const routeType = firstPart.toLowerCase()
 
     switch (routeType) {
       case 'course': {
-        if (pathParts.length >= 2) {
-          const courseId = pathParts[1]
+        if (part1) {
+          const courseId = part1
           result.route = { type: 'course', courseId }
           result.navigationPath = `/courses/${courseId}`
           result.isValid = true
@@ -108,9 +109,9 @@ export function parseDeepLink(url: string): DeepLinkParseResult {
       }
 
       case 'lesson': {
-        if (pathParts.length >= 3) {
-          const courseId = pathParts[1]
-          const lessonId = pathParts[2]
+        if (part1 && part2) {
+          const courseId = part1
+          const lessonId = part2
           result.route = { type: 'lesson', courseId, lessonId }
           result.navigationPath = `/courses/${courseId}/lessons/${lessonId}`
           result.isValid = true
@@ -119,8 +120,8 @@ export function parseDeepLink(url: string): DeepLinkParseResult {
       }
 
       case 'path': {
-        if (pathParts.length >= 2) {
-          const pathId = pathParts[1]
+        if (part1) {
+          const pathId = part1
           result.route = { type: 'path', pathId }
           result.navigationPath = `/paths/${pathId}`
           result.isValid = true
@@ -129,8 +130,8 @@ export function parseDeepLink(url: string): DeepLinkParseResult {
       }
 
       case 'assessment': {
-        if (pathParts.length >= 2) {
-          const assessmentId = pathParts[1]
+        if (part1) {
+          const assessmentId = part1
           result.route = { type: 'assessment', assessmentId }
           result.navigationPath = `/assessments/${assessmentId}`
           result.isValid = true
@@ -170,10 +171,10 @@ export function parseDeepLink(url: string): DeepLinkParseResult {
 
       // Handle direct paths (e.g., /courses/python-data-science)
       case 'courses': {
-        if (pathParts.length >= 2) {
-          const courseId = pathParts[1]
-          if (pathParts.length >= 4 && pathParts[2] === 'lessons') {
-            const lessonId = pathParts[3]
+        if (part1) {
+          const courseId = part1
+          if (part2 === 'lessons' && part3) {
+            const lessonId = part3
             result.route = { type: 'lesson', courseId, lessonId }
             result.navigationPath = `/courses/${courseId}/lessons/${lessonId}`
           } else {
@@ -186,8 +187,8 @@ export function parseDeepLink(url: string): DeepLinkParseResult {
       }
 
       case 'paths': {
-        if (pathParts.length >= 2) {
-          const pathId = pathParts[1]
+        if (part1) {
+          const pathId = part1
           result.route = { type: 'path', pathId }
           result.navigationPath = `/paths/${pathId}`
           result.isValid = true
@@ -196,8 +197,8 @@ export function parseDeepLink(url: string): DeepLinkParseResult {
       }
 
       case 'assessments': {
-        if (pathParts.length >= 2) {
-          const assessmentId = pathParts[1]
+        if (part1) {
+          const assessmentId = part1
           result.route = { type: 'assessment', assessmentId }
           result.navigationPath = `/assessments/${assessmentId}`
           result.isValid = true

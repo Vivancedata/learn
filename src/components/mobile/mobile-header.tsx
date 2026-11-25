@@ -314,8 +314,9 @@ export function MobileHeaderSpacer() {
 function getPageTitle(pathname: string): string {
   // Handle dynamic routes
   const segments = pathname.split('/').filter(Boolean)
+  const [firstSegment] = segments
 
-  if (segments.length === 0) return 'Home'
+  if (firstSegment === undefined) return 'Home'
 
   // Course lesson: /courses/[courseId]/lessons/[lessonId]
   if (segments[0] === 'courses' && segments[2] === 'lessons') {
@@ -333,5 +334,5 @@ function getPageTitle(pathname: string): string {
   }
 
   // Default: capitalize first segment
-  return segments[0].charAt(0).toUpperCase() + segments[0].slice(1)
+  return firstSegment.charAt(0).toUpperCase() + firstSegment.slice(1)
 }

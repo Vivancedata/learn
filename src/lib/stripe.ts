@@ -132,15 +132,15 @@ export async function getOrCreateCustomer(
     limit: 1,
   })
 
-  if (existingCustomers.data.length > 0) {
-    const customer = existingCustomers.data[0]
+  const [existingCustomer] = existingCustomers.data
+  if (existingCustomer) {
     // Update metadata if userId is not already set
-    if (!customer.metadata.userId) {
-      return await stripe.customers.update(customer.id, {
+    if (!existingCustomer.metadata.userId) {
+      return await stripe.customers.update(existingCustomer.id, {
         metadata: { userId },
       })
     }
-    return customer
+    return existingCustomer
   }
 
   // Create new customer

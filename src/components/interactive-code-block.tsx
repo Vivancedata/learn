@@ -121,7 +121,9 @@ export function parseCodeBlockLanguage(langString: string): {
   for (const part of parts.slice(1)) {
     if (part.includes('=')) {
       const [key, value] = part.split('=')
-      meta[key] = value
+      if (key !== undefined && value !== undefined) {
+        meta[key] = value
+      }
     }
   }
 
@@ -140,7 +142,7 @@ export function createInteractiveCodeComponent() {
   }: React.HTMLAttributes<HTMLElement> & { children?: React.ReactNode }) {
     // Extract language from className (e.g., "language-python")
     const match = /language-(\S+)/.exec(className || '')
-    const fullLang = match ? match[1] : ''
+    const fullLang = match?.[1] ?? ''
     const { language, interactive } = parseCodeBlockLanguage(fullLang)
 
     // Get code content

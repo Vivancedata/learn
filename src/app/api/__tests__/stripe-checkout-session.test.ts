@@ -144,7 +144,7 @@ describe('POST /api/stripe/create-checkout-session', () => {
 
       expect(response.status).toBe(201)
       expect(mockedGetCustomer).not.toHaveBeenCalled()
-      expect(mockedCreateSession.mock.calls[0][0]).toBe('cus_existing')
+      expect(mockedCreateSession.mock.calls[0]?.[0]).toBe('cus_existing')
     })
   })
 })

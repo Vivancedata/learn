@@ -47,9 +47,10 @@ export function verifySvixSignature(params: {
     .split(' ')
     .map((part) => part.trim())
     .filter(Boolean)
-    .map((part) => part.split(','))
-    .filter((pair) => pair[0] === 'v1' && pair[1])
-    .map((pair) => pair[1])
+    .flatMap((part) => {
+      const [version, signature] = part.split(',')
+      return version === 'v1' && signature ? [signature] : []
+    })
 
   return signatures.some((sig) => timingSafeEqual(sig, expected))
 }

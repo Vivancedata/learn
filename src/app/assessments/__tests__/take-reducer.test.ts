@@ -2,6 +2,7 @@ import {
   assessmentTakeReducer,
   createInitialAssessmentTakeState,
 } from '../[slug]/take/take-reducer'
+import { at } from '@/test-utils/at'
 
 
 type State = ReturnType<typeof createInitialAssessmentTakeState>
@@ -159,7 +160,7 @@ describe('assessment take reducer: navigation', () => {
       let state = inProgressAttempt()
       let expected = 0
       for (let step = 0; step < steps; step++) {
-        const move = moves[(mask >> step) & 1]
+        const move = at(moves, (mask >> step) & 1)
         state =
           move === 'nextQuestion'
             ? assessmentTakeReducer(state, { type: move, totalQuestions })
