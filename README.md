@@ -1,40 +1,23 @@
-# VivanceData Learning Platform
+# Vivancedata Learn
 
 <p align="center">
   <img src="docs/assets/hero.png" alt="learn preview" width="640">
 </p>
 
-[![Security](https://img.shields.io/badge/Audit-0_high%2Fcritical-success)]() [![Tests](https://img.shields.io/badge/Test_Suites-26_Passing-success)]()
+Structured learning paths for practical AI and data skills: courses, quizzes, hands-on projects and certificates. Live at [learn.vivancedata.com](https://learn.vivancedata.com).
 
-VivanceData Learning is a comprehensive educational platform focused on AI and data science skills, providing structured courses, interactive content, and community-driven learning experiences.
+## What it does
 
-## 🎯 Production Status
-
-This platform is deployable with hardened runtime checks, but production readiness still depends on correct infrastructure setup:
-- ✅ Runtime dependency audit clean (`npm audit --omit=dev`)
-- ✅ Authentication, authorization, rate limiting, and security headers in place
-- ✅ Migration-aware production build (`prisma migrate deploy` in `build:ci`)
-- ⚠️ Dev-tooling audit warnings can still appear in full `npm audit`
-
-See the [Production Deployment](#production-deployment) section below for deployment guide.
-
-## Overview
-
-The VivanceData Learning Platform is designed to help professionals and organizations build AI literacy and technical skills through structured learning paths, hands-on projects, and industry-relevant content. Developed by AI experts at VivanceData, this platform bridges the gap between theoretical knowledge and practical implementation.
-
-## Key Features
-
-- **Structured Learning Paths**: Curated educational journeys for various AI specializations and skill levels
-- **Interactive Courses**: Comprehensive courses with lessons, practical exercises, and real-world projects
-- **Knowledge Checks**: Regular assessments to reinforce learning and identify knowledge gaps
-- **Project Submissions**: Apply knowledge through guided projects with expert feedback
-- **Course Certificates**: Earn verifiable certificates upon course completion
-- **Progress Tracking**: Monitor learning progress across courses and paths
-- **Community Discussions**: Engage with peers and experts in subject-specific forums
-- **Success Stories**: Showcase real-world applications of skills learned on the platform
-- **Dark Mode**: Full dark mode support with system preference detection
-- **Markdown Content Pipeline**: Auto-import course content from markdown files with quiz extraction
-- **Semantic UI System**: Consistent design tokens with success, warning, and info states
+- **Learning paths**: ordered sequences of courses (currently Web Development and Data Science)
+- **Courses and lessons**: authored in Markdown under `content/`, imported into Postgres by `npm run db:seed`
+- **Knowledge checks**: quiz questions parsed from each lesson's "Knowledge Check" section
+- **Project submissions**: learners submit a GitHub link for review
+- **Progress, XP, streaks and achievements**
+- **Certificates** on course completion
+- **Discussions** on courses and lessons
+- **Stripe billing** for the paid tier
+- **AI tutor** (beta, needs an LLM API key)
+- **Dark mode**
 
 ## Tech Stack
 
@@ -51,8 +34,8 @@ The VivanceData Learning Platform is designed to help professionals and organiza
 
 ### Prerequisites
 
-- Node.js 18.0 or later
-- npm, yarn, or bun package manager
+- Node.js 24 (`engines` in `package.json`)
+- npm (CI uses `npm ci` against the committed lockfile)
 
 ### Installation
 
@@ -66,8 +49,6 @@ cd learn
 ```bash
 npm install
 ```
-> This project standardizes on **npm** (CI uses `npm ci` against the committed
-> `package-lock.json`). Using yarn or bun will not match the lockfile.
 
 3. Create a `.env` file in the root directory:
 ```bash
@@ -217,13 +198,11 @@ learn/
 - `npx prisma migrate dev` - Create and apply database migrations
 - `npx prisma generate` - Generate Prisma Client
 
-## Current Learning Paths
+## Current content
 
-The platform currently offers the following learning paths:
+Two learning paths (`content/paths/`): **Web Development** and **Data Science**.
 
-1. **Web Development** - From basics to advanced frontend and backend development
-2. **Data Science** - Statistical analysis, data visualization, and machine learning
-3. **Mobile Development** - Cross-platform and native mobile application development
+Eleven courses (`content/courses/`): AI Foundations for Professionals, Computer Vision Fundamentals, Data Engineering Fundamentals, Deep Learning & Neural Networks, Generative AI & LLM Applications, Machine Learning Fundamentals, MLOps and Model Deployment, Natural Language Processing, Python for Data Science, SQL for Data Analysis, and Introduction to Web Development.
 
 ## Rate Limiting with Redis
 
@@ -234,6 +213,7 @@ The platform uses Redis-based rate limiting for production scalability. This kee
 | Endpoint Type | Limit | Window |
 |---------------|-------|--------|
 | Authentication (`/api/auth/*`) | 5 requests | 15 minutes |
+| Auth emails (forgot password, resend verification) | 3 requests | 60 minutes |
 | API (`/api/*`) | 100 requests | 15 minutes |
 | General | 1000 requests | 15 minutes |
 
@@ -373,34 +353,14 @@ All API endpoints (except `/api/auth/*`) require authentication. Include the JWT
 - Success: `{ data: {...}, timestamp: "..." }`
 - Error: `{ error: "...", message: "...", details?: {...}, timestamp: "..." }`
 
-## Recent Improvements
+## Status
 
-### Styling & UI (Latest)
-- ✅ **Semantic Color System**: Added success, warning, and info color tokens for consistent theming
-- ✅ **Dark Mode**: Full dark mode support with theme toggle in navbar and settings
-- ✅ **Component Library**: Created reusable Spinner and StatusBadge components
-- ✅ **Form Consistency**: All forms now use consistent Input/Label components
-- ✅ **Theme Persistence**: Dark mode preference persists using localStorage
-
-### Content Pipeline
-- ✅ **Markdown Importer**: Automatically imports course content from markdown files
-- ✅ **Quiz Extraction**: Auto-parses quiz questions from "Knowledge Check" sections
-- ✅ **Frontmatter Support**: Full support for YAML frontmatter in content files
-- ✅ **Relationship Management**: Proper handling of paths → courses → sections → lessons
-
-### Platform Status
-- **Build Status**: Zero TypeScript errors
-- **Runtime Security**: 0 high/critical advisories; 3 moderate advisories remain
-  from Next.js's internally bundled `postcss` (`npm audit`)
-- **Styling Consistency**: 9/10 (up from 7.5/10)
-- **Infrastructure**: Deployable when required production env vars are configured
-
-### Validation status (be honest with yourself before shipping)
+### What is tested
 - **Tested**: backend API routes and `src/lib` utilities, via Jest with a mocked
   Prisma client (CI gates unit + integration coverage at 85%). Lint, type-check,
   production build, and Lighthouse all run in CI.
-- **Not yet validated end-to-end**: there are no UI/component tests, and the
-  Playwright e2e (`npm run test:e2e`) requires a real `DATABASE_URL` + running
+- **Component tests**: a few (`src/components/__tests__/`), not broad UI coverage.
+- **Not yet validated end-to-end**: the Playwright e2e (`npm run test:e2e`) requires a real `DATABASE_URL` + running
   server and is **not** part of the default CI run. Before claiming production
   readiness, do one staging deploy against a real Postgres and exercise the core
   flow (sign up → open a lesson → pass a quiz → see XP → earn a certificate).
@@ -495,7 +455,7 @@ npm run ops:sentry:bootstrap
 
 ## Contributing
 
-We welcome contributions to the VivanceData Learning Platform! Please review our contributing guidelines before submitting pull requests.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
