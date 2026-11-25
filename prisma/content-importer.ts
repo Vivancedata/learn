@@ -115,7 +115,7 @@ function extractBulletItems(content: string, heading: string): string[] {
   const match = content.match(pattern)
   if (!match) return []
 
-  const bullets = match[1].match(/^-\s+(.+)$/gm)
+  const bullets = (match[1] ?? '').match(/^-\s+(.+)$/gm)
   if (!bullets) return []
 
   return bullets.map(item => item.replace(/^-\s+/, '').trim())
@@ -259,7 +259,7 @@ function parseQuizQuestions(content: string): QuizQuestion[] {
   const knowledgeCheckMatch = content.match(/## Knowledge Check\s*([\s\S]*?)(?=\n## |$)/i)
   if (!knowledgeCheckMatch) return questions
 
-  const knowledgeCheckContent = knowledgeCheckMatch[1]
+  const knowledgeCheckContent = knowledgeCheckMatch[1] ?? ''
 
   // Match questions (numbered like "1. Question text?")
   const questionBlocks = knowledgeCheckContent.split(/\n(?=\d+\.\s+)/)
@@ -272,7 +272,7 @@ function parseQuizQuestions(content: string): QuizQuestion[] {
     const questionMatch = block.match(questionPattern)
     if (!questionMatch) continue
 
-    const question = questionMatch[1].trim()
+    const question = (questionMatch[1] ?? '').trim()
 
     // Extract options (lines starting with -)
     const optionMatches = block.match(/^\s*-\s+(.+)$/gm)
@@ -496,8 +496,7 @@ async function importLessons(courses: ImportedCourseMeta[]) {
       if (quizQuestions.length > 0) {
         console.log(`    📋 Found ${quizQuestions.length} quiz questions`)
 
-        for (let i = 0; i < quizQuestions.length; i++) {
-          const quiz = quizQuestions[i]
+        for (const [i, quiz] of quizQuestions.entries()) {
           const quizId = deterministicUuid(`${lesson.id}:quiz:${i + 1}`)
 
           await prisma.quizQuestion.upsert({
@@ -583,8 +582,7 @@ async function importLessons(courses: ImportedCourseMeta[]) {
       })
 
       const quizQuestions = parseQuizQuestions(fallback.content)
-      for (let i = 0; i < quizQuestions.length; i++) {
-        const quiz = quizQuestions[i]
+      for (const [i, quiz] of quizQuestions.entries()) {
         const quizId = deterministicUuid(`${lesson.id}:quiz:${i + 1}`)
 
         await prisma.quizQuestion.upsert({

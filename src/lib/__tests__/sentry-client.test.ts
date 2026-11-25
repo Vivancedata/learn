@@ -1,3 +1,5 @@
+import { at } from '@/test-utils/at'
+
 const mockSentry = {
   init: jest.fn(),
   setUser: jest.fn(),
@@ -50,8 +52,8 @@ describe('sentry-client', () => {
 
     expect(mockSentry.init).toHaveBeenCalledTimes(1)
     expect(mockSentry.captureException).toHaveBeenCalledTimes(2)
-    expect(mockSentry.init.mock.invocationCallOrder[0]).toBeLessThan(
-      mockSentry.captureException.mock.invocationCallOrder[0]
+    expect(at(mockSentry.init.mock.invocationCallOrder, 0)).toBeLessThan(
+      at(mockSentry.captureException.mock.invocationCallOrder, 0)
     )
   })
 

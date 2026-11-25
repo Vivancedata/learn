@@ -469,7 +469,8 @@ export function getClientIdentifier(request: {
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) {
     // x-forwarded-for can contain multiple IPs, use the first one
-    return forwarded.split(',')[0].trim()
+    const [firstIp = ''] = forwarded.split(',')
+    return firstIp.trim()
   }
 
   const realIp = request.headers.get('x-real-ip')

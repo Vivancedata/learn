@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < results.length; i++) {
       const result = results[i]
       const subscription = user.pushSubscriptions[i]
+      if (!result || !subscription) continue
 
       if (result.status === 'fulfilled' && result.value.success) {
         successCount++
