@@ -80,7 +80,7 @@ These contributions require discussion and assignment before beginning work. Thi
 
 Before contributing, ensure you have:
 
-- Node.js 18.0 or later installed
+- Node.js 24 installed (see `engines` in `package.json`)
 - A GitHub account
 - Basic familiarity with Git and GitHub
 - For code contributions: understanding of TypeScript and React
