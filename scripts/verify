@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Fast gate that Claude Code runs before a session can finish: `npm run verify`
+# minus the Next.js production build, plus the content markdownlint CI runs.
+# No database, browser or deploy needed. The full check before a PR is still
+# `npm run verify` (plus `npm run verify:ui` for UI changes).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+npm ci
+npm run verify:lint
+npm run lint:content
+npm run verify:typecheck
+npm run verify:unit
+npm run verify:integration
